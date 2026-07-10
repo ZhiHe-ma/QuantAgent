@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+*.log
+*.sqlite
+*.db
+*.bak*
+
+10_DailyNotes/
+runtime/
+server_state/

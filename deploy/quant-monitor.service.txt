@@ -1,0 +1,19 @@
+﻿# /etc/systemd/system/quant-monitor.service
+[Unit]
+Description=QuantAgent Flash News Monitor Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/QuantAgent
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/admin/QuantAgent/venv/bin/python -u /home/admin/QuantAgent/agent_engine.py --mode monitor
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/admin/QuantAgent/monitor.log
+StandardError=append:/home/admin/QuantAgent/monitor.log
+
+[Install]
+WantedBy=multi-user.target
