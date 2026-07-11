@@ -853,9 +853,8 @@ memory_enabled: true
 ## 🧠 DeepSeek-R1 宏观因果螺旋推演
 {ai_analysis}
 """
-        capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
-
         if self.dry_run:
+            capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
             print("\n===== [DRY_RUN] 日报预览开始 =====")
             print(obsidian_content)
             print("===== [DRY_RUN] 日报预览结束 =====")
@@ -872,6 +871,7 @@ memory_enabled: true
         self.push_to_wecom(f"### 📊 投研早餐内参 ({today_str})\n\n{ai_analysis}")
         print("[Daily] 企微管道推送执行完毕。")
 
+        capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
         self.save_memory_capsule(capsule)
         print("[Daily] 全链路收敛完成：今日判断已转化为明日记忆。")
         return {"report": obsidian_content, "capsule": capsule}
