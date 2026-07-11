@@ -261,6 +261,59 @@ class DryRunIsolationTests(unittest.TestCase):
             state = json.loads(memory_path.read_text(encoding="utf-8"))
             self.assertEqual(state["last_daily_capsule"]["date"], today)
 
+    def test_production_delivers_report_before_capsule_generation(self):
+        with tempfile.TemporaryDirectory() as temp_dir, mock.patch.dict(
+            os.environ,
+            {
+                "DRY_RUN": "false",
+                "DEEPSEEK_API_KEY": "test-key",
+                "WECOM_WEBHOOK_URL": "https://example.invalid/webhook",
+            },
+            clear=True,
+        ):
+            self.module.BASE_DIR = temp_dir
+            engine = self.module.QuantAgent()
+            today = self.module.datetime.now().strftime("%Y-%m-%d")
+            report_path = Path(engine.daily_dir) / f"{today}.md"
+            events = []
+
+            engine.fetch_market_signals = mock.Mock(
+                return_value={
+                    "macro": {"S&P500_Chg%": 0.5, "VIX_Volatility": 16.0},
+                    "crypto": {
+                        "BTC_24h_Chg%": 1.0,
+                        "BTC_Price": 64000.0,
+                        "Fear_Greed": 50,
+                    },
+                }
+            )
+
+            def deepseek_side_effect(*_args, **kwargs):
+                if kwargs.get("use_r1"):
+                    events.append("analysis")
+                    return "production analysis"
+                self.assertTrue(report_path.exists())
+                self.assertIn("wecom", events)
+                events.append("capsule")
+                return json.dumps(
+                    {
+                        "risk_regime": "neutral",
+                        "btc_bias": "neutral",
+                        "confidence": 50,
+                        "core_thesis": "production capsule",
+                        "invalid_if": "test",
+                        "watch_items": [],
+                        "today_check": "test",
+                    }
+                )
+
+            engine.request_deepseek = mock.Mock(side_effect=deepseek_side_effect)
+            engine.push_to_wecom = mock.Mock(side_effect=lambda *_args: events.append("wecom"))
+
+            engine.run_daily_pipeline()
+
+            self.assertEqual(events, ["analysis", "wecom", "capsule"])
+
 
 if __name__ == "__main__":
     unittest.main()
