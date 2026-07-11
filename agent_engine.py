@@ -22,6 +22,9 @@ class QuantAgent:
         self.api_key = os.getenv("DEEPSEEK_API_KEY")
         self.wecom_url = os.getenv("WECOM_WEBHOOK_URL")
 
+        # === 副作用总闸门：DRY_RUN=true 时只读数据、调用模型并打印预览 ===
+        self.dry_run = os.getenv("DRY_RUN", "false").strip().lower() == "true"
+
         # === 可配置模型网关：防止模型命名变化击穿业务代码 ===
         self.fast_model = os.getenv("DEEPSEEK_FAST_MODEL", "deepseek-v4-flash")
         self.reason_model = os.getenv("DEEPSEEK_REASON_MODEL", "deepseek-v4-pro")
@@ -52,12 +55,15 @@ class QuantAgent:
 
         if not self.api_key:
             print("❌ 严重错误：未能在 .env 文件中读取到 DEEPSEEK_API_KEY！")
-        if not self.wecom_url:
+        if not self.wecom_url and not self.dry_run:
             print("❌ 严重错误：未能在 .env 文件中读取到 WECOM_WEBHOOK_URL！")
 
         # 核心目录矩阵配置
         self.daily_dir = os.path.abspath(os.path.join(BASE_DIR, "10_DailyNotes"))
-        os.makedirs(self.daily_dir, exist_ok=True)
+        if not self.dry_run:
+            os.makedirs(self.daily_dir, exist_ok=True)
+        else:
+            print("🧪 [DRY_RUN] 副作用隔离已启用：不会创建目录、写文件、推送企微或更新状态。")
 
         # 去重状态库、内容指纹库、快讯蓄水池、跨日记忆状态库
         self.dedup_file = os.path.join(self.daily_dir, "processed_news_ids.json")
@@ -85,10 +91,14 @@ class QuantAgent:
             return default
 
     def _safe_json_write(self, path, data):
+        if self.dry_run:
+            print(f"🧪 [DRY_RUN] 已阻止 JSON 状态写入: {path}")
+            return False
         tmp_path = f"{path}.tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         os.replace(tmp_path, path)
+        return True
 
     def _strip_json_fence(self, text):
         if not text:
@@ -331,7 +341,7 @@ class QuantAgent:
         print(f"[Memory] 今日记忆胶囊已写入: {self.memory_file}")
 
     def generate_memory_capsule(self, today_str, ai_analysis, metrics, compact_news):
-        """把今日内参压缩为明日可继承的结构化记忆。失败时写入保守降级胶囊。"""
+        """生成并返回结构化记忆胶囊；是否持久化由 Daily Pipeline 统一决定。"""
         capsule_prompt = f"""
 请把以下今日投研内参压缩成严格 JSON，禁止 Markdown，禁止解释，禁止多余字段。
 
@@ -365,10 +375,10 @@ class QuantAgent:
             if not isinstance(capsule, dict):
                 raise ValueError("capsule is not dict")
             capsule["date"] = today_str
-            self.save_memory_capsule(capsule)
+            return capsule
         except Exception as e:
-            print(f"⚠️ 记忆胶囊结构化失败，启动保守降级写入: {e} | 原始返回: {raw}")
-            fallback = {
+            print(f"⚠️ 记忆胶囊结构化失败，返回保守降级胶囊: {e} | 原始返回: {raw}")
+            return {
                 "date": today_str,
                 "risk_regime": "unknown",
                 "btc_bias": "unknown",
@@ -378,7 +388,6 @@ class QuantAgent:
                 "watch_items": [],
                 "today_check": "检查今日判断是否被市场价格与波动率证伪。"
             }
-            self.save_memory_capsule(fallback)
 
     # =========================
     # 输入防溢出层：Factor Gate
@@ -619,6 +628,9 @@ class QuantAgent:
             return f"❌ 链路异常，未能连接至 DeepSeek: {e}"
 
     def push_to_wecom(self, text):
+        if self.dry_run:
+            print("🧪 [DRY_RUN] 已阻止企业微信推送。")
+            return
         if not self.wecom_url or "None" in self.wecom_url:
             print("❌ 企微网关未挂载，取消推送。")
             return
@@ -841,6 +853,17 @@ memory_enabled: true
 ## 🧠 DeepSeek-R1 宏观因果螺旋推演
 {ai_analysis}
 """
+        capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
+
+        if self.dry_run:
+            print("\n===== [DRY_RUN] 日报预览开始 =====")
+            print(obsidian_content)
+            print("===== [DRY_RUN] 日报预览结束 =====")
+            print("\n===== [DRY_RUN] Memory Capsule 预览 =====")
+            print(json.dumps(capsule, ensure_ascii=False, indent=2))
+            print("🧪 [DRY_RUN] 验证完成：未写日报、未推送企微、未更新 Memory。")
+            return {"report": obsidian_content, "capsule": capsule}
+
         file_path = os.path.join(self.daily_dir, f"{today_str}.md")
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(obsidian_content)
@@ -849,8 +872,9 @@ memory_enabled: true
         self.push_to_wecom(f"### 📊 投研早餐内参 ({today_str})\n\n{ai_analysis}")
         print("[Daily] 企微管道推送执行完毕。")
 
-        self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
+        self.save_memory_capsule(capsule)
         print("[Daily] 全链路收敛完成：今日判断已转化为明日记忆。")
+        return {"report": obsidian_content, "capsule": capsule}
 
     def run_weekly_pipeline(self):
         """显式占位，避免 argparse 允许 weekly 但执行时静默失败。"""
