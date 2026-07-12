@@ -13,7 +13,10 @@ import requests
 import yfinance as yf
 from dotenv import load_dotenv
 
+from signal_audit import SignalAuditError, SignalAuditStore, calculate_data_quality
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SIGNAL_AUDIT_MIGRATION_DIR = os.path.join(BASE_DIR, "sql")
 
 
 class DeepSeekError(RuntimeError):
@@ -76,6 +79,12 @@ class QuantAgent:
         self.fingerprint_file = os.path.join(self.daily_dir, "processed_news_fingerprints.json")
         self.memory_file = os.path.join(self.daily_dir, "memory_state.json")
         self.failed_news_file = os.path.join(self.daily_dir, "failed_news_quarantine.json")
+        self.signal_audit_file = os.path.join(self.daily_dir, "signal_audit.sqlite3")
+        self.signal_audit_store = SignalAuditStore(
+            self.signal_audit_file,
+            SIGNAL_AUDIT_MIGRATION_DIR,
+            dry_run=self.dry_run,
+        )
 
     # =========================
     # 基础工具层
@@ -429,6 +438,118 @@ class QuantAgent:
                 f"记忆胶囊响应不可信，拒绝覆盖Memory: {e} | raw={raw_preview}"
             ) from e
 
+    def build_signal_audit_payload(
+        self,
+        today_str,
+        started_at,
+        capsule,
+        metrics,
+        compact_news,
+        previous_memory,
+        ai_analysis,
+        delivery_state=None,
+    ):
+        """纯构造审计载荷；不连接数据库，不产生文件副作用。"""
+        try:
+            with open(__file__, "rb") as source_file:
+                source_sha256 = hashlib.sha256(source_file.read()).hexdigest()
+        except OSError:
+            source_sha256 = None
+
+        completed_at = datetime.now().astimezone().isoformat(timespec="seconds")
+        code_version = os.getenv("QUANTAGENT_VERSION")
+        if not code_version and source_sha256:
+            code_version = f"source:{source_sha256[:12]}"
+        version_known = bool(code_version and self.fast_model and self.reason_model)
+        quality_score, quality_flags = calculate_data_quality(
+            metrics,
+            compact_news,
+            version_known=version_known,
+        )
+        btc_price = (metrics.get("crypto", {}) or {}).get("BTC_Price")
+        reference_price = btc_price if isinstance(btc_price, (int, float)) else None
+        run_kind = "forced" if self.force_daily_run and not self.dry_run else "scheduled"
+        delivery_state = delivery_state or {}
+
+        run = {
+            "run_id": SignalAuditStore.new_id("run"),
+            "trade_date": today_str,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "run_kind": run_kind,
+            "code_version": code_version,
+            "source_sha256": source_sha256,
+            "fast_model": self.fast_model,
+            "reason_model": self.reason_model,
+            "report_written": bool(delivery_state.get("report_written", False)),
+            "wecom_sent": bool(delivery_state.get("wecom_sent", False)),
+            "memory_saved": bool(delivery_state.get("memory_saved", False)),
+        }
+        signal = {
+            "signal_id": SignalAuditStore.new_id("signal"),
+            "signal_date": today_str,
+            "asset": "BTC",
+            "quote_asset": "USDT",
+            "decision_horizon": "1d",
+            "risk_regime": capsule.get("risk_regime", "unknown"),
+            "bias": capsule.get("btc_bias", "unknown"),
+            "confidence_raw": capsule.get("confidence", 0),
+            "confidence_calibrated": None,
+            "core_thesis": capsule.get("core_thesis", ""),
+            "invalid_if": capsule.get("invalid_if", ""),
+            "today_check": capsule.get("today_check", ""),
+            "watch_items": capsule.get("watch_items", []),
+            "reference_price": reference_price,
+            "market_snapshot": metrics,
+            "previous_memory": previous_memory,
+            "analysis_text": ai_analysis,
+            "data_quality_score": quality_score,
+            "quality_flags": quality_flags,
+            "finalized_at": completed_at,
+        }
+        return run, signal
+
+    def record_signal_audit(
+        self,
+        today_str,
+        started_at,
+        capsule,
+        metrics,
+        compact_news,
+        previous_memory,
+        ai_analysis,
+        delivery_state=None,
+    ):
+        """统一审计边界；生产失败只告警，不反向破坏日报与 Memory。"""
+        run, signal = self.build_signal_audit_payload(
+            today_str,
+            started_at,
+            capsule,
+            metrics,
+            compact_news,
+            previous_memory,
+            ai_analysis,
+            delivery_state,
+        )
+        try:
+            result = self.signal_audit_store.record_completed_signal(
+                run,
+                signal,
+                compact_news,
+            )
+        except SignalAuditError as exc:
+            print(f"⚠️ [Signal Audit] 写入失败，日报与Memory保持已交付状态: {exc}")
+            return {"status": "failed", "error": str(exc)}
+
+        if result.get("status") == "dry_run":
+            print("🧪 [DRY_RUN] Signal Audit 预览完成：未创建或连接 SQLite。")
+        else:
+            print(
+                f"[Signal Audit] 信号审计已入账: {result.get('signal_id')} | "
+                f"quality={signal['data_quality_score']:.0f}"
+            )
+        return result
+
     # =========================
     # 输入防溢出层：Factor Gate
     # =========================
@@ -682,17 +803,28 @@ class QuantAgent:
     def push_to_wecom(self, text):
         if self.dry_run:
             print("🧪 [DRY_RUN] 已阻止企业微信推送。")
-            return
+            return False
         if not self.wecom_url or "None" in self.wecom_url:
             print("❌ 企微网关未挂载，取消推送。")
-            return
+            return False
         payload = {"msgtype": "markdown", "markdown": {"content": text}}
         try:
             res = requests.post(self.wecom_url, json=payload, timeout=10)
             if res.status_code != 200:
                 print(f"⚠️ 企微网关返回异常状态码: {res.status_code}")
+                return False
+            try:
+                response_body = res.json()
+            except Exception as parse_err:
+                print(f"⚠️ 企微网关响应不是可信 JSON: {parse_err}")
+                return False
+            if not isinstance(response_body, dict) or response_body.get("errcode") != 0:
+                print(f"⚠️ 企微网关业务响应失败: {response_body}")
+                return False
+            return True
         except Exception as e:
             print(f"❌ 企微网关物理击穿: {e}")
+            return False
 
     # =========================
     # 常驻监听层
@@ -861,6 +993,7 @@ class QuantAgent:
 
     def run_daily_pipeline(self):
         """每日 08:00 周期收敛宏观内参生成核心流水线"""
+        started_at = datetime.now().astimezone().isoformat(timespec="seconds")
         today_str = datetime.now().strftime("%Y-%m-%d")
         print(f"🌅 [Daily] 启动清晨 08:00 周期收敛引擎，执行日期: {today_str}")
 
@@ -984,26 +1117,69 @@ memory_enabled: true
 """
         if self.dry_run:
             capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
+            audit_result = self.record_signal_audit(
+                today_str,
+                started_at,
+                capsule,
+                metrics,
+                compact_news,
+                previous_memory,
+                ai_analysis,
+                {
+                    "report_written": False,
+                    "wecom_sent": False,
+                    "memory_saved": False,
+                },
+            )
             print("\n===== [DRY_RUN] 日报预览开始 =====")
             print(obsidian_content)
             print("===== [DRY_RUN] 日报预览结束 =====")
             print("\n===== [DRY_RUN] Memory Capsule 预览 =====")
             print(json.dumps(capsule, ensure_ascii=False, indent=2))
             print("🧪 [DRY_RUN] 验证完成：未写日报、未推送企微、未更新 Memory。")
-            return {"report": obsidian_content, "capsule": capsule}
+            return {
+                "report": obsidian_content,
+                "capsule": capsule,
+                "audit": audit_result,
+            }
 
         file_path = today_report_path
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(obsidian_content)
         print(f"[Daily] 负熵内参已落盘至 Obsidian: {file_path}")
 
-        self.push_to_wecom(f"### 📊 投研早餐内参 ({today_str})\n\n{ai_analysis}")
-        print("[Daily] 企微管道推送执行完毕。")
+        wecom_sent = self.push_to_wecom(
+            f"### 📊 投研早餐内参 ({today_str})\n\n{ai_analysis}"
+        )
+        if wecom_sent:
+            print("[Daily] 企微管道推送成功。")
+        else:
+            print("⚠️ [Daily] 企微管道未确认送达，审计账本将如实记录。")
 
         capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
-        self.save_memory_capsule(capsule)
+        memory_saved = self.save_memory_capsule(capsule)
+        audit_result = {"status": "skipped", "reason": "memory_not_saved"}
+        if memory_saved:
+            audit_result = self.record_signal_audit(
+                today_str,
+                started_at,
+                capsule,
+                metrics,
+                compact_news,
+                previous_memory,
+                ai_analysis,
+                {
+                    "report_written": True,
+                    "wecom_sent": wecom_sent,
+                    "memory_saved": True,
+                },
+            )
         print("[Daily] 全链路收敛完成：今日判断已转化为明日记忆。")
-        return {"report": obsidian_content, "capsule": capsule}
+        return {
+            "report": obsidian_content,
+            "capsule": capsule,
+            "audit": audit_result,
+        }
 
     def run_weekly_pipeline(self):
         """显式占位，避免 argparse 允许 weekly 但执行时静默失败。"""
