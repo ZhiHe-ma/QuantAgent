@@ -112,6 +112,12 @@ class SignalAuditStoreTests(unittest.TestCase):
             ).fetchall()
         self.assertEqual(rows, [(1, "initial_signal_audit")])
 
+    def test_initialize_wraps_directory_creation_failure(self):
+        store = self.store()
+        with mock.patch.object(Path, "mkdir", side_effect=PermissionError("denied")):
+            with self.assertRaisesRegex(SignalAuditError, "failed to initialize"):
+                store.initialize()
+
     def test_initialize_and_read_release_database_file_handle(self):
         store = self.store()
         store.initialize()
@@ -207,6 +213,26 @@ class SignalAuditStoreTests(unittest.TestCase):
             ).fetchall()
         self.assertEqual(runs, [("run-1",)])
         self.assertEqual(signals, [("signal-1", 1)])
+
+    def test_second_connection_failure_is_wrapped_for_pipeline_isolation(self):
+        store = self.store()
+        real_connect = store._connect
+        calls = 0
+
+        def fail_second_connection():
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return real_connect()
+            raise sqlite3.OperationalError("second connection unavailable")
+
+        with mock.patch.object(store, "_connect", side_effect=fail_second_connection):
+            with self.assertRaisesRegex(SignalAuditError, "failed to record"):
+                store.record_completed_signal(run_record(), signal_record(), factors())
+
+        with closing(sqlite3.connect(self.db_path)) as connection:
+            count = connection.execute("SELECT COUNT(*) FROM audit_runs").fetchone()[0]
+        self.assertEqual(count, 0)
 
     def test_data_quality_score_is_deterministic(self):
         score, flags = calculate_data_quality(

@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import sqlite3
 import sys
 import tempfile
 import types
@@ -129,6 +130,34 @@ class SignalAuditIntegrationTests(unittest.TestCase):
             )
 
             result = engine.run_daily_pipeline()
+
+            self.assertEqual(result["audit"]["status"], "failed")
+            self.assertTrue((Path(engine.daily_dir) / f"{today}.md").exists())
+            self.assertTrue(Path(engine.memory_file).exists())
+            engine.push_to_wecom.assert_called_once()
+
+    def test_real_connection_failure_is_isolated_after_memory_delivery(self):
+        with tempfile.TemporaryDirectory() as temp_dir, self.production_env():
+            self.module.BASE_DIR = temp_dir
+            engine = self.module.QuantAgent()
+            today = self.module.datetime.now().strftime("%Y-%m-%d")
+            self.configure_successful_pipeline(engine, today)
+            real_connect = engine.signal_audit_store._connect
+            calls = 0
+
+            def fail_second_connection():
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    return real_connect()
+                raise sqlite3.OperationalError("audit connection unavailable")
+
+            with mock.patch.object(
+                engine.signal_audit_store,
+                "_connect",
+                side_effect=fail_second_connection,
+            ):
+                result = engine.run_daily_pipeline()
 
             self.assertEqual(result["audit"]["status"], "failed")
             self.assertTrue((Path(engine.daily_dir) / f"{today}.md").exists())

@@ -78,9 +78,9 @@ class SignalAuditStore:
         if not migrations:
             raise SignalAuditError(f"no migrations found in {self.migration_dir}")
 
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         connection: sqlite3.Connection | None = None
         try:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
             connection = self._connect()
             for migration in migrations:
                 connection.executescript(migration.read_text(encoding="utf-8"))
@@ -183,9 +183,10 @@ class SignalAuditStore:
                 "database_created": False,
             }
 
-        self.initialize()
-        connection = self._connect()
+        connection: sqlite3.Connection | None = None
         try:
+            self.initialize()
+            connection = self._connect()
             connection.execute("BEGIN IMMEDIATE")
             existing = connection.execute(
                 """
@@ -320,11 +321,17 @@ class SignalAuditStore:
                 "run_id": run["run_id"],
                 "signal_id": signal["signal_id"],
             }
-        except (sqlite3.Error, SignalAuditValidationError) as exc:
-            connection.rollback()
+        except SignalAuditError:
+            if connection is not None:
+                connection.rollback()
+            raise
+        except (sqlite3.Error, OSError, SignalAuditValidationError) as exc:
+            if connection is not None:
+                connection.rollback()
             raise SignalAuditError(f"failed to record completed signal: {exc}") from exc
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()
 
     def get_canonical_signal(
         self,
