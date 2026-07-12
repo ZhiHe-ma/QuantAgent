@@ -16,6 +16,10 @@ from dotenv import load_dotenv
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+class DeepSeekError(RuntimeError):
+    """DeepSeek传输或响应不可信；调用方必须显式失败，禁止降级为业务文本。"""
+
+
 class QuantAgent:
     def __init__(self):
         load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -24,6 +28,7 @@ class QuantAgent:
 
         # === 副作用总闸门：DRY_RUN=true 时只读数据、调用模型并打印预览 ===
         self.dry_run = os.getenv("DRY_RUN", "false").strip().lower() == "true"
+        self.force_daily_run = os.getenv("FORCE_DAILY_RUN", "false").strip().lower() == "true"
 
         # === 可配置模型网关：防止模型命名变化击穿业务代码 ===
         self.fast_model = os.getenv("DEEPSEEK_FAST_MODEL", "deepseek-v4-flash")
@@ -39,6 +44,7 @@ class QuantAgent:
         self.max_news_per_cycle = int(os.getenv("MAX_NEWS_PER_CYCLE", "3"))
         self.max_buffer_factors = int(os.getenv("MAX_BUFFER_FACTORS", "240"))
         self.min_store_weight = os.getenv("MIN_STORE_WEIGHT", "Medium")
+        self.max_news_ai_retries = max(1, int(os.getenv("MAX_NEWS_AI_RETRIES", "3")))
 
         # === 免费 RSS 多源聚合器：替代已强制鉴权的 CryptoCompare/CoinDesk Data API ===
         default_rss_feeds = "|".join([
@@ -69,6 +75,7 @@ class QuantAgent:
         self.dedup_file = os.path.join(self.daily_dir, "processed_news_ids.json")
         self.fingerprint_file = os.path.join(self.daily_dir, "processed_news_fingerprints.json")
         self.memory_file = os.path.join(self.daily_dir, "memory_state.json")
+        self.failed_news_file = os.path.join(self.daily_dir, "failed_news_quarantine.json")
 
     # =========================
     # 基础工具层
@@ -306,21 +313,15 @@ class QuantAgent:
         }
 
     def save_memory_capsule(self, capsule):
-        """写入今日记忆胶囊，并把昨日胶囊压入 7 日滚动记忆。"""
+        """幂等写入今日胶囊；只有跨日期推进时才把上一日压入滚动记忆。"""
         if not isinstance(capsule, dict):
             print("⚠️ 记忆胶囊不是 dict，拒绝写入。")
-            return
+            return False
 
         state = self.load_memory_state()
         previous = state.get("last_daily_capsule", {}) or {}
-        rolling = state.get("rolling_7d", []) or []
-
-        if previous:
-            rolling.append({
-                "date": previous.get("date", ""),
-                "bias": previous.get("btc_bias", "unknown"),
-                "core": self._clamp_str(previous.get("core_thesis", ""), 180),
-            })
+        rolling_raw = state.get("rolling_7d", []) or []
+        rolling = list(rolling_raw) if isinstance(rolling_raw, list) else []
 
         normalized = {
             "date": self._clamp_str(capsule.get("date", datetime.now().strftime("%Y-%m-%d")), 20),
@@ -333,12 +334,40 @@ class QuantAgent:
             "today_check": self._clamp_str(capsule.get("today_check", ""), 180),
         }
 
+        current_date = normalized["date"]
+        previous_date = self._clamp_str(previous.get("date", ""), 20)
+        if previous and previous_date and previous_date != current_date:
+            rolling.append({
+                "date": previous_date,
+                "bias": previous.get("btc_bias", "unknown"),
+                "core": self._clamp_str(previous.get("core_thesis", ""), 180),
+            })
+
+        # 按日期保留最后一次有效记录，并排除当前日期，修复历史重复与同日重跑污染。
+        deduped_reversed = []
+        seen_dates = set()
+        for item in reversed(rolling):
+            if not isinstance(item, dict):
+                continue
+            item_date = self._clamp_str(item.get("date", ""), 20)
+            if not item_date or item_date == current_date or item_date in seen_dates:
+                continue
+            seen_dates.add(item_date)
+            deduped_reversed.append({
+                "date": item_date,
+                "bias": self._clamp_str(item.get("bias", "unknown"), 32),
+                "core": self._clamp_str(item.get("core", ""), 180),
+            })
+        deduped_rolling = list(reversed(deduped_reversed))[-7:]
+
         new_state = {
             "last_daily_capsule": normalized,
-            "rolling_7d": rolling[-7:],
+            "rolling_7d": deduped_rolling,
         }
-        self._safe_json_write(self.memory_file, new_state)
-        print(f"[Memory] 今日记忆胶囊已写入: {self.memory_file}")
+        if self._safe_json_write(self.memory_file, new_state):
+            print(f"[Memory] 今日记忆胶囊已写入: {self.memory_file}")
+            return True
+        return False
 
     def generate_memory_capsule(self, today_str, ai_analysis, metrics, compact_news):
         """生成并返回结构化记忆胶囊；是否持久化由 Daily Pipeline 统一决定。"""
@@ -374,20 +403,31 @@ class QuantAgent:
             capsule = json.loads(self._strip_json_fence(raw))
             if not isinstance(capsule, dict):
                 raise ValueError("capsule is not dict")
+            required = {
+                "risk_regime", "btc_bias", "confidence", "core_thesis",
+                "invalid_if", "watch_items", "today_check",
+            }
+            missing = sorted(required.difference(capsule))
+            if missing:
+                raise ValueError(f"missing fields: {', '.join(missing)}")
+            if capsule.get("risk_regime") not in {"risk_on", "neutral", "risk_off", "mixed"}:
+                raise ValueError("invalid risk_regime")
+            if capsule.get("btc_bias") not in {
+                "bullish", "slightly_bullish", "neutral", "slightly_bearish", "bearish"
+            }:
+                raise ValueError("invalid btc_bias")
+            confidence = capsule.get("confidence")
+            if isinstance(confidence, bool) or not isinstance(confidence, int) or not 0 <= confidence <= 100:
+                raise ValueError("confidence must be an integer from 0 to 100")
+            if not isinstance(capsule.get("watch_items"), list):
+                raise ValueError("watch_items must be a list")
             capsule["date"] = today_str
             return capsule
         except Exception as e:
-            print(f"⚠️ 记忆胶囊结构化失败，返回保守降级胶囊: {e} | 原始返回: {raw}")
-            return {
-                "date": today_str,
-                "risk_regime": "unknown",
-                "btc_bias": "unknown",
-                "confidence": 0,
-                "core_thesis": self._clamp_str(ai_analysis, 160),
-                "invalid_if": "模型记忆压缩失败，明日仅做弱参照。",
-                "watch_items": [],
-                "today_check": "检查今日判断是否被市场价格与波动率证伪。"
-            }
+            raw_preview = self._clamp_str(raw, 240)
+            raise DeepSeekError(
+                f"记忆胶囊响应不可信，拒绝覆盖Memory: {e} | raw={raw_preview}"
+            ) from e
 
     # =========================
     # 输入防溢出层：Factor Gate
@@ -593,8 +633,10 @@ class QuantAgent:
     # =========================
 
     def request_deepseek(self, prompt, use_r1=False, system_prompt=None):
-        """多模态自适应认知引擎。模型名由 .env 控制，业务代码不再硬编码锁死。"""
+        """调用DeepSeek并返回可信文本；任何传输或结构异常都显式抛错。"""
         model = self.reason_model if use_r1 else self.fast_model
+        if not self.api_key:
+            raise DeepSeekError("DEEPSEEK_API_KEY未配置")
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -619,13 +661,23 @@ class QuantAgent:
                 timeout=60,
             )
             data = res.json()
-            if "choices" not in data:
-                error_msg = data.get("error", {}).get("message", f"HTTP {res.status_code}")
-                print(f"❌ DeepSeek 云端故障: {error_msg}")
-                return f"❌ DeepSeek 阻断。原因: {error_msg}"
-            return data["choices"][0]["message"]["content"]
+            if not isinstance(data, dict):
+                raise DeepSeekError(f"DeepSeek返回非对象结构: HTTP {res.status_code}")
+            choices = data.get("choices")
+            if not isinstance(choices, list) or not choices:
+                error_obj = data.get("error", {})
+                error_msg = error_obj.get("message") if isinstance(error_obj, dict) else ""
+                error_msg = self._clamp_str(error_msg or f"HTTP {res.status_code}", 200)
+                raise DeepSeekError(f"DeepSeek响应缺少choices: {error_msg}")
+            message = choices[0].get("message") if isinstance(choices[0], dict) else None
+            content = message.get("content") if isinstance(message, dict) else None
+            if not isinstance(content, str) or not content.strip():
+                raise DeepSeekError("DeepSeek响应content为空或结构非法")
+            return content.strip()
+        except DeepSeekError:
+            raise
         except Exception as e:
-            return f"❌ 链路异常，未能连接至 DeepSeek: {e}"
+            raise DeepSeekError(f"DeepSeek链路异常: {e}") from e
 
     def push_to_wecom(self, text):
         if self.dry_run:
@@ -652,6 +704,9 @@ class QuantAgent:
 
         processed_ids = set(self._safe_json_load(self.dedup_file, []))
         processed_fingerprints = set(self._safe_json_load(self.fingerprint_file, []))
+        failed_news_records = self._safe_json_load(self.failed_news_file, {})
+        if not isinstance(failed_news_records, dict):
+            failed_news_records = {}
 
         sys_prompt_monitor = (
             "你是一个极端保守的微观量化因子标记器。请直接分析给定新闻对加密货币（主要是BTC与主流代币）价格的影响。\n"
@@ -670,6 +725,7 @@ class QuantAgent:
                     day_buffers = []
 
                 has_updates = False
+                failure_state_changed = False
 
                 candidates = []
                 for news in flash_news_list:
@@ -688,10 +744,22 @@ class QuantAgent:
                     print(f"🔥 捕获未处理原生增量快讯 [{news_id}]: {title}")
 
                     news_payload = f"来源: {self._clamp_str(news.get("source", "rss"), 40)}\n新闻标题: {title}\n新闻正文: {body}\n链接: {self._clamp_str(news.get("url", ""), 240)}"
-                    ai_raw_decision = self.request_deepseek(news_payload, use_r1=False, system_prompt=sys_prompt_monitor)
-
+                    ai_raw_decision = ""
                     try:
+                        ai_raw_decision = self.request_deepseek(
+                            news_payload,
+                            use_r1=False,
+                            system_prompt=sys_prompt_monitor,
+                        )
                         decision_json = json.loads(self._strip_json_fence(ai_raw_decision))
+                        if not isinstance(decision_json, dict):
+                            raise ValueError("decision is not dict")
+                        if decision_json.get("sentiment") not in {"利多", "利空", "中性"}:
+                            raise ValueError("invalid sentiment")
+                        if decision_json.get("weight") not in {"Critical", "High", "Medium", "Low"}:
+                            raise ValueError("invalid weight")
+                        if not str(decision_json.get("reason", "")).strip():
+                            raise ValueError("reason is empty")
                         factor_node = {
                             "id": news_id,
                             "fingerprint": fingerprint,
@@ -720,6 +788,9 @@ class QuantAgent:
 
                         processed_ids.add(news_id)
                         processed_fingerprints.add(fingerprint)
+                        if fingerprint in failed_news_records:
+                            failed_news_records.pop(fingerprint, None)
+                            failure_state_changed = True
 
                         if self._weight_rank(factor_node["weight"]) >= self._weight_rank(self.min_store_weight):
                             day_buffers.append(factor_node)
@@ -730,11 +801,49 @@ class QuantAgent:
                             has_updates = True
                             print(f" ╰─> [低权重丢弃] 定性: {factor_node['sentiment']} | 评级: {factor_node['weight']}，不写入蓄水池。")
                     except Exception as parse_err:
-                        processed_ids.add(news_id)
-                        processed_fingerprints.add(fingerprint)
-                        has_updates = True
-                        print(f"⚠️ 因子结构化提取异常，已记录指纹防止反复消耗: {parse_err} | 原始返回: {ai_raw_decision}")
+                        raw_preview = self._clamp_str(locals().get("ai_raw_decision", ""), 240)
+                        previous_failure = failed_news_records.get(fingerprint, {})
+                        previous_attempts = (
+                            previous_failure.get("attempts", 0)
+                            if isinstance(previous_failure, dict)
+                            else 0
+                        )
+                        attempts = previous_attempts + 1
+                        failure_record = {
+                            "id": news_id,
+                            "fingerprint": fingerprint,
+                            "source": self._clamp_str(news.get("source", "rss"), 40),
+                            "title": title,
+                            "url": self._clamp_str(news.get("url", ""), 240),
+                            "attempts": attempts,
+                            "last_failed_at": datetime.now().isoformat(timespec="seconds"),
+                            "error": self._clamp_str(parse_err, 240),
+                            "raw_preview": raw_preview,
+                            "status": "retry_pending",
+                        }
 
+                        if attempts >= self.max_news_ai_retries:
+                            failure_record["status"] = "quarantined"
+                            processed_ids.add(news_id)
+                            processed_fingerprints.add(fingerprint)
+                            has_updates = True
+                            print(
+                                f"🧯 因子提取连续失败 {attempts} 次，已进入隔离区并移出主队列: "
+                                f"{news_id} | {parse_err}"
+                            )
+                        else:
+                            print(
+                                f"⚠️ 因子提取失败，第 {attempts}/{self.max_news_ai_retries} 次；"
+                                f"未写入已处理库，等待重试: {parse_err} | raw={raw_preview}"
+                            )
+
+                        failed_news_records[fingerprint] = failure_record
+                        if len(failed_news_records) > 1000:
+                            failed_news_records = dict(list(failed_news_records.items())[-1000:])
+                        failure_state_changed = True
+
+                if failure_state_changed:
+                    self._safe_json_write(self.failed_news_file, failed_news_records)
                 if has_updates:
                     self._safe_json_write(buffer_path, day_buffers)
                     self._safe_json_write(self.dedup_file, list(processed_ids))
@@ -754,6 +863,26 @@ class QuantAgent:
         """每日 08:00 周期收敛宏观内参生成核心流水线"""
         today_str = datetime.now().strftime("%Y-%m-%d")
         print(f"🌅 [Daily] 启动清晨 08:00 周期收敛引擎，执行日期: {today_str}")
+
+        raw_memory_state = self.load_memory_state()
+        today_report_path = os.path.join(self.daily_dir, f"{today_str}.md")
+        last_capsule_date = self._clamp_str(
+            (raw_memory_state.get("last_daily_capsule", {}) or {}).get("date", ""),
+            20,
+        )
+        if (
+            not self.dry_run
+            and not self.force_daily_run
+            and last_capsule_date == today_str
+            and os.path.exists(today_report_path)
+        ):
+            print(
+                f"♻️ [Daily] {today_str} 已完成，幂等闸门跳过重复执行；"
+                "未抓行情、未调用DeepSeek、未写文件、未推送企微。"
+            )
+            return {"status": "skipped", "date": today_str}
+        if self.force_daily_run and not self.dry_run:
+            print("⚠️ [Daily] FORCE_DAILY_RUN=true：显式绕过同日幂等闸门。")
 
         metrics = self.fetch_market_signals()
 
@@ -778,7 +907,7 @@ class QuantAgent:
             f"经 Factor Gate 裁剪后进入推理层 {len(compact_news)} 个。"
         )
 
-        memory_state = self.clamp_memory_state(self.load_memory_state())
+        memory_state = self.clamp_memory_state(raw_memory_state)
         previous_memory = memory_state.get("last_daily_capsule", {})
         rolling_memory = memory_state.get("rolling_7d", [])
 
@@ -863,7 +992,7 @@ memory_enabled: true
             print("🧪 [DRY_RUN] 验证完成：未写日报、未推送企微、未更新 Memory。")
             return {"report": obsidian_content, "capsule": capsule}
 
-        file_path = os.path.join(self.daily_dir, f"{today_str}.md")
+        file_path = today_report_path
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(obsidian_content)
         print(f"[Daily] 负熵内参已落盘至 Obsidian: {file_path}")
@@ -887,9 +1016,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     engine = QuantAgent()
-    if args.mode == "daily":
-        engine.run_daily_pipeline()
-    elif args.mode == "monitor":
-        engine.run_monitor_pipeline()
-    elif args.mode == "weekly":
-        engine.run_weekly_pipeline()
+    try:
+        if args.mode == "daily":
+            engine.run_daily_pipeline()
+        elif args.mode == "monitor":
+            engine.run_monitor_pipeline()
+        elif args.mode == "weekly":
+            engine.run_weekly_pipeline()
+    except DeepSeekError as e:
+        print(f"❌ [AI Failure] {e}")
+        raise SystemExit(2)
