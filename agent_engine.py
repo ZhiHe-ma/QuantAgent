@@ -447,6 +447,7 @@ class QuantAgent:
         compact_news,
         previous_memory,
         ai_analysis,
+        delivery_state=None,
     ):
         """纯构造审计载荷；不连接数据库，不产生文件副作用。"""
         try:
@@ -468,6 +469,7 @@ class QuantAgent:
         btc_price = (metrics.get("crypto", {}) or {}).get("BTC_Price")
         reference_price = btc_price if isinstance(btc_price, (int, float)) else None
         run_kind = "forced" if self.force_daily_run and not self.dry_run else "scheduled"
+        delivery_state = delivery_state or {}
 
         run = {
             "run_id": SignalAuditStore.new_id("run"),
@@ -479,9 +481,9 @@ class QuantAgent:
             "source_sha256": source_sha256,
             "fast_model": self.fast_model,
             "reason_model": self.reason_model,
-            "report_written": not self.dry_run,
-            "wecom_sent": not self.dry_run,
-            "memory_saved": not self.dry_run,
+            "report_written": bool(delivery_state.get("report_written", False)),
+            "wecom_sent": bool(delivery_state.get("wecom_sent", False)),
+            "memory_saved": bool(delivery_state.get("memory_saved", False)),
         }
         signal = {
             "signal_id": SignalAuditStore.new_id("signal"),
@@ -516,6 +518,7 @@ class QuantAgent:
         compact_news,
         previous_memory,
         ai_analysis,
+        delivery_state=None,
     ):
         """统一审计边界；生产失败只告警，不反向破坏日报与 Memory。"""
         run, signal = self.build_signal_audit_payload(
@@ -526,6 +529,7 @@ class QuantAgent:
             compact_news,
             previous_memory,
             ai_analysis,
+            delivery_state,
         )
         try:
             result = self.signal_audit_store.record_completed_signal(
@@ -799,17 +803,28 @@ class QuantAgent:
     def push_to_wecom(self, text):
         if self.dry_run:
             print("🧪 [DRY_RUN] 已阻止企业微信推送。")
-            return
+            return False
         if not self.wecom_url or "None" in self.wecom_url:
             print("❌ 企微网关未挂载，取消推送。")
-            return
+            return False
         payload = {"msgtype": "markdown", "markdown": {"content": text}}
         try:
             res = requests.post(self.wecom_url, json=payload, timeout=10)
             if res.status_code != 200:
                 print(f"⚠️ 企微网关返回异常状态码: {res.status_code}")
+                return False
+            try:
+                response_body = res.json()
+            except Exception as parse_err:
+                print(f"⚠️ 企微网关响应不是可信 JSON: {parse_err}")
+                return False
+            if not isinstance(response_body, dict) or response_body.get("errcode") != 0:
+                print(f"⚠️ 企微网关业务响应失败: {response_body}")
+                return False
+            return True
         except Exception as e:
             print(f"❌ 企微网关物理击穿: {e}")
+            return False
 
     # =========================
     # 常驻监听层
@@ -1110,6 +1125,11 @@ memory_enabled: true
                 compact_news,
                 previous_memory,
                 ai_analysis,
+                {
+                    "report_written": False,
+                    "wecom_sent": False,
+                    "memory_saved": False,
+                },
             )
             print("\n===== [DRY_RUN] 日报预览开始 =====")
             print(obsidian_content)
@@ -1128,8 +1148,13 @@ memory_enabled: true
             f.write(obsidian_content)
         print(f"[Daily] 负熵内参已落盘至 Obsidian: {file_path}")
 
-        self.push_to_wecom(f"### 📊 投研早餐内参 ({today_str})\n\n{ai_analysis}")
-        print("[Daily] 企微管道推送执行完毕。")
+        wecom_sent = self.push_to_wecom(
+            f"### 📊 投研早餐内参 ({today_str})\n\n{ai_analysis}"
+        )
+        if wecom_sent:
+            print("[Daily] 企微管道推送成功。")
+        else:
+            print("⚠️ [Daily] 企微管道未确认送达，审计账本将如实记录。")
 
         capsule = self.generate_memory_capsule(today_str, ai_analysis, metrics, compact_news)
         memory_saved = self.save_memory_capsule(capsule)
@@ -1143,6 +1168,11 @@ memory_enabled: true
                 compact_news,
                 previous_memory,
                 ai_analysis,
+                {
+                    "report_written": True,
+                    "wecom_sent": wecom_sent,
+                    "memory_saved": True,
+                },
             )
         print("[Daily] 全链路收敛完成：今日判断已转化为明日记忆。")
         return {

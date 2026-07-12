@@ -6,6 +6,7 @@ import sys
 import tempfile
 import types
 import unittest
+from contextlib import closing
 from pathlib import Path
 from unittest import mock
 
@@ -81,7 +82,7 @@ class SignalAuditIntegrationTests(unittest.TestCase):
         engine.request_deepseek = mock.Mock(
             side_effect=["analysis", json.dumps(capsule(today))]
         )
-        engine.push_to_wecom = mock.Mock()
+        engine.push_to_wecom = mock.Mock(return_value=True)
 
     def test_production_records_completed_signal_after_memory(self):
         with tempfile.TemporaryDirectory() as temp_dir, self.production_env():
@@ -98,8 +99,42 @@ class SignalAuditIntegrationTests(unittest.TestCase):
             self.assertEqual(canonical["asset"], "BTC")
             self.assertEqual(canonical["confidence_raw"], 70)
             self.assertEqual(canonical["reference_price"], 64000.0)
+            with closing(sqlite3.connect(engine.signal_audit_file)) as connection:
+                wecom_sent = connection.execute(
+                    "SELECT wecom_sent FROM audit_runs"
+                ).fetchone()[0]
+            self.assertEqual(wecom_sent, 1)
             self.assertTrue(Path(engine.memory_file).exists())
             self.assertTrue(Path(engine.signal_audit_file).exists())
+
+    def test_wecom_business_result_controls_delivery_truth(self):
+        with tempfile.TemporaryDirectory() as temp_dir, self.production_env():
+            self.module.BASE_DIR = temp_dir
+            engine = self.module.QuantAgent()
+            response = mock.Mock(status_code=200)
+            response.json.return_value = {"errcode": 93000, "errmsg": "invalid webhook"}
+            self.module.requests.post = mock.Mock(return_value=response)
+            self.assertFalse(engine.push_to_wecom("message"))
+
+            response.json.return_value = {"errcode": 0, "errmsg": "ok"}
+            self.assertTrue(engine.push_to_wecom("message"))
+
+    def test_unconfirmed_wecom_delivery_is_recorded_as_false(self):
+        with tempfile.TemporaryDirectory() as temp_dir, self.production_env():
+            self.module.BASE_DIR = temp_dir
+            engine = self.module.QuantAgent()
+            today = self.module.datetime.now().strftime("%Y-%m-%d")
+            self.configure_successful_pipeline(engine, today)
+            engine.push_to_wecom.return_value = False
+
+            result = engine.run_daily_pipeline()
+
+            self.assertEqual(result["audit"]["status"], "recorded")
+            with closing(sqlite3.connect(engine.signal_audit_file)) as connection:
+                wecom_sent = connection.execute(
+                    "SELECT wecom_sent FROM audit_runs"
+                ).fetchone()[0]
+            self.assertEqual(wecom_sent, 0)
 
     def test_dry_run_previews_audit_without_database_or_directory(self):
         with tempfile.TemporaryDirectory() as temp_dir, mock.patch.dict(
@@ -172,7 +207,9 @@ class SignalAuditIntegrationTests(unittest.TestCase):
             events = []
             engine.fetch_market_signals = mock.Mock(return_value=market_metrics())
             engine.request_deepseek = mock.Mock(return_value="analysis")
-            engine.push_to_wecom = mock.Mock(side_effect=lambda *_: events.append("wecom"))
+            engine.push_to_wecom = mock.Mock(
+                side_effect=lambda *_: events.append("wecom") or True
+            )
             engine.generate_memory_capsule = mock.Mock(
                 side_effect=lambda *_: events.append("capsule") or capsule(today)
             )
