@@ -284,7 +284,7 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
             self.assertEqual(memory_path.read_bytes(), before_memory)
             engine.push_to_wecom.assert_called_once()
 
-    def test_monitor_parse_failure_is_not_persisted_as_processed(self):
+    def test_monitor_parse_failure_is_retryable_and_not_processed(self):
         class StopMonitor(BaseException):
             pass
 
@@ -309,7 +309,55 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
                 with self.assertRaises(StopMonitor):
                     engine.run_monitor_pipeline()
 
-            engine._safe_json_write.assert_not_called()
+            engine._safe_json_write.assert_called_once()
+            path, records = engine._safe_json_write.call_args.args
+            self.assertEqual(path, engine.failed_news_file)
+            record = next(iter(records.values()))
+            self.assertEqual(record["attempts"], 1)
+            self.assertEqual(record["status"], "retry_pending")
+
+    def test_monitor_poison_news_is_quarantined_after_retry_budget(self):
+        class StopMonitor(BaseException):
+            pass
+
+        with tempfile.TemporaryDirectory() as temp_dir, self.production_env():
+            self.module.BASE_DIR = temp_dir
+            engine = self.module.QuantAgent()
+            news = {
+                "id": "poison-news",
+                "source": "test",
+                "title": "persistent bad response fixture",
+                "body": "fixture",
+                "url": "https://example.invalid/poison",
+            }
+            fingerprint = engine._news_fingerprint(news)
+            Path(engine.failed_news_file).write_text(
+                json.dumps(
+                    {
+                        fingerprint: {
+                            "id": "poison-news",
+                            "fingerprint": fingerprint,
+                            "attempts": engine.max_news_ai_retries - 1,
+                            "status": "retry_pending",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            engine.fetch_crypto_flash_news = mock.Mock(return_value=[news])
+            engine.request_deepseek = mock.Mock(return_value="not-json")
+            engine._safe_json_write = mock.Mock(return_value=True)
+
+            with mock.patch.object(self.module.time, "sleep", side_effect=StopMonitor):
+                with self.assertRaises(StopMonitor):
+                    engine.run_monitor_pipeline()
+
+            writes = {call.args[0]: call.args[1] for call in engine._safe_json_write.call_args_list}
+            quarantine = writes[engine.failed_news_file][fingerprint]
+            self.assertEqual(quarantine["attempts"], engine.max_news_ai_retries)
+            self.assertEqual(quarantine["status"], "quarantined")
+            self.assertIn("poison-news", writes[engine.dedup_file])
+            self.assertIn(fingerprint, writes[engine.fingerprint_file])
 
 
 if __name__ == "__main__":

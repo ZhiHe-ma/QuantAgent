@@ -44,6 +44,7 @@ class QuantAgent:
         self.max_news_per_cycle = int(os.getenv("MAX_NEWS_PER_CYCLE", "3"))
         self.max_buffer_factors = int(os.getenv("MAX_BUFFER_FACTORS", "240"))
         self.min_store_weight = os.getenv("MIN_STORE_WEIGHT", "Medium")
+        self.max_news_ai_retries = max(1, int(os.getenv("MAX_NEWS_AI_RETRIES", "3")))
 
         # === 免费 RSS 多源聚合器：替代已强制鉴权的 CryptoCompare/CoinDesk Data API ===
         default_rss_feeds = "|".join([
@@ -74,6 +75,7 @@ class QuantAgent:
         self.dedup_file = os.path.join(self.daily_dir, "processed_news_ids.json")
         self.fingerprint_file = os.path.join(self.daily_dir, "processed_news_fingerprints.json")
         self.memory_file = os.path.join(self.daily_dir, "memory_state.json")
+        self.failed_news_file = os.path.join(self.daily_dir, "failed_news_quarantine.json")
 
     # =========================
     # 基础工具层
@@ -702,6 +704,9 @@ class QuantAgent:
 
         processed_ids = set(self._safe_json_load(self.dedup_file, []))
         processed_fingerprints = set(self._safe_json_load(self.fingerprint_file, []))
+        failed_news_records = self._safe_json_load(self.failed_news_file, {})
+        if not isinstance(failed_news_records, dict):
+            failed_news_records = {}
 
         sys_prompt_monitor = (
             "你是一个极端保守的微观量化因子标记器。请直接分析给定新闻对加密货币（主要是BTC与主流代币）价格的影响。\n"
@@ -720,6 +725,7 @@ class QuantAgent:
                     day_buffers = []
 
                 has_updates = False
+                failure_state_changed = False
 
                 candidates = []
                 for news in flash_news_list:
@@ -782,6 +788,9 @@ class QuantAgent:
 
                         processed_ids.add(news_id)
                         processed_fingerprints.add(fingerprint)
+                        if fingerprint in failed_news_records:
+                            failed_news_records.pop(fingerprint, None)
+                            failure_state_changed = True
 
                         if self._weight_rank(factor_node["weight"]) >= self._weight_rank(self.min_store_weight):
                             day_buffers.append(factor_node)
@@ -793,11 +802,48 @@ class QuantAgent:
                             print(f" ╰─> [低权重丢弃] 定性: {factor_node['sentiment']} | 评级: {factor_node['weight']}，不写入蓄水池。")
                     except Exception as parse_err:
                         raw_preview = self._clamp_str(locals().get("ai_raw_decision", ""), 240)
-                        print(
-                            "⚠️ 因子提取失败，未写入已处理库，等待后续重试: "
-                            f"{parse_err} | raw={raw_preview}"
+                        previous_failure = failed_news_records.get(fingerprint, {})
+                        previous_attempts = (
+                            previous_failure.get("attempts", 0)
+                            if isinstance(previous_failure, dict)
+                            else 0
                         )
+                        attempts = previous_attempts + 1
+                        failure_record = {
+                            "id": news_id,
+                            "fingerprint": fingerprint,
+                            "source": self._clamp_str(news.get("source", "rss"), 40),
+                            "title": title,
+                            "url": self._clamp_str(news.get("url", ""), 240),
+                            "attempts": attempts,
+                            "last_failed_at": datetime.now().isoformat(timespec="seconds"),
+                            "error": self._clamp_str(parse_err, 240),
+                            "raw_preview": raw_preview,
+                            "status": "retry_pending",
+                        }
 
+                        if attempts >= self.max_news_ai_retries:
+                            failure_record["status"] = "quarantined"
+                            processed_ids.add(news_id)
+                            processed_fingerprints.add(fingerprint)
+                            has_updates = True
+                            print(
+                                f"🧯 因子提取连续失败 {attempts} 次，已进入隔离区并移出主队列: "
+                                f"{news_id} | {parse_err}"
+                            )
+                        else:
+                            print(
+                                f"⚠️ 因子提取失败，第 {attempts}/{self.max_news_ai_retries} 次；"
+                                f"未写入已处理库，等待重试: {parse_err} | raw={raw_preview}"
+                            )
+
+                        failed_news_records[fingerprint] = failure_record
+                        if len(failed_news_records) > 1000:
+                            failed_news_records = dict(list(failed_news_records.items())[-1000:])
+                        failure_state_changed = True
+
+                if failure_state_changed:
+                    self._safe_json_write(self.failed_news_file, failed_news_records)
                 if has_updates:
                     self._safe_json_write(buffer_path, day_buffers)
                     self._safe_json_write(self.dedup_file, list(processed_ids))
