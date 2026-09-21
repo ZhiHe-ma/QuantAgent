@@ -1,10 +1,10 @@
 # QuantAgent
 
-基于 Python 的市场信息采集与日报工具，用于整理公开行情和新闻、生成研究摘要，并保存可追溯的运行记录。
+QuantAgent 是一台可以插“功能卡带”的量化主机：以小核心连接数据、校验、研究、回测与报告能力，并保存可追溯的运行记录。现有市场信息采集与日报流程继续保留，新增能力通过受控插件和经过验证的配方逐步接入。
 
 项目起点是个人每天收集市场信息时遇到的重复工作：多个来源需要分别查看，相同新闻反复出现，前一天的判断也容易缺少后续核对。QuantAgent 将采集、筛选、汇总和记录整理为一套可运行的流程。
 
-当前覆盖信息整理与纸面观察。自动交易、仓位管理、收益回测和完整周报生成尚未实现。
+当前已落地第一套离线套餐“历史数据体检”，并保留原有信息整理与纸面观察能力。自动交易、仓位管理、收益回测、多来源对账、完整周报、Qlib/MLflow/Pandera 等外部项目尚未接入，不能视为已实现或已验证。
 
 ## 已有功能
 
@@ -40,8 +40,51 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `sql/001_signal_audit.sql` | 信号审计数据库结构 |
 | `tests/` | 试运行、重复执行、异常隔离及审计存储测试 |
 | `docs/P1_SIGNAL_AUDIT_SCHEMA.md` | 审计模块的设计说明与阶段边界，含后续规划 |
+| `quantagent_platform/` | 最小插件主机、版本化数据包、权限预检与配方运行器 |
+| `plugin_catalog/catalog.json` | 首批允许加载的精选插件及精确版本 |
+| `recipes/historical_data_health.json` | 历史数据体检套餐；数据入口可按配置替换 |
+| `docs/QUANTAGENT_*.md` | 数据、插件和配方契约 |
+| `docs/COMPATIBILITY_*.md` | 兼容声明规则和实测矩阵 |
 | `deploy/` | cron 与 systemd 配置参考，使用前需修改运行用户和安装路径 |
 | `10_DailyNotes/` | 运行后产生的日报、新闻池、状态与数据库；不纳入版本控制 |
+
+## 插件主机：第一阶段
+
+首批精选插件全部使用 Python 标准库，不会联网：
+
+| 插件 | 能力 | 权限 |
+| --- | --- | --- |
+| `builtin.sqlite-signal-source` | 以 SQLite `mode=ro` 读取 `daily_signals` | 读文件 |
+| `builtin.json-signal-source` | 读取 JSON 历史快照 | 读文件 |
+| `builtin.signal-data-quality` | 检查必填字段、重复 ID 和时区时间 | 无 |
+| `builtin.markdown-quality-report` | 生成带范围说明的体检报告 | 写本次运行目录 |
+
+查看目录并验证配方：
+
+```bash
+python -m quantagent_platform catalog
+python -m quantagent_platform validate-recipe recipes/historical_data_health.json --source sqlite
+```
+
+对现有审计数据库运行体检：
+
+```bash
+python -m quantagent_platform run recipes/historical_data_health.json \
+  --source sqlite \
+  --input 10_DailyNotes/signal_audit.sqlite3 \
+  --output-dir artifacts/runs
+```
+
+把入口替换成 JSON 时只改参数，后续校验和报告步骤不变：
+
+```bash
+python -m quantagent_platform run recipes/historical_data_health.json \
+  --source json \
+  --input tests/fixtures/sample_signals.json \
+  --output-dir artifacts/runs
+```
+
+每次运行生成独立 `run_id` 目录，保存原始标准包、步骤插件版本、契约、SHA-256、时间、状态和 Markdown 报告。默认离线；读取路径限制在输入文件所在目录，也可以用 `--allow-read-root` 显式缩小或扩展允许范围。
 
 ## 本地运行
 
@@ -158,8 +201,11 @@ python -m unittest discover -s tests -v
 - 模型响应异常、非法摘要和新闻重试隔离。
 - 日报、推送、记忆与审计之间的执行顺序。
 - SQLite 结构、校验、事务回滚及同日有效记录切换。
+- 数据包哈希与时区约束、精选插件目录和配方兼容预检。
+- SQLite/JSON 数据入口替换、原生包及运行血缘保存、体检报告生成。
+- 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-17 对提交 `e114396f6f2e541ef6d92b255a0a973bb7b4ec97` 运行上述测试，Python 3.12.14 环境下 **43 项通过**。相关测试使用模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实接口已经联调成功，也不代表模型判断具有经验证的收益表现。
+2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试，**54 项通过**，其中新增平台测试 11 项。相关测试使用固定样本和模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实外部项目已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 

@@ -1,0 +1,31 @@
+{
+  "recipe_id": "historical-data-health",
+  "recipe_version": "1.0.0",
+  "description": "Read a signal-history snapshot, validate it, and write an auditable Markdown report.",
+  "steps": [
+    {
+      "id": "load-signal-history",
+      "capability": "source.signal_history",
+      "plugin": "builtin.sqlite-signal-source",
+      "config": {
+        "path": "${source_path}",
+        "limit": 10000
+      }
+    },
+    {
+      "id": "inspect-data-quality",
+      "capability": "quality.signal_history",
+      "plugin": "builtin.signal-data-quality",
+      "config": {}
+    },
+    {
+      "id": "write-quality-report",
+      "capability": "report.data_quality",
+      "plugin": "builtin.markdown-quality-report",
+      "config": {
+        "title": "${report_title}",
+        "filename": "data_quality_report.md"
+      }
+    }
+  ]
+}

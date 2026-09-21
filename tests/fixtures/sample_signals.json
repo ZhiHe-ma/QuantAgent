@@ -1,0 +1,22 @@
+{
+  "signals": [
+    {
+      "signal_id": "sample-btc-2026-09-20",
+      "signal_date": "2026-09-20",
+      "asset": "BTC",
+      "quote_asset": "USDT",
+      "bias": "neutral",
+      "confidence_raw": 55,
+      "finalized_at": "2026-09-20T08:05:00+08:00"
+    },
+    {
+      "signal_id": "sample-eth-2026-09-20",
+      "signal_date": "2026-09-20",
+      "asset": "ETH",
+      "quote_asset": "USDT",
+      "bias": "slightly_bullish",
+      "confidence_raw": 62,
+      "finalized_at": "2026-09-20T08:06:00+08:00"
+    }
+  ]
+}
