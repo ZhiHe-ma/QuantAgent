@@ -1,0 +1,22 @@
+{
+  "contract_version": "quantagent.signal_history.v1",
+  "packet_type": "signal_history",
+  "source": "fixture.phase2",
+  "created_at": "2026-09-20T08:02:00+08:00",
+  "records": [
+    {
+      "signal_id": "signal-btc-1",
+      "signal_date": "2026-09-20",
+      "asset": "BTC",
+      "quote_asset": "USDT",
+      "bias": "bullish",
+      "reference_price": 100.0,
+      "decision_at": "2026-09-20T08:00:00+08:00",
+      "finalized_at": "2026-09-20T08:01:00+08:00"
+    }
+  ],
+  "metadata": {
+    "fixture": true
+  },
+  "content_sha256": "70dcffe754ed80001bd109c6f243620df992672ad5a9eb720044b0909dcaf6ef"
+}

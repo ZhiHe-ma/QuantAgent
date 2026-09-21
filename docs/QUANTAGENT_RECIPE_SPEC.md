@@ -12,3 +12,10 @@
 4. 权限和离线要求全部满足。
 
 能力绑定可以替换同类插件而不改后续步骤。例如 `source.signal_history` 可在 SQLite 与 JSON 适配器间切换。每次运行保存步骤插件版本、输入输出契约、内容哈希、时间、状态和原生数据包。
+
+当前验证套餐：
+
+- `historical-data-health@1.0.0`：SQLite/JSON → 数据体检 → Markdown 报告。
+- `offline-outcome-backfill@1.0.0`：已保存信号包重放 → 固定历史价格评价 → 预览或事务回填 → Markdown 报告。
+
+第二套套餐只支持 Crypto 的 24/72/168 自然小时；缺少 `decision_at` 时必须标记不可评价，不得以 `finalized_at` 代替。

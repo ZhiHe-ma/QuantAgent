@@ -1,0 +1,45 @@
+{
+  "recipe_id": "offline-outcome-backfill",
+  "recipe_version": "1.0.0",
+  "description": "Replay a verified signal packet, evaluate fixed-hour crypto outcomes, optionally backfill a selected audit database, and write a report.",
+  "steps": [
+    {
+      "id": "replay-signal-packet",
+      "capability": "source.signal_history",
+      "plugin": "builtin.packet-replay-source",
+      "config": {
+        "path": "${source_path}"
+      }
+    },
+    {
+      "id": "evaluate-signal-outcomes",
+      "capability": "evaluate.signal_outcomes",
+      "plugin": "builtin.signal-outcome-evaluator",
+      "config": {
+        "prices_path": "${prices_path}",
+        "clock": "calendar_hours",
+        "horizon_hours": "${horizon_hours}",
+        "max_observation_delay_hours": "${max_observation_delay_hours}",
+        "neutral_band_decimal": "${neutral_band_decimal}"
+      }
+    },
+    {
+      "id": "backfill-outcome-database",
+      "capability": "sink.signal_outcomes",
+      "plugin": "builtin.sqlite-outcome-writer",
+      "config": {
+        "database_path": "${target_database_path}",
+        "apply": "${apply_backfill}"
+      }
+    },
+    {
+      "id": "write-outcome-report",
+      "capability": "report.signal_outcomes",
+      "plugin": "builtin.markdown-outcome-report",
+      "config": {
+        "title": "${report_title}",
+        "filename": "outcome_report.md"
+      }
+    }
+  ]
+}

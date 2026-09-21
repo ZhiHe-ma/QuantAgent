@@ -11,6 +11,12 @@ from typing import Any
 
 from .builtin_plugins import JsonSignalSource, MarkdownQualityReport, SignalDataQuality, SqliteSignalSource
 from .contracts import DataPacket, utc_now
+from .outcome_plugins import (
+    OutcomeMarkdownReport,
+    PacketReplaySource,
+    SignalOutcomeEvaluator,
+    SqliteOutcomeWriter,
+)
 from .plugins import PluginError, PluginRegistry, RunContext
 
 
@@ -35,7 +41,16 @@ def default_registry() -> PluginRegistry:
         raise PluginError(f"cannot load curated plugin catalog {catalog_path}: {exc}") from exc
     catalog = {row["plugin_id"]: row for row in catalog_rows}
     registry = PluginRegistry()
-    for plugin in (JsonSignalSource(), SqliteSignalSource(), SignalDataQuality(), MarkdownQualityReport()):
+    for plugin in (
+        JsonSignalSource(),
+        SqliteSignalSource(),
+        PacketReplaySource(),
+        SignalDataQuality(),
+        SignalOutcomeEvaluator(),
+        SqliteOutcomeWriter(),
+        MarkdownQualityReport(),
+        OutcomeMarkdownReport(),
+    ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:
             raise PluginError(f"plugin is not present in curated catalog: {plugin.manifest.plugin_id}")
@@ -154,6 +169,7 @@ class RecipeRunner:
         params: dict[str, Any],
         output_dir: str | Path,
         allowed_read_roots: list[str | Path],
+        allowed_write_roots: list[str | Path] | None = None,
         bindings: dict[str, str] | None = None,
         allowed_permissions: set[str] | None = None,
         offline: bool = True,
@@ -167,12 +183,16 @@ class RecipeRunner:
             allowed_permissions = set(allowed_permissions)
         resolved = self._preflight(recipe, bindings, allowed_permissions, offline)
         run_id = run_id or f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}"
-        run_dir = Path(output_dir).expanduser().resolve() / run_id
+        output_root = Path(output_dir).expanduser().resolve()
+        run_dir = output_root / run_id
         run_dir.mkdir(parents=True, exist_ok=False)
+        if allowed_write_roots is None:
+            allowed_write_roots = []
         context = RunContext(
             run_id=run_id,
             run_dir=run_dir,
             allowed_read_roots=tuple(Path(root).expanduser().resolve() for root in allowed_read_roots),
+            allowed_write_roots=tuple(Path(root).expanduser().resolve() for root in allowed_write_roots),
             offline=offline,
         )
         state: dict[str, Any] = {
@@ -183,6 +203,8 @@ class RecipeRunner:
             "started_at": utc_now(),
             "offline": offline,
             "allowed_permissions": sorted(allowed_permissions),
+            "allowed_read_roots": [str(path) for path in context.allowed_read_roots],
+            "allowed_write_roots": [str(path) for path in context.allowed_write_roots],
             "bindings": bindings,
             "steps": [],
         }

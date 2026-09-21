@@ -37,6 +37,7 @@ class RunContext:
     run_id: str
     run_dir: Any
     allowed_read_roots: tuple[Any, ...]
+    allowed_write_roots: tuple[Any, ...]
     offline: bool
 
     def assert_read_path(self, value: str) -> Any:
@@ -51,6 +52,19 @@ class RunContext:
                 continue
         roots = ", ".join(str(Path(root)) for root in self.allowed_read_roots)
         raise PluginError(f"read path is outside allowed roots: {path}; allowed={roots}")
+
+    def assert_write_path(self, value: str) -> Any:
+        from pathlib import Path
+
+        path = Path(value).expanduser().resolve()
+        for root in self.allowed_write_roots:
+            try:
+                path.relative_to(Path(root).resolve())
+                return path
+            except ValueError:
+                continue
+        roots = ", ".join(str(Path(root)) for root in self.allowed_write_roots)
+        raise PluginError(f"write path is outside allowed roots: {path}; allowed={roots}")
 
 
 class Plugin(Protocol):

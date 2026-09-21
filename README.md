@@ -58,6 +58,10 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `builtin.json-signal-source` | 读取 JSON 历史快照 | 读文件 |
 | `builtin.signal-data-quality` | 检查必填字段、重复 ID 和时区时间 | 无 |
 | `builtin.markdown-quality-report` | 生成带范围说明的体检报告 | 写本次运行目录 |
+| `builtin.packet-replay-source` | 校验并离线重放已保存的信号包 | 读文件 |
+| `builtin.signal-outcome-evaluator` | 用固定价格文件评价 24/72/168 小时结果 | 读文件 |
+| `builtin.sqlite-outcome-writer` | 预览或事务回填 `signal_outcomes` | 读写显式授权的数据库 |
+| `builtin.markdown-outcome-report` | 生成结果回填及不可评价说明 | 写本次运行目录 |
 
 查看目录并验证配方：
 
@@ -85,6 +89,32 @@ python -m quantagent_platform run recipes/historical_data_health.json \
 ```
 
 每次运行生成独立 `run_id` 目录，保存原始标准包、步骤插件版本、契约、SHA-256、时间、状态和 Markdown 报告。默认离线；读取路径限制在输入文件所在目录，也可以用 `--allow-read-root` 显式缩小或扩展允许范围。
+
+## 离线重放与结果回填
+
+第二套套餐读取第一套运行保存的 `quantagent.signal_history.v1` 数据包，并使用明确提供的历史价格文件评价结果。预览模式不会修改数据库：
+
+```bash
+python -m quantagent_platform run recipes/offline_outcome_backfill.json \
+  --source replay \
+  --input artifacts/runs/<run-id>/01-load-signal-history.json \
+  --allow-read-root . \
+  --param prices_path=path/to/prices.json \
+  --param target_database_path=10_DailyNotes/signal_audit.sqlite3 \
+  --param apply_backfill=false \
+  --param horizon_hours=[24,72,168] \
+  --param max_observation_delay_hours=1 \
+  --param neutral_band_decimal=0.002
+```
+
+确认使用数据库副本演练后，才把 `apply_backfill` 改为 `true`，并显式授权数据库所在目录：
+
+```bash
+  --allow-write-root 10_DailyNotes \
+  --param apply_backfill=true
+```
+
+回填使用单个 SQLite 事务；相同结果重复运行保持幂等，不同结果与已存在记录冲突时整批回滚。评价要求来源显式提供带时区的 `decision_at`，不会用 `finalized_at` 冒充决策时间。当前只支持 Crypto 的 24/72/168 自然小时；方向命中不等于可交易收益。
 
 ## 本地运行
 
@@ -205,7 +235,7 @@ python -m unittest discover -s tests -v
 - SQLite/JSON 数据入口替换、原生包及运行血缘保存、体检报告生成。
 - 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试，**54 项通过**，其中新增平台测试 11 项。相关测试使用固定样本和模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实外部项目已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
+2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试，**62 项通过**，其中插件平台、离线重放和结果回填测试 19 项。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实外部项目已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 

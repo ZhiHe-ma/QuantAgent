@@ -10,8 +10,23 @@ from .runner import RecipeError, RecipeRunner, default_registry
 
 SOURCE_PLUGINS = {
     "json": "builtin.json-signal-source",
+    "replay": "builtin.packet-replay-source",
     "sqlite": "builtin.sqlite-signal-source",
 }
+
+
+def _key_value(value: str) -> tuple[str, object]:
+    if "=" not in value:
+        raise argparse.ArgumentTypeError("expected KEY=VALUE")
+    key, raw = value.split("=", 1)
+    key = key.strip()
+    if not key:
+        raise argparse.ArgumentTypeError("parameter key cannot be empty")
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        parsed = raw
+    return key, parsed
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,6 +46,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--input", required=True, dest="input_path")
     run.add_argument("--output-dir", default="artifacts/runs")
     run.add_argument("--allow-read-root", action="append", default=[])
+    run.add_argument("--allow-write-root", action="append", default=[])
+    run.add_argument("--param", action="append", type=_key_value, default=[], metavar="KEY=VALUE")
+    run.add_argument("--bind", action="append", type=_key_value, default=[], metavar="CAPABILITY=PLUGIN")
     run.add_argument("--title", default="QuantAgent 历史数据体检报告")
     run.add_argument("--online", action="store_true", help="allow recipes to use network-enabled plugins")
     return parser
@@ -67,11 +85,19 @@ def main(argv: list[str] | None = None) -> int:
         roots = [Path(value).expanduser().resolve() for value in args.allow_read_root]
         if not roots:
             roots = [input_path.parent]
+        write_roots = [Path(value).expanduser().resolve() for value in args.allow_write_root]
+        params = {
+            "source_path": str(input_path),
+            "report_title": args.title,
+        }
+        params.update(dict(args.param))
+        binding.update({str(key): str(value) for key, value in args.bind})
         result = runner.run(
             recipe,
-            params={"source_path": str(input_path), "report_title": args.title},
+            params=params,
             output_dir=args.output_dir,
             allowed_read_roots=roots,
+            allowed_write_roots=write_roots or None,
             bindings=binding,
             offline=not args.online,
         )
