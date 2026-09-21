@@ -1,0 +1,37 @@
+{
+  "catalog_version": "1.0.0",
+  "plugins": [
+    {
+      "plugin_id": "builtin.json-signal-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "Python standard library",
+      "license": "PSF",
+      "notes": "Read-only adapter for JSON signal snapshots."
+    },
+    {
+      "plugin_id": "builtin.sqlite-signal-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "SQLite via Python standard library",
+      "license": "Public domain / PSF wrapper",
+      "notes": "Opens existing audit databases with SQLite mode=ro."
+    },
+    {
+      "plugin_id": "builtin.signal-data-quality",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Checks required fields, duplicate IDs and timezone-aware timestamps."
+    },
+    {
+      "plugin_id": "builtin.markdown-quality-report",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Writes one Markdown report inside the per-run output directory."
+    }
+  ]
+}
