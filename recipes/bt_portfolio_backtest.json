@@ -1,0 +1,24 @@
+{
+  "recipe_id": "bt-portfolio-backtest",
+  "recipe_version": "1.0.0",
+  "description": "Run a lagged, long-only factor portfolio and equal-weight baseline in an isolated bt environment, then render an assumption-first report.",
+  "steps": [
+    {
+      "id": "run-bt-portfolio-backtest",
+      "capability": "backtest.portfolio",
+      "plugin": "builtin.bt-portfolio-backtest",
+      "config": {
+        "data_path": "${source_path}",
+        "options": "${backtest_options}"
+      }
+    },
+    {
+      "id": "write-backtest-report",
+      "capability": "report.backtest",
+      "plugin": "builtin.markdown-backtest-report",
+      "config": {
+        "filename": "bt_portfolio_backtest.md"
+      }
+    }
+  ]
+}

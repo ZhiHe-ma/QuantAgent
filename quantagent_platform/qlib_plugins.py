@@ -1,57 +1,19 @@
 from __future__ import annotations
 
 import hashlib
-import json
-import os
-import subprocess
 import uuid
 from pathlib import Path
 from typing import Any
 
 from .builtin_plugins import REPORT_CONTRACT
 from .contracts import DataPacket
+from .isolated_runtime import execute_json_worker, read_bounded
 from .plugins import PluginError, PluginManifest, RunContext
 from .qlib_worker import PROTOCOL_VERSION, RESULT_CONTRACT
 
 
 FACTOR_RESEARCH_CONTRACT = RESULT_CONTRACT
 _MAX_DATA_BYTES = 10 * 1024 * 1024
-_MAX_RESPONSE_BYTES = 2 * 1024 * 1024
-_MAX_LOG_BYTES = 64 * 1024
-
-
-def _read_bounded(path: Path, max_bytes: int, label: str) -> bytes:
-    try:
-        size = path.stat().st_size
-        if size > max_bytes:
-            raise PluginError(f"{label} exceeds {max_bytes} bytes")
-        return path.read_bytes()
-    except PluginError:
-        raise
-    except OSError as exc:
-        raise PluginError(f"cannot read {label} {path}: {exc}") from exc
-
-
-def _worker_environment() -> dict[str, str]:
-    allowed = (
-        "PATH",
-        "SYSTEMROOT",
-        "WINDIR",
-        "TEMP",
-        "TMP",
-        "TMPDIR",
-        "HOME",
-        "USERPROFILE",
-        "HOMEDRIVE",
-        "HOMEPATH",
-        "APPDATA",
-        "LOCALAPPDATA",
-        "LANG",
-        "LC_ALL",
-    )
-    environment = {key: os.environ[key] for key in allowed if key in os.environ}
-    environment.update({"PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"})
-    return environment
 
 
 def _validate_result(response: Any, request_id: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -116,7 +78,7 @@ class QlibFactorResearch:
             if not path.is_file():
                 raise PluginError(f"{label} does not exist or is not a file: {path}")
 
-        data = _read_bounded(data_path, int(options.get("max_data_bytes", _MAX_DATA_BYTES)), "Qlib data")
+        data = read_bounded(data_path, int(options.get("max_data_bytes", _MAX_DATA_BYTES)), "Qlib data")
         timeout = float(options.get("timeout_seconds", 120))
         if not 1 <= timeout <= 600:
             raise PluginError("Qlib timeout_seconds must be between 1 and 600")
@@ -130,10 +92,6 @@ class QlibFactorResearch:
             raise PluginError("Qlib columns must be an object of non-empty strings")
 
         request_id = uuid.uuid4().hex
-        request_path = Path(context.run_dir) / "qlib-worker-request.json"
-        response_path = Path(context.run_dir) / "qlib-worker-response.json"
-        stdout_path = Path(context.run_dir) / "qlib-worker.stdout.log"
-        stderr_path = Path(context.run_dir) / "qlib-worker.stderr.log"
         request = {
             "protocol_version": PROTOCOL_VERSION,
             "request_id": request_id,
@@ -143,45 +101,18 @@ class QlibFactorResearch:
             "columns": columns,
             "min_rows_per_date": int(options.get("min_rows_per_date", 3)),
         }
-        request_path.write_text(
-            json.dumps(request, ensure_ascii=False, allow_nan=False, indent=2), encoding="utf-8"
+        execution = execute_json_worker(
+            context,
+            display_name="Qlib",
+            file_prefix="qlib-worker",
+            python_executable=python_executable,
+            worker_path=worker_path,
+            request=request,
+            timeout_seconds=timeout,
         )
-        try:
-            with stdout_path.open("wb") as stdout_file, stderr_path.open("wb") as stderr_file:
-                completed = subprocess.run(
-                    [
-                        str(python_executable),
-                        str(worker_path),
-                        "--request",
-                        str(request_path),
-                        "--response",
-                        str(response_path),
-                    ],
-                    cwd=context.run_dir,
-                    env=_worker_environment(),
-                    stdout=stdout_file,
-                    stderr=stderr_file,
-                    timeout=timeout,
-                    check=False,
-                    shell=False,
-                )
-        except subprocess.TimeoutExpired as exc:
-            raise PluginError(f"Qlib worker timed out after {timeout:g} seconds") from exc
-        except OSError as exc:
-            raise PluginError(f"cannot start Qlib worker: {exc}") from exc
-        stdout = _read_bounded(stdout_path, _MAX_LOG_BYTES, "Qlib worker stdout")
-        stderr = _read_bounded(stderr_path, _MAX_LOG_BYTES, "Qlib worker stderr")
-        if not response_path.is_file():
-            detail = stderr.decode("utf-8", errors="replace").strip()[:1000]
-            raise PluginError(f"Qlib worker produced no response (exit {completed.returncode}): {detail}")
-        raw_response = _read_bounded(response_path, _MAX_RESPONSE_BYTES, "Qlib worker response")
-        try:
-            response = json.loads(raw_response.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise PluginError(f"cannot parse Qlib worker response: {exc}") from exc
-        records, metadata = _validate_result(response, request_id)
-        if completed.returncode != 0:
-            raise PluginError(f"Qlib worker exited with code {completed.returncode} despite an OK response")
+        records, metadata = _validate_result(execution.response, request_id)
+        if execution.returncode != 0:
+            raise PluginError(f"Qlib worker exited with code {execution.returncode} despite an OK response")
         if metadata.get("data_sha256") != request["data_sha256"]:
             raise PluginError("Qlib worker result data SHA-256 does not match the request")
         metadata = dict(metadata)
@@ -189,8 +120,8 @@ class QlibFactorResearch:
             "worker_protocol": PROTOCOL_VERSION,
             "worker_path": str(worker_path),
             "python_executable": str(python_executable),
-            "worker_stdout_sha256": hashlib.sha256(stdout).hexdigest(),
-            "worker_stderr_sha256": hashlib.sha256(stderr).hexdigest(),
+            "worker_stdout_sha256": execution.stdout_sha256,
+            "worker_stderr_sha256": execution.stderr_sha256,
             "isolated_process": True,
         })
         return DataPacket.create(
