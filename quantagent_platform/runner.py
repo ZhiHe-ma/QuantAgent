@@ -11,6 +11,12 @@ from typing import Any
 
 from .builtin_plugins import JsonSignalSource, MarkdownQualityReport, SignalDataQuality, SqliteSignalSource
 from .contracts import DataPacket, utc_now
+from .daily_plugins import (
+    DeepSeekDailyAnalysis,
+    JsonDailyContextSource,
+    MarkdownDailyReport,
+    ReplayDailyAnalysis,
+)
 from .outcome_plugins import (
     OutcomeMarkdownReport,
     PacketReplaySource,
@@ -50,6 +56,10 @@ def default_registry() -> PluginRegistry:
         SqliteOutcomeWriter(),
         MarkdownQualityReport(),
         OutcomeMarkdownReport(),
+        JsonDailyContextSource(),
+        ReplayDailyAnalysis(),
+        DeepSeekDailyAnalysis(),
+        MarkdownDailyReport(),
     ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:

@@ -21,6 +21,8 @@
 - `quantagent.signal_history.v1`：历史判断记录。体检所需字段为 `signal_id`、`signal_date`、`asset`、`quote_asset`、`bias`、`finalized_at`。
 - `quantagent.data_quality.v1`：字段缺失、重复标识、时间合法性及未评价项。
 - `quantagent.signal_outcomes.v1`：按明确决策时间、期限和历史价格生成的评价记录；交换字段 `return_decimal` 使用小数。
+- `quantagent.daily_context.v1`：单日日报所需的日期、市场指标、记忆胶囊和新闻因子。
+- `quantagent.daily_analysis.v1`：模型分析文本、模型身份、提示词哈希和完整输入上下文。
 - `quantagent.report.v1`：报告产物引用，不嵌入或伪造外部评价结果。
 
 插件必须保留原生输入包；转换后的包记录输入哈希。无法恢复的信息必须显式标记，不得猜测。

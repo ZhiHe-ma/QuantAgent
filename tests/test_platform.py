@@ -223,10 +223,13 @@ class PlatformRecipeTests(unittest.TestCase):
 
     def test_catalog_exposes_versions_permissions_and_status(self):
         catalog = default_registry().catalog()
-        self.assertEqual(len(catalog), 8)
+        self.assertEqual(len(catalog), 12)
+        statuses = {row["plugin_id"]: row["status"] for row in catalog}
+        self.assertEqual(statuses["builtin.deepseek-daily-analysis"], "experimental")
         for row in catalog:
             self.assertTrue(row["version"])
-            self.assertEqual(row["status"], "verified")
+            if row["plugin_id"] != "builtin.deepseek-daily-analysis":
+                self.assertEqual(row["status"], "verified")
             self.assertIn("permissions", row)
 
 

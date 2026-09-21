@@ -8,10 +8,11 @@ from pathlib import Path
 from .runner import RecipeError, RecipeRunner, default_registry
 
 
-SOURCE_PLUGINS = {
-    "json": "builtin.json-signal-source",
-    "replay": "builtin.packet-replay-source",
-    "sqlite": "builtin.sqlite-signal-source",
+SOURCE_BINDINGS = {
+    "daily-json": ("source.daily_context", "builtin.json-daily-context-source"),
+    "json": ("source.signal_history", "builtin.json-signal-source"),
+    "replay": ("source.signal_history", "builtin.packet-replay-source"),
+    "sqlite": ("source.signal_history", "builtin.sqlite-signal-source"),
 }
 
 
@@ -38,15 +39,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = subparsers.add_parser("validate-recipe", help="validate recipe structure and plugin compatibility")
     validate.add_argument("recipe")
-    validate.add_argument("--source", choices=sorted(SOURCE_PLUGINS), default="sqlite")
+    validate.add_argument("--source", choices=sorted(SOURCE_BINDINGS), default="sqlite")
 
     run = subparsers.add_parser("run", help="run a verified recipe")
     run.add_argument("recipe")
-    run.add_argument("--source", choices=sorted(SOURCE_PLUGINS), required=True)
+    run.add_argument("--source", choices=sorted(SOURCE_BINDINGS), required=True)
     run.add_argument("--input", required=True, dest="input_path")
     run.add_argument("--output-dir", default="artifacts/runs")
     run.add_argument("--allow-read-root", action="append", default=[])
     run.add_argument("--allow-write-root", action="append", default=[])
+    run.add_argument("--allow-permission", action="append", default=[])
     run.add_argument("--param", action="append", type=_key_value, default=[], metavar="KEY=VALUE")
     run.add_argument("--bind", action="append", type=_key_value, default=[], metavar="CAPABILITY=PLUGIN")
     run.add_argument("--title", default="QuantAgent 历史数据体检报告")
@@ -70,7 +72,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         recipe = runner.load_recipe(args.recipe)
-        binding = {"source.signal_history": SOURCE_PLUGINS[args.source]}
+        source_capability, source_plugin = SOURCE_BINDINGS[args.source]
+        binding = {source_capability: source_plugin}
         if args.command == "validate-recipe":
             runner._preflight(
                 recipe,
@@ -98,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             output_dir=args.output_dir,
             allowed_read_roots=roots,
             allowed_write_roots=write_roots or None,
+            allowed_permissions={"filesystem:read", "filesystem:write", *args.allow_permission},
             bindings=binding,
             offline=not args.online,
         )

@@ -17,5 +17,8 @@
 
 - `historical-data-health@1.0.0`：SQLite/JSON → 数据体检 → Markdown 报告。
 - `offline-outcome-backfill@1.0.0`：已保存信号包重放 → 固定历史价格评价 → 预览或事务回填 → Markdown 报告。
+- `offline-daily-research@1.0.0`：日报 JSON 上下文 → 固定分析重放 → 生产兼容 Markdown 日报。
 
 第二套套餐只支持 Crypto 的 24/72/168 自然小时；缺少 `decision_at` 时必须标记不可评价，不得以 `finalized_at` 代替。
+
+第三套套餐通过 `model.daily_analysis` 能力替换模型步骤。默认回放插件完全离线；DeepSeek 适配器必须显式绑定、开启在线模式并授权网络与环境密钥权限。`model_options` 是插件专属配置对象，允许替换模型时不修改上下游契约。
