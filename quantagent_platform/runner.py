@@ -24,6 +24,7 @@ from .outcome_plugins import (
     SqliteOutcomeWriter,
 )
 from .plugins import PluginError, PluginRegistry, RunContext
+from .qlib_plugins import MarkdownFactorResearchReport, QlibFactorResearch
 
 
 class RecipeError(RuntimeError):
@@ -60,6 +61,8 @@ def default_registry() -> PluginRegistry:
         ReplayDailyAnalysis(),
         DeepSeekDailyAnalysis(),
         MarkdownDailyReport(),
+        QlibFactorResearch(),
+        MarkdownFactorResearchReport(),
     ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:
