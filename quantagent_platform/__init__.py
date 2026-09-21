@@ -1,9 +1,4 @@
-"""QuantAgent plugin host primitives.
-
-The package is deliberately independent from the legacy Daily/Monitor runtime so
-the first platform recipe can be adopted without changing its dependencies or
-side-effect behaviour.
-"""
+"""QuantAgent plugin host, versioned packets, recipes, and built-in adapters."""
 
 from .contracts import ContractError, DataPacket
 from .runner import RecipeError, RecipeRunner, RunResult, default_registry
@@ -17,4 +12,4 @@ __all__ = [
     "default_registry",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

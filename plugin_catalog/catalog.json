@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.1.0",
+  "catalog_version": "1.2.0",
   "plugins": [
     {
       "plugin_id": "builtin.json-signal-source",
@@ -64,6 +64,38 @@
       "upstream": "QuantAgent built-in",
       "license": "MIT",
       "notes": "Reports evaluated and non-evaluable historical outcomes with explicit limits."
+    },
+    {
+      "plugin_id": "builtin.json-daily-context-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Reads and validates a bounded daily research context JSON file."
+    },
+    {
+      "plugin_id": "builtin.replay-daily-analysis",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Replays a fixed UTF-8 analysis for deterministic offline workflow checks."
+    },
+    {
+      "plugin_id": "builtin.deepseek-daily-analysis",
+      "version": "1.0.0",
+      "status": "experimental",
+      "upstream": "DeepSeek chat completions API",
+      "license": "MIT adapter; provider terms apply",
+      "notes": "Opt-in network model adapter; requires online mode and explicit network and secret permissions."
+    },
+    {
+      "plugin_id": "builtin.markdown-daily-report",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Renders the same daily research report shape used by the legacy production entrypoint."
     }
   ]
 }

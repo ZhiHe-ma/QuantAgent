@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-21",
+  "metrics": {
+    "macro": {
+      "S&P500_Chg%": 0.5,
+      "VIX_Volatility": 16.0
+    },
+    "crypto": {
+      "BTC_24h_Chg%": 1.0,
+      "BTC_Price": 64000.0,
+      "Fear_Greed": 50
+    }
+  },
+  "previous_memory": {
+    "date": "2026-09-20",
+    "risk_regime": "neutral",
+    "btc_bias": "neutral",
+    "confidence": 50,
+    "core_thesis": "市场等待新的确认信号",
+    "invalid_if": "波动率显著扩大",
+    "watch_items": [
+      "BTC"
+    ],
+    "today_check": "检查价格与波动率是否同向"
+  },
+  "rolling_7d": [],
+  "news_factors": [
+    {
+      "id": "fixture-news-1",
+      "title": "监管框架公开征求意见",
+      "weight": "High",
+      "reason": "规则清晰度可能改善"
+    }
+  ],
+  "raw_factor_count": 2
+}

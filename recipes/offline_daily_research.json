@@ -1,0 +1,32 @@
+{
+  "recipe_id": "offline-daily-research",
+  "recipe_version": "1.0.0",
+  "description": "Load a fixed daily research context, replay a known model analysis, and render the production-compatible Markdown report offline.",
+  "steps": [
+    {
+      "id": "load-daily-context",
+      "capability": "source.daily_context",
+      "plugin": "builtin.json-daily-context-source",
+      "config": {
+        "path": "${source_path}",
+        "max_bytes": 5242880
+      }
+    },
+    {
+      "id": "analyze-daily-context",
+      "capability": "model.daily_analysis",
+      "plugin": "builtin.replay-daily-analysis",
+      "config": {
+        "options": "${model_options}"
+      }
+    },
+    {
+      "id": "write-daily-report",
+      "capability": "report.daily_analysis",
+      "plugin": "builtin.markdown-daily-report",
+      "config": {
+        "filename": "daily_research_report.md"
+      }
+    }
+  ]
+}

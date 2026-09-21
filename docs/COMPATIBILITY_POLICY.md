@@ -9,4 +9,4 @@
 - 未验证、信息损失、样本不足和无法评价必须原样显示。
 - 运行产物按 `run_id` 保留；停用插件不删除历史包和报告。
 
-首批固定套餐为 `historical-data-health@1.0.0`，验证 SQLite/JSON 入口替换、数据体检、Markdown 报告、权限拒绝和失败留痕。
+当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0` 和 `offline-daily-research@1.0.0`。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。

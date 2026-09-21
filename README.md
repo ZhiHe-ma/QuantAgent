@@ -43,14 +43,16 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `quantagent_platform/` | 最小插件主机、版本化数据包、权限预检与配方运行器 |
 | `plugin_catalog/catalog.json` | 首批允许加载的精选插件及精确版本 |
 | `recipes/historical_data_health.json` | 历史数据体检套餐；数据入口可按配置替换 |
+| `recipes/offline_outcome_backfill.json` | 离线重放、结果评价及可选事务回填套餐 |
+| `recipes/offline_daily_research.json` | 日报上下文、分析模型和报告生成套餐 |
 | `docs/QUANTAGENT_*.md` | 数据、插件和配方契约 |
 | `docs/COMPATIBILITY_*.md` | 兼容声明规则和实测矩阵 |
 | `deploy/` | cron 与 systemd 配置参考，使用前需修改运行用户和安装路径 |
 | `10_DailyNotes/` | 运行后产生的日报、新闻池、状态与数据库；不纳入版本控制 |
 
-## 插件主机：第一阶段
+## 插件主机
 
-首批精选插件全部使用 Python 标准库，不会联网：
+已验证套餐默认使用 Python 标准库且不联网；DeepSeek 适配器为显式选用的实验插件：
 
 | 插件 | 能力 | 权限 |
 | --- | --- | --- |
@@ -62,6 +64,10 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `builtin.signal-outcome-evaluator` | 用固定价格文件评价 24/72/168 小时结果 | 读文件 |
 | `builtin.sqlite-outcome-writer` | 预览或事务回填 `signal_outcomes` | 读写显式授权的数据库 |
 | `builtin.markdown-outcome-report` | 生成结果回填及不可评价说明 | 写本次运行目录 |
+| `builtin.json-daily-context-source` | 读取并校验日报研究上下文 | 读文件 |
+| `builtin.replay-daily-analysis` | 离线重放固定模型分析 | 读文件 |
+| `builtin.deepseek-daily-analysis` | 可替换的 DeepSeek 分析模型（实验） | 联网、读取环境密钥 |
+| `builtin.markdown-daily-report` | 生成与原生产入口同形的日报 | 写本次运行目录 |
 
 查看目录并验证配方：
 
@@ -115,6 +121,34 @@ python -m quantagent_platform run recipes/offline_outcome_backfill.json \
 ```
 
 回填使用单个 SQLite 事务；相同结果重复运行保持幂等，不同结果与已存在记录冲突时整批回滚。评价要求来源显式提供带时区的 `decision_at`，不会用 `finalized_at` 冒充决策时间。当前只支持 Crypto 的 24/72/168 自然小时；方向命中不等于可交易收益。
+
+## 日报、模型与报告插件
+
+第三套套餐把日报上下文、分析模型和报告拆成可替换步骤。默认用固定分析文件离线验收，不调用模型：
+
+```bash
+python -m quantagent_platform run recipes/offline_daily_research.json \
+  --source daily-json \
+  --input tests/fixtures/sample_daily_context.json \
+  --allow-read-root . \
+  --param model_options='{"analysis_path":"tests/fixtures/sample_daily_analysis.txt"}' \
+  --output-dir artifacts/daily-runs
+```
+
+将模型步骤绑定到实验性 DeepSeek 适配器时，必须同时显式开启在线模式和两项权限；API key 只从指定环境变量读取，不写入运行包：
+
+```bash
+python -m quantagent_platform run recipes/offline_daily_research.json \
+  --source daily-json \
+  --input path/to/daily_context.json \
+  --bind model.daily_analysis=builtin.deepseek-daily-analysis \
+  --param model_options='{"model":"deepseek-v4-pro","api_key_env":"DEEPSEEK_API_KEY","timeout_seconds":60}' \
+  --online \
+  --allow-permission network:https \
+  --allow-permission environment:read-secret
+```
+
+现有 `agent_engine.py --mode daily` 仍是生产入口；它与插件报告共用同一提示词和渲染函数。本仓库仅用模拟传输验证 DeepSeek 适配器，未把真实外部调用标记为已验证。
 
 ## 本地运行
 
@@ -233,15 +267,16 @@ python -m unittest discover -s tests -v
 - SQLite 结构、校验、事务回滚及同日有效记录切换。
 - 数据包哈希与时区约束、精选插件目录和配方兼容预检。
 - SQLite/JSON 数据入口替换、原生包及运行血缘保存、体检报告生成。
+- 日报上下文校验、离线分析重放、模型替换权限闸门和生产兼容报告。
 - 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试，**62 项通过**，其中插件平台、离线重放和结果回填测试 19 项。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实外部项目已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
+2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试，**68 项通过**。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实外部项目已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 
 - 新闻清洗和去重主要依赖规则、标识及文本指纹，尚未实现语义去重。
 - 日报质量依赖数据完整性和模型输出；模型给出的置信度尚未进行历史校准。
-- 信号审计主要记录已完成的判断，未来结果回填和完整收益评估仍属于后续工作。
+- 已支持显式历史价格文件的离线结果回填；自动取价、交易日口径和完整收益评估仍属于后续工作。
 - 第三方行情和新闻源可能出现访问限制、数据缺失或接口变化。
 - 数据库设计文档含后续规划，功能是否完成以当前源码和测试为准。
 
