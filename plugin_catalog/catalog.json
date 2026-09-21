@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.3.0",
+  "catalog_version": "1.4.0",
   "plugins": [
     {
       "plugin_id": "builtin.json-signal-source",
@@ -112,6 +112,22 @@
       "upstream": "QuantAgent built-in",
       "license": "MIT",
       "notes": "Reports Qlib factor IC results, exact runtime versions, input hash, and validation limits."
+    },
+    {
+      "plugin_id": "builtin.bt-portfolio-backtest",
+      "version": "1.0.0",
+      "status": "experimental",
+      "upstream": "bt 1.2.3",
+      "license": "MIT",
+      "notes": "Runs a lagged long-only factor portfolio and equal-weight baseline in an explicitly selected isolated Python subprocess."
+    },
+    {
+      "plugin_id": "builtin.markdown-backtest-report",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Reports backtest assumptions, costs, baseline comparison, exact runtime versions, and validation limits."
     }
   ]
 }

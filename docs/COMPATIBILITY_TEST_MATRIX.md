@@ -16,6 +16,8 @@
 | 单插件 | Daily Markdown report 1.0.0 | 与现有生产日报共用提示词和渲染函数 |
 | 单插件 | Qlib factor research 1.0.0 experimental | 普通 CI 验证子进程协议、权限、路径、错误隔离；真实 Qlib 需显式环境测试 |
 | 单插件 | Factor research report 1.0.0 | 记录输入哈希、精确运行时版本、IC/Rank IC 与能力边界 |
+| 单插件 | bt portfolio backtest 1.0.0 experimental | 普通 CI 验证协议、显式进程权限、下一根 bar 延迟和失败关闭；真实 bt 需显式环境测试 |
+| 单插件 | Backtest report 1.0.0 | 展示时间/价格语义、成本、策略与等权基线、精确版本和能力边界 |
 | 连接处 | source → quality | `quantagent.signal_history.v1` |
 | 连接处 | quality → report | `quantagent.data_quality.v1` |
 | 整套配方 | JSON → quality → report | 固定样本离线通过 |
@@ -23,9 +25,10 @@
 | 整套配方 | packet replay → outcome → SQLite preview/apply → report | 固定价格样本离线通过 |
 | 整套配方 | daily JSON → replay analysis → Markdown report | 固定上下文与分析样本离线通过 |
 | 整套配方 | CSV → Qlib StaticDataLoader → factor report | 固定 20 行样本；真实结果仅在 `QUANTAGENT_QLIB_PYTHON` 集成测试通过时成立 |
+| 整套配方 | CSV → bt portfolio backtest → report | 固定 30 行合成面板；信号延迟 1 bar，手续费 5 bps，滑点 5 bps，含等权基线 |
 | 安全边界 | 路径越界、权限不足、未知插件 | 失败关闭并记录或在执行前拒绝 |
 
-CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离线 unittest。Qlib 普通 CI 使用协议 worker，不导入 Qlib；可选集成测试必须指向独立安装的 Qlib Python，并在结果包记录 Python、pyqlib 和 pandas 版本。真实外部接口仍须单独报告。
+CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离线 unittest。Qlib 与 `bt` 的普通 CI 使用协议 worker，不导入重型依赖；可选集成测试必须指向独立安装的 Python，并在结果包记录上游及 pandas 等精确版本。真实外部接口仍须单独报告。
 
 ## Qlib 本地受控验证（2026-09-21）
 
@@ -35,4 +38,12 @@ CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离�
 
 该验证未使用 Qlib 行情供应商数据，未初始化 provider、训练模型或运行回测。第一次真实测试暴露了子进程最小环境缺少用户目录变量的问题；补回 `HOME`/Windows 用户目录定位变量后通过，API key 等非白名单变量仍不传给 worker。
 
-未覆盖：真实 DeepSeek 外部联调、在线数据源、Qlib 供应商数据、Qlib 模型训练、MLflow、Pandera、回测引擎、容器隔离、多来源实盘对账、模型收益评价和实盘交易。
+## bt 本地受控验证（2026-09-21）
+
+| 平台 | 组合 | 固定样本结果 | 结论 |
+| --- | --- | --- | --- |
+| Windows | Python 3.12.8 + bt 1.2.3 + ffn 1.2.2 + pandas 3.0.6 | 30 行、3 标的、10 时间点；信号延迟 1 bar；总成本 10 bps；策略总收益 2.9569%，等权基线 9.6667% | 接口与假设落盘通过，且样本策略明显跑输基线；插件仍为 `experimental` |
+
+该结果诚实保留负面的相对基线差异，目的只是证明适配器没有挑选“看起来赚钱”的验收样本。样本为合成价格，不验证真实复权、交易日、流动性、容量或订单成交。
+
+未覆盖：真实 DeepSeek 外部联调、在线数据源、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、MLflow、Pandera、容器隔离、多来源实盘对账、模型收益评价和实盘交易。

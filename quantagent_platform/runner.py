@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .bt_plugins import BtPortfolioBacktest, MarkdownBacktestReport
 from .builtin_plugins import JsonSignalSource, MarkdownQualityReport, SignalDataQuality, SqliteSignalSource
 from .contracts import DataPacket, utc_now
 from .daily_plugins import (
@@ -63,6 +64,8 @@ def default_registry() -> PluginRegistry:
         MarkdownDailyReport(),
         QlibFactorResearch(),
         MarkdownFactorResearchReport(),
+        BtPortfolioBacktest(),
+        MarkdownBacktestReport(),
     ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:

@@ -9,6 +9,7 @@ from .runner import RecipeError, RecipeRunner, default_registry
 
 
 SOURCE_BINDINGS = {
+    "bt-csv": ("backtest.portfolio", "builtin.bt-portfolio-backtest"),
     "daily-json": ("source.daily_context", "builtin.json-daily-context-source"),
     "json": ("source.signal_history", "builtin.json-signal-source"),
     "qlib-csv": ("research.factor", "builtin.qlib-factor-research"),

@@ -4,7 +4,7 @@ QuantAgent 是一台可以插“功能卡带”的量化主机：以小核心连
 
 项目起点是个人每天收集市场信息时遇到的重复工作：多个来源需要分别查看，相同新闻反复出现，前一天的判断也容易缺少后续核对。QuantAgent 将采集、筛选、汇总和记录整理为一套可运行的流程。
 
-当前已落地历史数据体检、结果回填和日报研究套餐，并保留原有信息整理与纸面观察能力。Qlib 已有一个受控的实验适配器，只覆盖固定 CSV 通过独立进程加载并计算 IC/Rank IC；自动交易、仓位管理、收益回测、多来源对账、完整周报、Qlib 模型训练及 MLflow/Pandera 等仍未接入，不能视为已实现或已验证。
+当前已落地历史数据体检、结果回填和日报研究套餐，并保留原有信息整理与纸面观察能力。Qlib 和 `bt` 已有受控的实验适配器：前者只覆盖固定 CSV 的 IC/Rank IC，后者只覆盖带下一根 bar 延迟、成本假设和等权基线的固定组合回测。自动交易、真实行情回测、仓位管理、多来源对账、完整周报、Qlib 模型训练及 MLflow/Pandera 等仍未接入，不能视为已实现或已验证。
 
 ## 已有功能
 
@@ -70,6 +70,8 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `builtin.markdown-daily-report` | 生成与原生产入口同形的日报 | 写本次运行目录 |
 | `builtin.qlib-factor-research` | 在显式指定的隔离 Python 中用 Qlib 加载固定因子样本并计算 IC | 读文件、启动进程 |
 | `builtin.markdown-factor-research-report` | 报告 Qlib 环境、输入哈希、指标和验证边界 | 写本次运行目录 |
+| `builtin.bt-portfolio-backtest` | 在隔离 Python 中运行带信号延迟、成本和基线的 `bt` 组合回测 | 读文件、启动进程 |
+| `builtin.markdown-backtest-report` | 报告回测假设、结果、基线、版本和边界 | 写本次运行目录 |
 
 查看目录并验证配方：
 
@@ -181,6 +183,38 @@ python -m unittest tests.test_qlib_plugins -v
 ```
 
 真实测试会调用 `qlib.data.dataset.loader.StaticDataLoader`，并把 Python、pyqlib、pandas 精确版本及输入 SHA-256 写入结果。它不下载行情、不训练模型、不做回测，也不证明该结果具有收益或可交易性。
+
+## bt 组合回测插件
+
+首个回测引擎选择 [`bt`](https://github.com/pmorissette/bt)，固定版本 1.2.3。它使用 MIT 许可证、支持 Python 3.12，且直接面向组合权重和再平衡，适合当前因子研究阶段。选择记录及未选引擎的许可证和运行代价见 `docs/BACKTEST_ENGINE_DECISION.md`。
+
+`bt` 同样安装在独立环境中：
+
+```powershell
+python -m venv artifacts/bt-env
+.\artifacts\bt-env\Scripts\python.exe -m pip install bt==1.2.3
+```
+
+用固定的时区时间、价格和信号面板运行套餐：
+
+```powershell
+python -m quantagent_platform run recipes/bt_portfolio_backtest.json `
+  --source bt-csv `
+  --input tests/fixtures/sample_bt_panel.csv `
+  --allow-read-root . `
+  --allow-permission process:spawn `
+  --param backtest_options='{"python_executable":"artifacts/bt-env/Scripts/python.exe","price_semantics":"synthetic_close","execution_lag_bars":1,"top_n":1,"commission_bps":5,"slippage_bps":5,"periods_per_year":365}' `
+  --output-dir artifacts/bt-runs
+```
+
+首版只做多，信号必须至少延迟一根 bar，并在报告中同时展示等权买入持有基线。手续费和滑点被合并为按成交金额计算的比例成本。真实兼容测试需显式指定隔离解释器：
+
+```powershell
+$env:QUANTAGENT_BT_PYTHON = (Resolve-Path artifacts/bt-env/Scripts/python.exe)
+python -m unittest tests.test_bt_plugins -v
+```
+
+固定样本用于验证接口、时间顺序、成本和报告，不用于证明策略有效；小样本 CAGR 与 Sharpe 尤其不应当作收益证据。
 
 ## 本地运行
 
@@ -301,15 +335,17 @@ python -m unittest discover -s tests -v
 - SQLite/JSON 数据入口替换、原生包及运行血缘保存、体检报告生成。
 - 日报上下文校验、离线分析重放、模型替换权限闸门和生产兼容报告。
 - Qlib 子进程协议、显式权限、路径限制、超时/错误隔离，以及可选真实 StaticDataLoader 集成。
+- `bt` 子进程协议、时区时间、至少一根 bar 的执行延迟、成本参数、等权基线和可选真实引擎集成。
 - 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 的真实集成测试只在显式提供隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
+2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 与 `bt` 的真实集成测试只在显式提供各自隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 
 - 新闻清洗和去重主要依赖规则、标识及文本指纹，尚未实现语义去重。
 - 日报质量依赖数据完整性和模型输出；模型给出的置信度尚未进行历史校准。
 - 已支持显式历史价格文件的离线结果回填；自动取价、交易日口径和完整收益评估仍属于后续工作。
+- 已支持 `bt` 固定样本组合回测，但尚未验证真实行情的复权、交易日、可成交性、容量、冲击、部分成交或订单生命周期。
 - 第三方行情和新闻源可能出现访问限制、数据缺失或接口变化。
 - 数据库设计文档含后续规划，功能是否完成以当前源码和测试为准。
 
