@@ -11,6 +11,7 @@ from .runner import RecipeError, RecipeRunner, default_registry
 SOURCE_BINDINGS = {
     "daily-json": ("source.daily_context", "builtin.json-daily-context-source"),
     "json": ("source.signal_history", "builtin.json-signal-source"),
+    "qlib-csv": ("research.factor", "builtin.qlib-factor-research"),
     "replay": ("source.signal_history", "builtin.packet-replay-source"),
     "sqlite": ("source.signal_history", "builtin.sqlite-signal-source"),
 }
@@ -78,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
             runner._preflight(
                 recipe,
                 binding,
-                {"filesystem:read", "filesystem:write"},
+                {"filesystem:read", "filesystem:write", "process:spawn"},
                 offline=True,
             )
             print("Recipe validation passed")

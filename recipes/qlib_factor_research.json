@@ -1,0 +1,24 @@
+{
+  "recipe_id": "qlib-factor-research",
+  "recipe_version": "1.0.0",
+  "description": "Run bounded factor IC research through Qlib StaticDataLoader in an explicitly selected isolated Python environment, then render an offline report.",
+  "steps": [
+    {
+      "id": "run-qlib-factor-research",
+      "capability": "research.factor",
+      "plugin": "builtin.qlib-factor-research",
+      "config": {
+        "data_path": "${source_path}",
+        "options": "${qlib_options}"
+      }
+    },
+    {
+      "id": "write-factor-research-report",
+      "capability": "report.factor_research",
+      "plugin": "builtin.markdown-factor-research-report",
+      "config": {
+        "filename": "qlib_factor_research.md"
+      }
+    }
+  ]
+}

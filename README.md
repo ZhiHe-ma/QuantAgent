@@ -4,7 +4,7 @@ QuantAgent 是一台可以插“功能卡带”的量化主机：以小核心连
 
 项目起点是个人每天收集市场信息时遇到的重复工作：多个来源需要分别查看，相同新闻反复出现，前一天的判断也容易缺少后续核对。QuantAgent 将采集、筛选、汇总和记录整理为一套可运行的流程。
 
-当前已落地第一套离线套餐“历史数据体检”，并保留原有信息整理与纸面观察能力。自动交易、仓位管理、收益回测、多来源对账、完整周报、Qlib/MLflow/Pandera 等外部项目尚未接入，不能视为已实现或已验证。
+当前已落地历史数据体检、结果回填和日报研究套餐，并保留原有信息整理与纸面观察能力。Qlib 已有一个受控的实验适配器，只覆盖固定 CSV 通过独立进程加载并计算 IC/Rank IC；自动交易、仓位管理、收益回测、多来源对账、完整周报、Qlib 模型训练及 MLflow/Pandera 等仍未接入，不能视为已实现或已验证。
 
 ## 已有功能
 
@@ -68,6 +68,8 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `builtin.replay-daily-analysis` | 离线重放固定模型分析 | 读文件 |
 | `builtin.deepseek-daily-analysis` | 可替换的 DeepSeek 分析模型（实验） | 联网、读取环境密钥 |
 | `builtin.markdown-daily-report` | 生成与原生产入口同形的日报 | 写本次运行目录 |
+| `builtin.qlib-factor-research` | 在显式指定的隔离 Python 中用 Qlib 加载固定因子样本并计算 IC | 读文件、启动进程 |
+| `builtin.markdown-factor-research-report` | 报告 Qlib 环境、输入哈希、指标和验证边界 | 写本次运行目录 |
 
 查看目录并验证配方：
 
@@ -149,6 +151,36 @@ python -m quantagent_platform run recipes/offline_daily_research.json \
 ```
 
 现有 `agent_engine.py --mode daily` 仍是生产入口；它与插件报告共用同一提示词和渲染函数。本仓库仅用模拟传输验证 DeepSeek 适配器，未把真实外部调用标记为已验证。
+
+## Qlib 因子研究插件
+
+Qlib 作为重型依赖不安装到 QuantAgent 主环境。先创建独立虚拟环境并固定版本：
+
+```powershell
+python -m venv artifacts/qlib-env
+.\artifacts\qlib-env\Scripts\python.exe -m pip install pyqlib==0.9.7
+```
+
+随后用固定本地 CSV 运行实验套餐。必须显式授权启动子进程，并把仓库根目录（包含 worker、隔离环境和样本）列入读取范围：
+
+```powershell
+python -m quantagent_platform run recipes/qlib_factor_research.json `
+  --source qlib-csv `
+  --input tests/fixtures/sample_qlib_factor.csv `
+  --allow-read-root . `
+  --allow-permission process:spawn `
+  --param qlib_options='{"python_executable":"artifacts/qlib-env/Scripts/python.exe","timeout_seconds":120}' `
+  --output-dir artifacts/qlib-runs
+```
+
+标准测试仅使用协议 worker，避免把 Qlib 的完整依赖树带入核心 CI。真实本机兼容测试需显式设置隔离解释器：
+
+```powershell
+$env:QUANTAGENT_QLIB_PYTHON = (Resolve-Path artifacts/qlib-env/Scripts/python.exe)
+python -m unittest tests.test_qlib_plugins -v
+```
+
+真实测试会调用 `qlib.data.dataset.loader.StaticDataLoader`，并把 Python、pyqlib、pandas 精确版本及输入 SHA-256 写入结果。它不下载行情、不训练模型、不做回测，也不证明该结果具有收益或可交易性。
 
 ## 本地运行
 
@@ -268,9 +300,10 @@ python -m unittest discover -s tests -v
 - 数据包哈希与时区约束、精选插件目录和配方兼容预检。
 - SQLite/JSON 数据入口替换、原生包及运行血缘保存、体检报告生成。
 - 日报上下文校验、离线分析重放、模型替换权限闸门和生产兼容报告。
+- Qlib 子进程协议、显式权限、路径限制、超时/错误隔离，以及可选真实 StaticDataLoader 集成。
 - 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试，**68 项通过**。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；该结果说明所覆盖的程序行为通过检查，不代表真实外部项目已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
+2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 的真实集成测试只在显式提供隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 
