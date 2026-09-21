@@ -223,7 +223,7 @@ class PlatformRecipeTests(unittest.TestCase):
 
     def test_catalog_exposes_versions_permissions_and_status(self):
         catalog = default_registry().catalog()
-        self.assertEqual(len(catalog), 4)
+        self.assertEqual(len(catalog), 8)
         for row in catalog:
             self.assertTrue(row["version"])
             self.assertEqual(row["status"], "verified")

@@ -1,0 +1,29 @@
+{
+  "price_source": "synthetic-test-fixture",
+  "observations": [
+    {
+      "asset": "BTC",
+      "quote_asset": "USDT",
+      "observed_at": "2026-09-20T08:00:00+08:00",
+      "price": 100.0
+    },
+    {
+      "asset": "BTC",
+      "quote_asset": "USDT",
+      "observed_at": "2026-09-21T08:00:00+08:00",
+      "price": 105.0
+    },
+    {
+      "asset": "BTC",
+      "quote_asset": "USDT",
+      "observed_at": "2026-09-23T08:00:00+08:00",
+      "price": 95.0
+    },
+    {
+      "asset": "BTC",
+      "quote_asset": "USDT",
+      "observed_at": "2026-09-27T08:00:00+08:00",
+      "price": 110.0
+    }
+  ]
+}
