@@ -23,6 +23,7 @@ RESEARCH_SCHEMA_PATHS = (
     SCHEMA_DIR / "quantagent.research_request.v1.schema.json",
     SCHEMA_DIR / "quantagent.evidence_bundle.v1.schema.json",
     SCHEMA_DIR / "quantagent.thesis_state.v1.schema.json",
+    SCHEMA_DIR / "quantagent.read_api.run_summary.v1.schema.json",
 )
 ALL_SCHEMA_PATHS = SCHEMA_PATHS + RESEARCH_SCHEMA_PATHS
 DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"

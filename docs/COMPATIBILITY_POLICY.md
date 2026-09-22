@@ -43,6 +43,6 @@
 
 ## 当前声明
 
-当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0`、`bt-portfolio-backtest@1.0.0` 和 `thesis-tracker@1.0.0`，证据范围见测试矩阵。P1/P2 分别验证数据体检 Agent 和 `builtin.research-agent@1.0.0` → `anthropic-financial-services-adapted.thesis-tracker@1.0.0` → `thesis-tracker@1.0.0` 的精确离线组合。
+当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0`、`bt-portfolio-backtest@1.0.0` 和 `thesis-tracker@1.0.0`，证据范围见测试矩阵。P1/P2 分别验证数据体检 Agent 和 `builtin.research-agent@1.0.0` → `anthropic-financial-services-adapted.thesis-tracker@1.0.0` → `thesis-tracker@1.0.0` 的精确离线组合。P3a 的只读 API 仅以这些本地运行包作为 `offline_fixture`，验证摘要、认证、访问和完整性行为；它不扩大底层套餐的兼容声明。
 
-AgentManifest/SkillManifest 严格加载、精选目录、P2 研究契约和离线 `thesis-tracker` 已有 `offline_fixture` 行为证据。该证据只覆盖合成夹具、确定性转换和报告，不是外部来源真实性或投资有效性验证。模型驱动选择、动态预算执行、Tool Broker、Typed Handoff 和 OpenStock API/UI 仍只有规范或尚未实现。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。
+AgentManifest/SkillManifest 严格加载、精选目录、P2 研究契约、离线 `thesis-tracker` 和 P3a 单用户只读结果 API 已有 `offline_fixture` 行为证据。该证据只覆盖合成夹具、确定性转换、报告读取和失败关闭，不是外部来源真实性、投资有效性、OpenStock 集成或生产级网络安全验证。模型驱动选择、动态预算执行、Tool Broker、Typed Handoff、OpenStock 页面与任务提交/取消仍只有规范或尚未实现。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。

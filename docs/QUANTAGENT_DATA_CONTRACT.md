@@ -33,6 +33,7 @@
 - `quantagent.daily_context.v1`：单日日报所需的日期、市场指标、记忆胶囊和新闻因子。
 - `quantagent.daily_analysis.v1`：模型分析文本、模型身份、提示词哈希和完整输入上下文。
 - `quantagent.report.v1`：报告产物引用，不嵌入或伪造外部评价结果。
+- `quantagent.read_api.run_summary.v1`：P3a 只读 API 的脱敏运行摘要；只包含稳定身份、状态、时间、步骤契约/哈希、最终引用和报告链接，不包含本地路径、原始证据或错误消息。
 
 现有 SQLite `signal_outcomes.return_pct` 已由旧结构确定为百分数值。写入插件必须把 `return_decimal` 显式乘以 100，并把交换记录完整保存在 `raw_json`；不得仅凭字段名猜测单位。
 
@@ -77,6 +78,12 @@
 P2 还使用 `quantagent.thesis_review_input.v1` 数据包封装同一次离线运行的 request、previous thesis 和 evidence bundle。源文件固定为 `quantagent.thesis_review_fixture.v1`；三个嵌套对象分别校验，引用哈希必须与对象 canonical JSON 一致。证据内容哈希覆盖 `excerpt` 与 `structured_facts`，观点状态只保留证据索引和哈希，并明确记录这一信息损失。
 
 P2 的充分性规则是可审计的最低门槛：至少一个支持证据、一个反对证据和两个不同 `origin_ref`。它只表示夹具具备双向证据结构，不代表来源真实、相互独立或结论正确。`human_reviewed` 与 `action_eligible` 不从该规则推导。
+
+## P3a 只读结果契约
+
+`schemas/quantagent.read_api.run_summary.v1.schema.json` 使用 Draft 2020-12 严格定义 HTTP 摘要。服务从既有 `run.json` 派生响应，不直接返回状态文件；失败运行只暴露异常类型，不暴露异常消息。报告正文不嵌入摘要，通过单独的授权端点读取。
+
+读取报告时必须重新验证：运行已完成、最终契约为 `quantagent.report.v1`、最终步骤与最终哈希一致、数据包内容哈希有效、报告格式为 Markdown，且文件 SHA-256 与包引用一致。该检查证明同一运行目录内的引用一致，不是数字签名，也不证明能抵抗可同时改写内容与全部哈希的本机攻击者。
 
 ## 预留研究契约
 
