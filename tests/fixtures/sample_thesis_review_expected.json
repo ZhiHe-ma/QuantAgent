@@ -1,0 +1,23 @@
+{
+  "input_fixture_sha256": "8192ea91541df24ced98554fd4b6f918344c6244ff50335cdc33b27f411485a5",
+  "expected_state_sha256": "83a964bb14fdef29a0b2815994f55e9524699b4ed8611aea7c176e311572ee9f",
+  "expected_version": 2,
+  "expected_assessment": "weakened",
+  "expected_research_suggestion": "research_only_reassess",
+  "expected_evidence_sufficient": true,
+  "expected_supporting_evidence_refs": [
+    "evidence.new.support",
+    "evidence.prior.support"
+  ],
+  "expected_opposing_evidence_refs": [
+    "evidence.new.oppose"
+  ],
+  "expected_context_evidence_refs": [
+    "evidence.new.context"
+  ],
+  "expected_claim_statuses": {
+    "claim.institutional_demand": "challenged",
+    "claim.network_usage": "supported"
+  },
+  "expected_report_sha256": "1d2139cacf94561c258e15b7e926d06b52f524846c29c1ea8add12cc5ad7a3dd"
+}

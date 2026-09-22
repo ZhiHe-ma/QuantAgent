@@ -43,6 +43,6 @@
 
 ## 当前声明
 
-当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0` 和 `bt-portfolio-backtest@1.0.0`，证据范围见测试矩阵。P1 还验证 `builtin.data-health-research-agent@1.0.0` → `builtin.signal-data-health@1.0.0` → `historical-data-health@1.0.0` 这一条精确、离线、确定性组合。
+当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0`、`bt-portfolio-backtest@1.0.0` 和 `thesis-tracker@1.0.0`，证据范围见测试矩阵。P1/P2 分别验证数据体检 Agent 和 `builtin.research-agent@1.0.0` → `anthropic-financial-services-adapted.thesis-tracker@1.0.0` → `thesis-tracker@1.0.0` 的精确离线组合。
 
-AgentManifest/SkillManifest 严格加载、精选目录和上述单一 Agent 组合已有 `offline_fixture` 行为证据。模型驱动选择、新研究契约、`thesis-tracker`、动态预算执行、Tool Broker、Typed Handoff 和 OpenStock API/UI 仍只有规范或尚未实现。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。
+AgentManifest/SkillManifest 严格加载、精选目录、P2 研究契约和离线 `thesis-tracker` 已有 `offline_fixture` 行为证据。该证据只覆盖合成夹具、确定性转换和报告，不是外部来源真实性或投资有效性验证。模型驱动选择、动态预算执行、Tool Broker、Typed Handoff 和 OpenStock API/UI 仍只有规范或尚未实现。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。

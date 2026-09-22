@@ -1,0 +1,30 @@
+{
+  "recipe_id": "thesis-tracker",
+  "recipe_version": "1.0.0",
+  "description": "Read a bounded offline thesis review fixture, deterministically update thesis state, and render an auditable report.",
+  "steps": [
+    {
+      "id": "load-thesis-review",
+      "capability": "source.thesis_review",
+      "plugin": "builtin.json-thesis-review-source",
+      "config": {
+        "path": "${source_path}"
+      }
+    },
+    {
+      "id": "update-thesis-state",
+      "capability": "research.thesis_update",
+      "plugin": "builtin.deterministic-thesis-tracker",
+      "config": {}
+    },
+    {
+      "id": "write-thesis-report",
+      "capability": "report.thesis",
+      "plugin": "builtin.markdown-thesis-report",
+      "config": {
+        "title": "${report_title}",
+        "filename": "thesis_review_report.md"
+      }
+    }
+  ]
+}

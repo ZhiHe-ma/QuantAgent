@@ -26,6 +26,11 @@ from .outcome_plugins import (
 )
 from .plugins import PluginError, PluginRegistry, RunContext
 from .qlib_plugins import MarkdownFactorResearchReport, QlibFactorResearch
+from .research_plugins import (
+    DeterministicThesisTracker,
+    JsonThesisReviewSource,
+    MarkdownThesisReport,
+)
 
 
 class RecipeError(RuntimeError):
@@ -66,6 +71,9 @@ def default_registry() -> PluginRegistry:
         MarkdownFactorResearchReport(),
         BtPortfolioBacktest(),
         MarkdownBacktestReport(),
+        JsonThesisReviewSource(),
+        DeterministicThesisTracker(),
+        MarkdownThesisReport(),
     ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:

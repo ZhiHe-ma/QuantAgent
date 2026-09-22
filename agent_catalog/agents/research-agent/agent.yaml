@@ -1,0 +1,43 @@
+manifest_type: quantagent.agent_manifest.v1
+agent_id: builtin.research-agent
+version: 1.0.0
+skills:
+  - id: anthropic-financial-services-adapted.thesis-tracker
+    version: 1.0.0
+recipes:
+  - id: thesis-tracker
+    version: 1.0.0
+model_policy:
+  required_capabilities:
+    text_generation: false
+    structured_output: false
+    tool_calling: false
+    min_context_tokens: 1
+    offline_replay: false
+  allowed_models: []
+  allow_recorded_replay: false
+  selection: ordered_allowlist
+input_contract: quantagent.research_request.v1
+output_contract: quantagent.report.v1
+required_capabilities:
+  - source.thesis_review
+  - research.thesis_update
+  - report.thesis
+review_gates:
+  - gate_id: validate-before-run
+    trigger: before_run
+    action: automatic_validation
+    on_reject: fail
+limits:
+  max_steps: 3
+  max_tool_calls: 0
+  max_wall_seconds: 120
+  max_cost:
+    amount_minor: 0
+    currency: USD
+callable_agents: []
+metadata:
+  deterministic: true
+  execution_status: implemented
+  role_isolation: plugin_permissions
+  trading_authority: false

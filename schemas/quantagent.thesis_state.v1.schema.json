@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.thesis_state.v1.schema.json",
+  "title": "QuantAgent Thesis State v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_type",
+    "thesis_id",
+    "subject",
+    "version",
+    "as_of",
+    "core_thesis",
+    "claims",
+    "evidence_index",
+    "supporting_evidence_refs",
+    "opposing_evidence_refs",
+    "context_evidence_refs",
+    "invalidation_conditions",
+    "watch_items",
+    "current_assessment",
+    "research_suggestion",
+    "missing_information",
+    "previous_state_ref",
+    "revision",
+    "lineage",
+    "statuses"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset_type", "symbol", "venue", "base_asset", "quote_asset"],
+      "properties": {
+        "asset_type": { "enum": ["cryptoasset", "equity", "fund", "index"] },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "venue": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "base_asset": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "quote_asset": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" }
+      }
+    }
+  },
+  "properties": {
+    "contract_type": { "const": "quantagent.thesis_state.v1" },
+    "thesis_id": { "$ref": "#/$defs/id" },
+    "subject": { "$ref": "#/$defs/subject" },
+    "version": { "type": "integer", "minimum": 1 },
+    "as_of": { "type": "string", "format": "date-time" },
+    "core_thesis": { "type": "string", "minLength": 1, "maxLength": 5000 },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim_id", "text", "status", "evidence_refs"],
+        "properties": {
+          "claim_id": { "$ref": "#/$defs/id" },
+          "text": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "status": { "enum": ["untested", "supported", "challenged", "invalidated"] },
+          "evidence_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    },
+    "evidence_index": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "content_sha256",
+          "stance",
+          "impact",
+          "claim_refs",
+          "source_id",
+          "origin_ref",
+          "source_title",
+          "available_at"
+        ],
+        "properties": {
+          "evidence_id": { "$ref": "#/$defs/id" },
+          "content_sha256": { "$ref": "#/$defs/sha256" },
+          "stance": { "enum": ["support", "oppose", "context"] },
+          "impact": { "enum": ["strengthen", "weaken", "invalidate", "context"] },
+          "claim_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          },
+          "source_id": { "$ref": "#/$defs/id" },
+          "origin_ref": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "source_title": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "available_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "supporting_evidence_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "opposing_evidence_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "context_evidence_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "invalidation_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["condition_id", "text", "status", "evidence_refs"],
+        "properties": {
+          "condition_id": { "$ref": "#/$defs/id" },
+          "text": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "status": { "enum": ["monitoring", "triggered", "cleared"] },
+          "evidence_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    },
+    "watch_items": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "current_assessment": { "enum": ["insufficient_evidence", "intact", "weakened", "invalidated"] },
+    "research_suggestion": {
+      "enum": ["research_only_maintain", "research_only_reassess", "research_only_investigate"]
+    },
+    "missing_information": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "previous_state_ref": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["thesis_id", "version", "content_sha256"],
+          "properties": {
+            "thesis_id": { "$ref": "#/$defs/id" },
+            "version": { "type": "integer", "minimum": 1 },
+            "content_sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      ]
+    },
+    "revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason_codes", "added_evidence_refs"],
+      "properties": {
+        "reason_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "added_evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "evidence_bundle_id",
+        "previous_thesis_sha256",
+        "evidence_bundle_sha256",
+        "transformation",
+        "information_loss"
+      ],
+      "properties": {
+        "request_id": { "$ref": "#/$defs/id" },
+        "evidence_bundle_id": { "$ref": "#/$defs/id" },
+        "previous_thesis_sha256": { "$ref": "#/$defs/sha256" },
+        "evidence_bundle_sha256": { "$ref": "#/$defs/sha256" },
+        "transformation": { "const": "builtin.deterministic-thesis-tracker@1.0.0" },
+        "information_loss": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "statuses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structure_valid", "evidence_sufficient", "human_reviewed", "action_eligible"],
+      "properties": {
+        "structure_valid": { "const": true },
+        "evidence_sufficient": { "type": "boolean" },
+        "human_reviewed": { "type": "boolean" },
+        "action_eligible": { "const": false }
+      }
+    }
+  }
+}

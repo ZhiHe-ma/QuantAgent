@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.4.0",
+  "catalog_version": "1.5.0",
   "plugins": [
     {
       "plugin_id": "builtin.json-signal-source",
@@ -128,6 +128,30 @@
       "upstream": "QuantAgent built-in",
       "license": "MIT",
       "notes": "Reports backtest assumptions, costs, baseline comparison, exact runtime versions, and validation limits."
+    },
+    {
+      "plugin_id": "builtin.json-thesis-review-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Reads one bounded offline thesis review fixture and validates research, evidence, lineage, and Point-in-Time semantics."
+    },
+    {
+      "plugin_id": "builtin.deterministic-thesis-tracker",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in; method adapted from Anthropic financial-services thesis-tracker",
+      "license": "MIT implementation; adapted method documentation is Apache-2.0",
+      "notes": "Updates claim and invalidation status without a model, network, filesystem, or trading authority."
+    },
+    {
+      "plugin_id": "builtin.markdown-thesis-report",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Writes a deterministic thesis review report without rendering raw untrusted evidence excerpts."
     }
   ]
 }

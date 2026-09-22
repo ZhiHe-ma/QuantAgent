@@ -17,6 +17,7 @@ SOURCE_BINDINGS = {
     "qlib-csv": ("research.factor", "builtin.qlib-factor-research"),
     "replay": ("source.signal_history", "builtin.packet-replay-source"),
     "sqlite": ("source.signal_history", "builtin.sqlite-signal-source"),
+    "thesis-json": ("source.thesis_review", "builtin.json-thesis-review-source"),
 }
 
 

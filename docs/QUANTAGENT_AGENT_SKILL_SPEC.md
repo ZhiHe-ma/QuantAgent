@@ -1,6 +1,6 @@
 # QuantAgent Agent/Skill Spec v1
 
-状态：P0 规范冻结，P1 最小运行入口已实现。当前仓库可加载精选目录中的一个确定性数据体检 Agent/Skill，并复用现有 RecipeRunner；这不等于模型驱动 Agent、任意 Skill 安装或多 Agent 已实现。
+状态：P0 规范冻结，P1 最小入口与 P2 观点跟踪闭环已实现。当前仓库可加载精选目录中的确定性 Agent/Skill 并复用现有 RecipeRunner；这不等于模型驱动 Agent、任意 Skill 安装或多 Agent 协作已实现。
 
 ## 1. 职责
 
@@ -87,4 +87,6 @@ P1 先接入 `builtin.data-health-research-agent@1.0.0` 和 `builtin.signal-data
 
 P1 已实现严格安全 YAML、Draft 2020-12 Schema、目录 SHA-256、Skill 包哈希、精确 Agent → Skill → Recipe 引用、`verified` 状态、能力等值校验、现有插件权限预检、自动 `before_run` gate 和 `max_steps`。清单中的 `max_tool_calls`、`max_wall_seconds` 和费用只被记录，尚未动态计量；人工 gate 会被拒绝而不是暂停。
 
-P2 目标 Skill 仍是 `thesis-tracker@1.0.0`：读取旧观点和新证据，输出支持/反对证据、观点修订、失效条件与缺口。Crypto 适配必须移除不适用的企业字段，并将增仓/减仓降为研究建议。进入 P2 前还必须有该 Skill 的离线包、许可证记录、固定 Golden Fixtures，以及研究契约的机器 Schema 和正反例。
+P2 观点跟踪闭环已实现：`builtin.research-agent@1.0.0` 只能选择 `anthropic-financial-services-adapted.thesis-tracker@1.0.0` 和 `thesis-tracker@1.0.0`。Skill 固定上游 commit 和 Apache-2.0 许可证，包含明显修改声明；Crypto 适配移除了企业、持仓、目标价和交易动作字段。
+
+P2 使用研究请求、证据包和观点状态的严格 Schema 与语义校验；验证标的、时区、Point-in-Time、对象/内容哈希、claim 引用、状态一致性和权限请求。Reader 只读显式夹具，Analyst 无文件/网络权限，Writer 只写当前运行目录。报告只显示证据引用和哈希，不渲染原始不可信摘录。相同证据重放保持观点版本不变；研究建议始终 `research_only_*`，`action_eligible` 固定为 false。

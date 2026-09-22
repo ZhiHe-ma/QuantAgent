@@ -18,34 +18,41 @@
 | 单插件 | Factor research report 1.0.0 | 记录输入哈希、精确运行时版本、IC/Rank IC 与能力边界 |
 | 单插件 | bt portfolio backtest 1.0.0 experimental | 普通 CI 验证协议、显式进程权限、下一根 bar 延迟和失败关闭；真实 bt 需显式环境测试 |
 | 单插件 | Backtest report 1.0.0 | 展示时间/价格语义、成本、策略与等权基线、精确版本和能力边界 |
+| 单插件 | Thesis review JSON source 1.0.0 | 严格 JSON、Schema、对象哈希、标的、Point-in-Time 截止和显式读取根 |
+| 单插件 | Deterministic thesis tracker 1.0.0 | 证据 ID 去重/冲突拒绝、支持/反对/背景分区、claim 和失效条件派生、重复应用幂等 |
+| 单插件 | Thesis Markdown report 1.0.0 | 仅写运行目录；不渲染原始不可信证据摘录；固定输入生成固定内容哈希 |
 | 连接处 | source → quality | `quantagent.signal_history.v1` |
 | 连接处 | quality → report | `quantagent.data_quality.v1` |
+| 连接处 | thesis source → tracker → report | `quantagent.thesis_review_input.v1` → `quantagent.thesis_state.v1` → `quantagent.report.v1` |
 | 整套配方 | JSON → quality → report | 固定样本离线通过 |
 | 整套配方 | SQLite → quality → report | 临时数据库离线通过 |
 | 整套配方 | packet replay → outcome → SQLite preview/apply → report | 固定价格样本离线通过 |
 | 整套配方 | daily JSON → replay analysis → Markdown report | 固定上下文与分析样本离线通过 |
 | 整套配方 | CSV → Qlib StaticDataLoader → factor report | 固定 20 行样本；真实结果仅在 `QUANTAGENT_QLIB_PYTHON` 集成测试通过时成立 |
 | 整套配方 | CSV → bt portfolio backtest → report | 固定 30 行合成面板；信号延迟 1 bar，手续费 5 bps，滑点 5 bps，含等权基线 |
+| 整套配方 | old thesis + evidence bundle → thesis update → report | 合成 BTC Golden Fixture；正反证据、来源分离、失效条件、血缘、幂等和不可信文本隔离通过 |
 | 安全边界 | 路径越界、权限不足、未知插件 | 失败关闭并记录或在执行前拒绝 |
 | Agent 入口 | data-health Agent → signal-data-health Skill → historical-data-health Recipe | 精确版本和 SHA-256；与直接 Recipe 共用 RecipeRunner、权限预检及步骤语义；Agent 身份写入 `run.json` |
+| Agent 入口 | research Agent → adapted thesis-tracker Skill → thesis-tracker Recipe | 固定版本和 SHA-256；Reader/Analyst/Writer 最小权限；无模型、网络、交易权限或 Agent 间调用 |
 | Agent 安全边界 | 不安全 YAML、目录/Skill 篡改、未知版本/Recipe/能力/绑定、非 verified 状态 | 创建运行目录前失败关闭 |
+| 研究契约安全边界 | 未来信息、内容篡改、标的不一致、未知字段、额外能力、伪造派生状态、证据 ID 冲突 | 严格失败关闭；prompt-like 证据文本保持为数据，不能改绑定或权限 |
 
 CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离线 unittest。Qlib 与 `bt` 的普通 CI 使用协议 worker，不导入重型依赖；可选集成测试必须指向独立安装的 Python，并在结果包记录上游及 pandas 等精确版本。真实外部接口仍须单独报告。
 
-## P0/P1 Agent/Skill 矩阵（2026-09-22）
+## P0/P1/P2 Agent/Skill 矩阵（2026-09-22）
 
-P0 规范仍是语义基线；P1 只把单一确定性数据体检 Agent 推进到 `offline_fixture`，其余条目保持 `static`。
+P0 规范仍是语义基线；P1 把确定性数据体检 Agent 推进到 `offline_fixture`，P2 又把离线观点跟踪 Agent/Skill 推进到固定夹具验证。两者是独立目录项，不启用 Agent 间调用。
 
-| 测试面 | P0 产物 | P1 当前证据 | P2/后续必须补的行为证据 |
+| 测试面 | P0 产物 | P1/P2 当前证据 | 后续必须补的行为证据 |
 | --- | --- | --- | --- |
 | AgentManifest 结构 | Draft 2020-12 Schema、精确 ID/版本、模型能力、预算、审查和空 `callable_agents` | 严格 SafeLoader 拒绝锚点、别名、显式标签、merge key 和重复键；Schema、目录哈希和精确引用已实测 | 签名发布、目录迁移和更多清单版本 |
-| SkillManifest 结构 | 来源 commit/许可证、文件哈希、契约、能力、配方和测试状态 | `builtin.signal-data-health@1.0.0` 已打包；Schema、路径限制、逐文件/包哈希及篡改拒绝已覆盖 | 第三方包签名、NOTICE 聚合和安全审查流水线 |
-| Agent → Skill → Recipe | 双向精确允许名单；共用现有 RecipeRunner | 单一 verified 组合通过；未知版本、越权 Recipe、额外能力和非 verified 状态失败关闭 | 多 Skill 选择与真正研究型 Agent |
+| SkillManifest 结构 | 来源 commit/许可证、文件哈希、契约、能力、配方和测试状态 | 内置数据体检和 Apache-2.0 改编观点跟踪 Skill 已打包；固定上游 commit/blob、完整许可证、NOTICE、逐文件/包哈希及篡改拒绝已覆盖 | 第三方包签名、NOTICE 自动聚合和安全审查流水线 |
+| Agent → Skill → Recipe | 双向精确允许名单；共用现有 RecipeRunner | 两个各自固定的 verified 组合通过；未知版本、越权 Recipe、额外能力和非 verified 状态失败关闭 | 受控多 Skill 选择与模型能力协商 |
 | 模型能力协商 | 文本、结构化输出、工具调用、上下文和离线回放分开声明 | 无模型 Skill 的静态能力相容检查已实现；未选择或调用模型 | 能力不足拒绝、允许名单替换、实际模型/Prompt/费用落盘 |
-| 权限交集 | 用户、部署、Agent、Recipe/Plugin、凭据范围取交集 | Agent 入口复用 RecipeRunner 的插件权限、离线和绑定预检 | 部署策略、凭据范围、工具调用/墙钟/费用动态计量 |
-| 研究契约 | request、evidence、thesis、handoff 的语义边界 | 字段语义已定义；实例 Schema 未实现 | 时间/单位/来源/缺失/Point-in-Time 正反例和血缘校验 |
-| 注入与交接 | 不可信文字不得成为工具或 handoff；首版不启用交接 | 边界已定义；Router 未实现 | 伪造工具 JSON、越权目标、循环、重复和预算增加拒绝 |
-| thesis-tracker | 首个 Skill 的输入输出与 Crypto 边界 | 目标已定义；尚未移植 | 固定夹具可重放、支持/反对证据、修订幂等、Daily/Monitor 回归 |
+| 权限交集 | 用户、部署、Agent、Recipe/Plugin、凭据范围取交集 | Agent 入口复用 RecipeRunner 的插件权限、离线和绑定预检；观点 Reader/Analyst/Writer 权限分别为只读/无权限/仅写运行目录 | 部署策略、凭据范围、工具调用/墙钟/费用动态计量 |
+| 研究契约 | request、evidence、thesis、handoff 的语义边界 | request/evidence/thesis 三个严格实例 Schema 已实现；时间、来源、哈希、缺失、Point-in-Time 和血缘正反例已覆盖 | Typed Handoff 实例、跨 Agent 路由与暂停恢复 |
+| 注入与交接 | 不可信文字不得成为工具或 handoff；首版不启用交接 | prompt-like 证据作为数据通过，不能改变绑定或权限；`callable_agents=[]` | handoff 启用后的伪造工具 JSON、越权目标、循环、重复和预算增加拒绝 |
+| thesis-tracker | 首个 Skill 的输入输出与 Crypto 边界 | 固定夹具可重放；支持/反对证据、显式失效、修订幂等、来源许可和 Daily/Monitor 全量回归通过 | 真实数据适配、来源质量评估、人工复核与长期校准 |
 
 ## 本次 P0 基线复跑（2026-09-22）
 
@@ -54,6 +61,10 @@ P0 规范仍是语义基线；P1 只把单一确定性数据体检 Agent 推进�
 ## P1 Agent 入口本地回归（2026-09-22）
 
 Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 96 个测试：94 个通过、0 个失败、2 个跳过。P1 新增行为测试验证精确目录解析、Agent 与直接 Recipe 的同一运行器/步骤语义、审计身份、目录重复键、清单和 Skill 内容篡改、未知版本/Recipe/绑定、额外能力、非 verified 状态、模型需求、不安全/非 JSON YAML，以及非法审计上下文在创建运行目录前被拒绝。两个跳过项仍是未配置专用解释器的真实 Qlib 与 bt 测试，未被并入通过数。
+
+## P2 观点跟踪本地回归（2026-09-22）
+
+Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 106 个测试：104 个通过、0 个失败、2 个跳过。P2 新增 10 个行为测试，覆盖 Golden Fixture 精确哈希、重复运行确定性、证据重复应用幂等、Point-in-Time 截止、内容篡改、标的不一致、未知字段、证据 ID 冲突、伪造旧状态、额外能力、显式失效条件、Agent 精确身份、三角色最小权限、不可信文本隔离和第三方来源/许可证追溯。全量回归同时重跑原有 Daily、Monitor、P0/P1、Qlib 和 bt 协议测试。两个跳过项仍是未配置专用解释器的真实 Qlib 与 bt 集成测试，未被并入通过数。
 
 ## Qlib 本地受控验证（2026-09-21）
 
@@ -71,4 +82,4 @@ Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 96 个测试：94 �
 
 该结果诚实保留负面的相对基线差异，目的只是证明适配器没有挑选“看起来赚钱”的验收样本。样本为合成价格，不验证真实复权、交易日、流动性、容量或订单成交。
 
-未覆盖：真实 DeepSeek 外部联调、在线数据源、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、模型驱动 Agent、`thesis-tracker`、动态工具调用/墙钟/费用限制、人工暂停恢复、Tool Broker、Typed Handoff、OpenStock API/UI、MLflow、Pandera、容器/操作系统级隔离、多来源实盘对账、模型收益评价和实盘交易。
+未覆盖：真实 DeepSeek 外部联调、在线数据源、真实 thesis 数据适配与来源质量判断、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、模型驱动 Agent、动态工具调用/墙钟/费用限制、人工暂停恢复、Tool Broker、Typed Handoff、OpenStock API/UI、MLflow、Pandera、容器/操作系统级隔离、多来源实盘对账、模型收益评价和实盘交易。
