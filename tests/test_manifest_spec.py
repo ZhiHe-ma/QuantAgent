@@ -7,7 +7,7 @@ from typing import Any
 
 try:
     from jsonschema import Draft202012Validator, FormatChecker, ValidationError
-except ImportError:  # Core runtime stays dependency-free; CI installs requirements-test.txt.
+except ImportError:  # CI and the P1 Agent runtime install requirements-test.txt/requirements.txt.
     Draft202012Validator = None
     FormatChecker = None
     ValidationError = None
@@ -111,9 +111,11 @@ class ManifestSpecTests(unittest.TestCase):
             with self.subTest(unsafe_path=unsafe_path), self.assertRaises(ValidationError):
                 Draft202012Validator(skill_schema).validate(unsafe)
 
-    def test_spec_does_not_claim_runtime_is_implemented(self):
+    def test_spec_reports_p1_runtime_and_remaining_boundaries(self):
         spec = (ROOT / "docs" / "QUANTAGENT_AGENT_SKILL_SPEC.md").read_text(encoding="utf-8")
-        self.assertIn("尚未实现清单加载器或 Agent Runtime", spec)
+        self.assertIn("P1 最小运行入口已实现", spec)
+        self.assertIn("max_wall_seconds", spec)
+        self.assertIn("尚未动态计量", spec)
         self.assertIn("quantagent.agent_manifest.v1.schema.json", spec)
         self.assertIn("quantagent.skill_manifest.v1.schema.json", spec)
 

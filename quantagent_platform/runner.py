@@ -190,8 +190,18 @@ class RecipeRunner:
         allowed_permissions: set[str] | None = None,
         offline: bool = True,
         run_id: str | None = None,
+        invocation: dict[str, Any] | None = None,
     ) -> RunResult:
         self.validate_recipe(recipe)
+        if invocation is not None:
+            if not isinstance(invocation, dict):
+                raise RecipeError("invocation audit context must be an object")
+            try:
+                invocation = json.loads(
+                    json.dumps(invocation, ensure_ascii=False, allow_nan=False, sort_keys=True)
+                )
+            except (TypeError, ValueError) as exc:
+                raise RecipeError(f"invocation audit context must be JSON-safe: {exc}") from exc
         bindings = dict(bindings or {})
         if allowed_permissions is None:
             allowed_permissions = {"filesystem:read", "filesystem:write"}
@@ -224,6 +234,8 @@ class RecipeRunner:
             "bindings": bindings,
             "steps": [],
         }
+        if invocation is not None:
+            state["invocation"] = invocation
         state_path = run_dir / "run.json"
         _atomic_json_write(state_path, state)
         packet: DataPacket | None = None

@@ -43,6 +43,6 @@
 
 ## 当前声明
 
-当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0` 和 `bt-portfolio-backtest@1.0.0`，证据范围见测试矩阵。
+当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0` 和 `bt-portfolio-backtest@1.0.0`，证据范围见测试矩阵。P1 还验证 `builtin.data-health-research-agent@1.0.0` → `builtin.signal-data-health@1.0.0` → `historical-data-health@1.0.0` 这一条精确、离线、确定性组合。
 
-AgentManifest、SkillManifest、新研究契约、Tool Broker、Typed Handoff 和 OpenStock API/UI 目前只有 P0 规范，证据等级为 `static`。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。
+AgentManifest/SkillManifest 严格加载、精选目录和上述单一 Agent 组合已有 `offline_fixture` 行为证据。模型驱动选择、新研究契约、`thesis-tracker`、动态预算执行、Tool Broker、Typed Handoff 和 OpenStock API/UI 仍只有规范或尚未实现。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。

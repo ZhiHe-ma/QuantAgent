@@ -4,7 +4,7 @@ QuantAgent 是一台可以插“功能卡带”的量化主机：以小核心连
 
 项目起点是个人每天收集市场信息时遇到的重复工作：多个来源需要分别查看，相同新闻反复出现，前一天的判断也容易缺少后续核对。QuantAgent 将采集、筛选、汇总和记录整理为一套可运行的流程。
 
-当前已落地历史数据体检、结果回填和日报研究套餐，并保留原有信息整理与纸面观察能力。Qlib 和 `bt` 已有受控的实验适配器：前者只覆盖固定 CSV 的 IC/Rank IC，后者只覆盖带下一根 bar 延迟、成本假设和等权基线的固定组合回测。自动交易、真实行情回测、仓位管理、多来源对账、完整周报、Qlib 模型训练及 MLflow/Pandera 等仍未接入，不能视为已实现或已验证。
+当前已落地历史数据体检、结果回填和日报研究套餐，并保留原有信息整理与纸面观察能力。P1 新增一个精选目录中的确定性数据体检 Agent：它只能选择固定版本的 Skill/Recipe，并复用原有 `RecipeRunner`、权限预检和运行审计。Qlib 和 `bt` 已有受控的实验适配器：前者只覆盖固定 CSV 的 IC/Rank IC，后者只覆盖带下一根 bar 延迟、成本假设和等权基线的固定组合回测。自动交易、真实行情回测、仓位管理、多来源对账、完整周报、模型驱动 Agent、Qlib 模型训练及 MLflow/Pandera 等仍未接入，不能视为已实现或已验证。
 
 ## 已有功能
 
@@ -42,10 +42,11 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `docs/P1_SIGNAL_AUDIT_SCHEMA.md` | 审计模块的设计说明与阶段边界，含后续规划 |
 | `quantagent_platform/` | 最小插件主机、版本化数据包、权限预检与配方运行器 |
 | `plugin_catalog/catalog.json` | 首批允许加载的精选插件及精确版本 |
+| `agent_catalog/catalog.json` | P1 允许加载的 Agent、Skill 和 Recipe 精确版本及 SHA-256 |
 | `recipes/historical_data_health.json` | 历史数据体检套餐；数据入口可按配置替换 |
 | `recipes/offline_outcome_backfill.json` | 离线重放、结果评价及可选事务回填套餐 |
 | `recipes/offline_daily_research.json` | 日报上下文、分析模型和报告生成套餐 |
-| `docs/QUANTAGENT_*.md` | 数据、插件、配方及 Agent/Skill 规范；Agent/Skill 当前仅完成 P0 规范，尚无运行入口 |
+| `docs/QUANTAGENT_*.md` | 数据、插件、配方及 Agent/Skill 规范；P1 已实现一个确定性精选 Agent 入口 |
 | `schemas/` | P0 AgentManifest 与 SkillManifest 的 Draft 2020-12 JSON Schema |
 | `docs/COMPATIBILITY_*.md` | 兼容声明规则和实测矩阵 |
 | `docs/P0_BASELINE_REPORT.md` | 锁定提交、环境、测试结果、跳过项和固定夹具哈希 |
@@ -101,6 +102,31 @@ python -m quantagent_platform run recipes/historical_data_health.json \
 ```
 
 每次运行生成独立 `run_id` 目录，保存原始标准包、步骤插件版本、契约、SHA-256、时间、状态和 Markdown 报告。默认离线；读取路径限制在输入文件所在目录，也可以用 `--allow-read-root` 显式缩小或扩展允许范围。
+
+## 受控 Agent 入口
+
+P1 的 Agent 入口只从 `agent_catalog/catalog.json` 读取精确版本和 SHA-256。AgentManifest/SkillManifest 使用严格安全 YAML 解析和 Draft 2020-12 Schema 校验；锚点、别名、显式标签、merge key、重复键、路径逃逸、内容哈希不符、未知能力以及非 `verified` 目录项都会失败关闭。
+
+查看目录并做只读预检：
+
+```bash
+python -m quantagent_platform agent-catalog
+python -m quantagent_platform validate-agent builtin.data-health-research-agent \
+  --agent-version 1.0.0 \
+  --source json
+```
+
+通过 Agent 运行同一历史数据体检配方：
+
+```bash
+python -m quantagent_platform run-agent builtin.data-health-research-agent \
+  --agent-version 1.0.0 \
+  --source json \
+  --input tests/fixtures/sample_signals.json \
+  --output-dir artifacts/agent-runs
+```
+
+运行记录中的 `invocation` 会保存目录、Agent、Skill、Recipe 的精确版本和哈希。P1 只实现自动 `before_run` 校验和 `max_steps`；`max_tool_calls`、墙钟时间、费用、人工暂停/恢复、模型选择、Tool Broker、Typed Handoff 和 Agent 间调用目前只是清单边界或后续阶段，不能宣称已动态执行。
 
 ## 离线重放与结果回填
 
@@ -246,9 +272,10 @@ Windows PowerShell：
 
 ```bash
 python -m pip install requests yfinance python-dotenv
+python -m pip install -r requirements.txt
 ```
 
-SQLite 使用 Python 标准库中的 `sqlite3`。当前仓库尚未锁定第三方依赖版本，外部行情、RSS 和模型接口的实时可用性需要在实际环境中核对。
+SQLite 使用 Python 标准库中的 `sqlite3`。`requirements.txt` 锁定 P1 Agent/Skill 清单运行时及 Schema 校验依赖；原有外部行情、RSS 和模型客户端尚未纳入同一锁文件，其实时可用性仍需在实际环境中核对。
 
 ### 2. 配置环境变量
 
@@ -327,7 +354,7 @@ python -m pip install -r requirements-test.txt
 python -m unittest discover -s tests -v
 ```
 
-`requirements-test.txt` 只用于 Schema/夹具一致性测试，不是 QuantAgent 核心运行依赖。
+`requirements-test.txt` 复用已锁定的 P1 平台运行依赖，供 Schema、清单、夹具和完整离线回归使用。
 
 现有测试覆盖：
 
@@ -343,7 +370,7 @@ python -m unittest discover -s tests -v
 - `bt` 子进程协议、时区时间、至少一根 bar 的执行延迟、成本参数、等权基线和可选真实引擎集成。
 - 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-22 在基线提交 `12407081cb882ae526180145237f32093f83dffc`、Windows、CPython 3.12.8 和 UTF-8 模式下复跑：共运行 81 个测试，其中 79 个通过、0 个失败、2 个真实依赖测试因未配置隔离解释器而跳过。P0 规范变更后共运行 86 个测试，其中 84 个通过、0 个失败、2 个跳过。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 与 `bt` 的真实集成测试只在显式提供各自隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。完整环境、跳过项和夹具哈希见 `docs/P0_BASELINE_REPORT.md`。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
+2026-09-22 在基线提交 `12407081cb882ae526180145237f32093f83dffc`、Windows、CPython 3.12.8 和 UTF-8 模式下复跑：共运行 81 个测试，其中 79 个通过、0 个失败、2 个真实依赖测试因未配置隔离解释器而跳过。P0 规范变更后共运行 86 个测试，其中 84 个通过、0 个失败、2 个跳过。P1 Agent 入口变更后的完整结果见 `docs/COMPATIBILITY_TEST_MATRIX.md`。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 与 `bt` 的真实集成测试只在显式提供各自隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。完整 P0 环境、跳过项和夹具哈希见 `docs/P0_BASELINE_REPORT.md`。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 
@@ -351,7 +378,7 @@ python -m unittest discover -s tests -v
 - 日报质量依赖数据完整性和模型输出；模型给出的置信度尚未进行历史校准。
 - 已支持显式历史价格文件的离线结果回填；自动取价、交易日口径和完整收益评估仍属于后续工作。
 - 已支持 `bt` 固定样本组合回测，但尚未验证真实行情的复权、交易日、可成交性、容量、冲击、部分成交或订单生命周期。
-- AgentManifest、SkillManifest 和研究契约目前只有 P0 规范及 Schema；加载器、Agent Runtime、Tool Broker、Typed Handoff 和 OpenStock 接口尚未实现。
+- AgentManifest、SkillManifest 加载器和单一精选 Agent 入口已实现；模型驱动选路、动态工具/费用/墙钟限制、人工暂停恢复、`thesis-tracker`、Tool Broker、Typed Handoff 和 OpenStock 接口尚未实现。
 - 第三方行情和新闻源可能出现访问限制、数据缺失或接口变化。
 - 数据库设计文档含后续规划，功能是否完成以当前源码和测试为准。
 
