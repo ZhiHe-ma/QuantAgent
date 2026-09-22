@@ -30,6 +30,25 @@
 
 CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离线 unittest。Qlib 与 `bt` 的普通 CI 使用协议 worker，不导入重型依赖；可选集成测试必须指向独立安装的 Python，并在结果包记录上游及 pandas 等精确版本。真实外部接口仍须单独报告。
 
+## P0 Agent/Skill 规范矩阵（2026-09-22）
+
+这些条目当前只有 `static` 证据，不是运行通过记录。
+
+| 测试面 | P0 产物 | 当前状态 | P1/P2 必须补的行为证据 |
+| --- | --- | --- | --- |
+| AgentManifest 结构 | Draft 2020-12 Schema、精确 ID/版本、模型能力、预算、审查和空 `callable_agents` | `jsonschema` 4.25.1 已做 Schema/示例、未知字段、版本范围和非空交接拒绝；加载器未实现 | 安全 YAML 解析、目录注册、跨引用和运行映射 |
+| SkillManifest 结构 | 来源 commit/许可证、文件哈希、契约、能力、配方和测试状态 | `jsonschema` 4.25.1 已做 Schema/结构示例和未知字段拒绝；Skill 包未移植 | 安全 YAML 解析、路径逃逸、实际哈希篡改、未知能力和许可证缺失拒绝 |
+| Agent → Skill → Recipe | 双向精确允许名单；共用现有 RecipeRunner | 规范已定义；入口未实现 | 直接 Recipe 与 Agent 入口同权限/审计，越权和契约不连续均失败关闭 |
+| 模型能力协商 | 文本、结构化输出、工具调用、上下文和离线回放分开声明 | 规范已定义；协商器未实现 | 能力不足拒绝、允许名单替换、实际模型/Prompt/费用落盘 |
+| 权限交集 | 用户、部署、Agent、Recipe/Plugin、凭据范围取交集 | 规范已定义；现有仅插件权限预检 | 未授权工具/路径/主机/凭据/费用拒绝，交接不增权 |
+| 研究契约 | request、evidence、thesis、handoff 的语义边界 | 字段语义已定义；实例 Schema 未实现 | 时间/单位/来源/缺失/Point-in-Time 正反例和血缘校验 |
+| 注入与交接 | 不可信文字不得成为工具或 handoff；首版不启用交接 | 边界已定义；Router 未实现 | 伪造工具 JSON、越权目标、循环、重复和预算增加拒绝 |
+| thesis-tracker | 首个 Skill 的输入输出与 Crypto 边界 | 目标已定义；尚未移植 | 固定夹具可重放、支持/反对证据、修订幂等、Daily/Monitor 回归 |
+
+## 本次 P0 基线复跑（2026-09-22）
+
+基线提交 `12407081cb882ae526180145237f32093f83dffc` 在 Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下运行 `python -m unittest discover -s tests -v`：共运行 81 个测试，其中 79 个通过、0 个失败、2 个跳过。P0 变更后的完整回归共运行 86 个测试，其中 84 个通过、0 个失败、2 个跳过。跳过项都是未配置专用解释器的真实 Qlib 与 bt 测试；历史真实依赖记录没有被冒充成本次复验。固定 tree、环境和夹具哈希见 `docs/P0_BASELINE_REPORT.md`。
+
 ## Qlib 本地受控验证（2026-09-21）
 
 | 平台 | 组合 | 固定样本结果 | 结论 |
@@ -46,4 +65,4 @@ CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离�
 
 该结果诚实保留负面的相对基线差异，目的只是证明适配器没有挑选“看起来赚钱”的验收样本。样本为合成价格，不验证真实复权、交易日、流动性、容量或订单成交。
 
-未覆盖：真实 DeepSeek 外部联调、在线数据源、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、MLflow、Pandera、容器隔离、多来源实盘对账、模型收益评价和实盘交易。
+未覆盖：真实 DeepSeek 外部联调、在线数据源、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、Agent/Skill Runtime、Tool Broker、Typed Handoff、OpenStock API/UI、MLflow、Pandera、容器/操作系统级隔离、多来源实盘对账、模型收益评价和实盘交易。

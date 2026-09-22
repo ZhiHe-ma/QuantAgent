@@ -45,8 +45,10 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `recipes/historical_data_health.json` | 历史数据体检套餐；数据入口可按配置替换 |
 | `recipes/offline_outcome_backfill.json` | 离线重放、结果评价及可选事务回填套餐 |
 | `recipes/offline_daily_research.json` | 日报上下文、分析模型和报告生成套餐 |
-| `docs/QUANTAGENT_*.md` | 数据、插件和配方契约 |
+| `docs/QUANTAGENT_*.md` | 数据、插件、配方及 Agent/Skill 规范；Agent/Skill 当前仅完成 P0 规范，尚无运行入口 |
+| `schemas/` | P0 AgentManifest 与 SkillManifest 的 Draft 2020-12 JSON Schema |
 | `docs/COMPATIBILITY_*.md` | 兼容声明规则和实测矩阵 |
+| `docs/P0_BASELINE_REPORT.md` | 锁定提交、环境、测试结果、跳过项和固定夹具哈希 |
 | `deploy/` | cron 与 systemd 配置参考，使用前需修改运行用户和安装路径 |
 | `10_DailyNotes/` | 运行后产生的日报、新闻池、状态与数据库；不纳入版本控制 |
 
@@ -321,8 +323,11 @@ python agent_engine.py --mode daily
 在项目根目录执行：
 
 ```bash
+python -m pip install -r requirements-test.txt
 python -m unittest discover -s tests -v
 ```
+
+`requirements-test.txt` 只用于 Schema/夹具一致性测试，不是 QuantAgent 核心运行依赖。
 
 现有测试覆盖：
 
@@ -338,7 +343,7 @@ python -m unittest discover -s tests -v
 - `bt` 子进程协议、时区时间、至少一根 bar 的执行延迟、成本参数、等权基线和可选真实引擎集成。
 - 路径越界、权限不足、未知插件及错误数据库的失败关闭。
 
-2026-09-21 在 Python 3.12 环境以 UTF-8 模式运行上述测试。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 与 `bt` 的真实集成测试只在显式提供各自隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
+2026-09-22 在基线提交 `12407081cb882ae526180145237f32093f83dffc`、Windows、CPython 3.12.8 和 UTF-8 模式下复跑：共运行 81 个测试，其中 79 个通过、0 个失败、2 个真实依赖测试因未配置隔离解释器而跳过。P0 规范变更后共运行 86 个测试，其中 84 个通过、0 个失败、2 个跳过。GitHub Actions 同时在 Windows 与 Linux 上运行完整离线测试。相关测试使用固定样本和模拟的网络与模型依赖；Qlib 与 `bt` 的真实集成测试只在显式提供各自隔离解释器时运行。测试结果说明所覆盖的程序行为通过检查，不代表任意外部项目、数据源或组合已经联调成功，也不代表模型判断具有经验证的收益表现。完整环境、跳过项和夹具哈希见 `docs/P0_BASELINE_REPORT.md`。Windows 传统 GBK 控制台无法编码现有日志中的 emoji，运行测试时应启用 UTF-8，例如 PowerShell 使用 `$env:PYTHONUTF8='1'`。
 
 ## 当前边界
 
@@ -346,6 +351,7 @@ python -m unittest discover -s tests -v
 - 日报质量依赖数据完整性和模型输出；模型给出的置信度尚未进行历史校准。
 - 已支持显式历史价格文件的离线结果回填；自动取价、交易日口径和完整收益评估仍属于后续工作。
 - 已支持 `bt` 固定样本组合回测，但尚未验证真实行情的复权、交易日、可成交性、容量、冲击、部分成交或订单生命周期。
+- AgentManifest、SkillManifest 和研究契约目前只有 P0 规范及 Schema；加载器、Agent Runtime、Tool Broker、Typed Handoff 和 OpenStock 接口尚未实现。
 - 第三方行情和新闻源可能出现访问限制、数据缺失或接口变化。
 - 数据库设计文档含后续规划，功能是否完成以当前源码和测试为准。
 

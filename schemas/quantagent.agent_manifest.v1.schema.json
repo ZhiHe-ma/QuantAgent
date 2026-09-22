@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.agent_manifest.v1.schema.json",
+  "title": "QuantAgent AgentManifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_type",
+    "agent_id",
+    "version",
+    "skills",
+    "recipes",
+    "model_policy",
+    "input_contract",
+    "output_contract",
+    "required_capabilities",
+    "review_gates",
+    "limits",
+    "callable_agents"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/version" }
+      }
+    }
+  },
+  "properties": {
+    "manifest_type": { "const": "quantagent.agent_manifest.v1" },
+    "agent_id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/version" },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "recipes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "model_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_capabilities", "allowed_models", "allow_recorded_replay", "selection"],
+      "properties": {
+        "required_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text_generation", "structured_output", "tool_calling", "min_context_tokens", "offline_replay"],
+          "properties": {
+            "text_generation": { "type": "boolean" },
+            "structured_output": { "type": "boolean" },
+            "tool_calling": { "type": "boolean" },
+            "min_context_tokens": { "type": "integer", "minimum": 1 },
+            "offline_replay": { "type": "boolean" }
+          }
+        },
+        "allowed_models": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["provider", "model"],
+            "properties": {
+              "provider": { "$ref": "#/$defs/id" },
+              "model": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "allow_recorded_replay": { "type": "boolean" },
+        "selection": { "enum": ["recorded_first", "lowest_cost_capable", "ordered_allowlist"] }
+      }
+    },
+    "input_contract": { "type": "string", "pattern": "^quantagent\\.[a-z0-9_.-]+\\.v[1-9][0-9]*$" },
+    "output_contract": { "type": "string", "pattern": "^quantagent\\.[a-z0-9_.-]+\\.v[1-9][0-9]*$" },
+    "required_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "review_gates": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate_id", "trigger", "action", "on_reject"],
+        "properties": {
+          "gate_id": { "$ref": "#/$defs/id" },
+          "trigger": { "enum": ["before_run", "before_external_write", "before_publish", "on_validation_failure"] },
+          "action": { "enum": ["automatic_validation", "human_review"] },
+          "on_reject": { "enum": ["fail", "cancel"] }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_steps", "max_tool_calls", "max_wall_seconds", "max_cost"],
+      "properties": {
+        "max_steps": { "type": "integer", "minimum": 1 },
+        "max_tool_calls": { "type": "integer", "minimum": 0 },
+        "max_wall_seconds": { "type": "integer", "minimum": 1 },
+        "max_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["amount_minor", "currency"],
+          "properties": {
+            "amount_minor": { "type": "integer", "minimum": 0 },
+            "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+          }
+        }
+      }
+    },
+    "callable_agents": {
+      "type": "array",
+      "maxItems": 0,
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "metadata": { "type": "object" }
+  }
+}
