@@ -1,0 +1,58 @@
+{
+  "manifest_type": "quantagent.agent_manifest.v1",
+  "agent_id": "research-agent",
+  "version": "1.0.0",
+  "skills": [
+    { "id": "thesis-tracker", "version": "1.0.0" }
+  ],
+  "recipes": [
+    { "id": "thesis-tracker", "version": "1.0.0" }
+  ],
+  "model_policy": {
+    "required_capabilities": {
+      "text_generation": true,
+      "structured_output": true,
+      "tool_calling": false,
+      "min_context_tokens": 16000,
+      "offline_replay": true
+    },
+    "allowed_models": [
+      { "provider": "fixture", "model": "recorded-thesis-analysis-v1" }
+    ],
+    "allow_recorded_replay": true,
+    "selection": "recorded_first"
+  },
+  "input_contract": "quantagent.research_request.v1",
+  "output_contract": "quantagent.thesis_state.v1",
+  "required_capabilities": [
+    "source.thesis_state",
+    "source.evidence_bundle",
+    "model.research_analysis",
+    "report.thesis"
+  ],
+  "review_gates": [
+    {
+      "gate_id": "validate-inputs",
+      "trigger": "before_run",
+      "action": "automatic_validation",
+      "on_reject": "fail"
+    },
+    {
+      "gate_id": "review-publication",
+      "trigger": "before_publish",
+      "action": "human_review",
+      "on_reject": "cancel"
+    }
+  ],
+  "limits": {
+    "max_steps": 4,
+    "max_tool_calls": 2,
+    "max_wall_seconds": 120,
+    "max_cost": { "amount_minor": 0, "currency": "USD" }
+  },
+  "callable_agents": [],
+  "metadata": {
+    "example_only": true,
+    "description": "P0 structural example; not registered or executable"
+  }
+}

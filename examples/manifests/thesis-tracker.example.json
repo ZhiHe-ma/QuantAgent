@@ -1,0 +1,56 @@
+{
+  "manifest_type": "quantagent.skill_manifest.v1",
+  "skill_id": "thesis-tracker",
+  "version": "1.0.0",
+  "source": {
+    "repository": "https://github.com/anthropics/financial-services",
+    "path": "plugins/vertical-plugins/equity-research/skills/thesis-tracker",
+    "commit": "574ed3624aebd0418c7e96cd101262f30210ab26",
+    "license": "Apache-2.0",
+    "notice_files": [],
+    "modified": true
+  },
+  "content": {
+    "entrypoint": "SKILL.md",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "package_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "input_contracts": [
+    "quantagent.research_request.v1",
+    "quantagent.evidence_bundle.v1",
+    "quantagent.thesis_state.v1"
+  ],
+  "output_contracts": [
+    "quantagent.thesis_state.v1",
+    "quantagent.report.v1"
+  ],
+  "required_capabilities": [
+    "source.thesis_state",
+    "source.evidence_bundle",
+    "model.research_analysis",
+    "report.thesis"
+  ],
+  "model_requirements": {
+    "structured_output": true,
+    "tool_calling": false,
+    "min_context_tokens": 16000,
+    "offline_replay": true
+  },
+  "compatible_recipes": [
+    { "id": "thesis-tracker", "version": "1.0.0" }
+  ],
+  "test_status": {
+    "state": "unverified",
+    "evidence_refs": []
+  },
+  "metadata": {
+    "example_only": true,
+    "placeholder_hashes": true,
+    "description": "P0 structural example; not an adapted Skill package"
+  }
+}

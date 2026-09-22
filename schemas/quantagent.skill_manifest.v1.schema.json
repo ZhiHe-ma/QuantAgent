@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.skill_manifest.v1.schema.json",
+  "title": "QuantAgent SkillManifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_type",
+    "skill_id",
+    "version",
+    "source",
+    "content",
+    "input_contracts",
+    "output_contracts",
+    "required_capabilities",
+    "model_requirements",
+    "compatible_recipes",
+    "test_status"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "(^/|^[A-Za-z]:|\\\\|(?:^|/)\\.\\.(?:/|$)|://)" }
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^quantagent\\.[a-z0-9_.-]+\\.v[1-9][0-9]*$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/version" }
+      }
+    }
+  },
+  "properties": {
+    "manifest_type": { "const": "quantagent.skill_manifest.v1" },
+    "skill_id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/version" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "path", "commit", "license", "notice_files", "modified"],
+      "properties": {
+        "repository": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "path": { "$ref": "#/$defs/path" },
+        "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "license": { "type": "string", "minLength": 1 },
+        "notice_files": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/path" }
+        },
+        "modified": { "type": "boolean" }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entrypoint", "files", "package_sha256"],
+      "properties": {
+        "entrypoint": { "const": "SKILL.md" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "$ref": "#/$defs/path" },
+              "sha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        },
+        "package_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "input_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/contract" }
+    },
+    "output_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/contract" }
+    },
+    "required_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "model_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structured_output", "tool_calling", "min_context_tokens", "offline_replay"],
+      "properties": {
+        "structured_output": { "type": "boolean" },
+        "tool_calling": { "type": "boolean" },
+        "min_context_tokens": { "type": "integer", "minimum": 1 },
+        "offline_replay": { "type": "boolean" }
+      }
+    },
+    "compatible_recipes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "test_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "evidence_refs"],
+      "properties": {
+        "state": { "enum": ["unverified", "static_checked", "fixture_verified", "disabled"] },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "metadata": { "type": "object" }
+  }
+}
