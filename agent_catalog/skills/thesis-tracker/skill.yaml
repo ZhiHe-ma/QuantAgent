@@ -1,0 +1,51 @@
+manifest_type: quantagent.skill_manifest.v1
+skill_id: anthropic-financial-services-adapted.thesis-tracker
+version: 1.0.0
+source:
+  repository: https://github.com/anthropics/financial-services
+  path: plugins/vertical-plugins/equity-research/skills/thesis-tracker/SKILL.md
+  commit: 574ed3624aebd0418c7e96cd101262f30210ab26
+  license: Apache-2.0
+  notice_files:
+    - THIRD_PARTY_LICENSES/anthropics-financial-services-Apache-2.0.txt
+    - agent_catalog/skills/thesis-tracker/NOTICE.md
+  modified: true
+content:
+  entrypoint: SKILL.md
+  files:
+    - path: NOTICE.md
+      sha256: 9edc11724173ed9daed2dcc705dca3c88f2489cda7b3c12f6ad6f8faea9db987
+    - path: SKILL.md
+      sha256: e6eb28ee684298838e43d2ebd7bec3d720c051c9ff388690ffe85415ef807b74
+  package_sha256: c5e6e510ecf411567a3fedd254927e1b672e86fa82c4a5b905881fa02a496c31
+input_contracts:
+  - quantagent.research_request.v1
+  - quantagent.evidence_bundle.v1
+  - quantagent.thesis_state.v1
+  - quantagent.thesis_review_input.v1
+output_contracts:
+  - quantagent.thesis_state.v1
+  - quantagent.report.v1
+required_capabilities:
+  - source.thesis_review
+  - research.thesis_update
+  - report.thesis
+model_requirements:
+  structured_output: false
+  tool_calling: false
+  min_context_tokens: 1
+  offline_replay: false
+compatible_recipes:
+  - id: thesis-tracker
+    version: 1.0.0
+test_status:
+  state: fixture_verified
+  evidence_refs:
+    - tests/test_thesis_tracker.py
+    - tests/fixtures/sample_thesis_review.json
+    - tests/fixtures/sample_thesis_review_expected.json
+metadata:
+  deterministic: true
+  execution_status: implemented
+  upstream_method_adapted: true
+  trading_authority: false

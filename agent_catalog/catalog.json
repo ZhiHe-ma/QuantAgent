@@ -7,6 +7,13 @@
       "status": "verified",
       "path": "agent_catalog/agents/data-health-agent/agent.yaml",
       "sha256": "02209efe5cc49b6761109a32984e973e73b4f917f57eb469634eb41acc1c82e3"
+    },
+    {
+      "id": "builtin.research-agent",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/agents/research-agent/agent.yaml",
+      "sha256": "afe46bccab2d0e3e09a8a477a6c193faa03b92eb9f529a855f3cc60f5a340286"
     }
   ],
   "skills": [
@@ -16,6 +23,13 @@
       "status": "verified",
       "path": "agent_catalog/skills/signal-data-health/skill.yaml",
       "sha256": "7e2724443f11c79b45e12abea699cd9af14414b1b8bb8edb21c77c6833ef2faf"
+    },
+    {
+      "id": "anthropic-financial-services-adapted.thesis-tracker",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/skills/thesis-tracker/skill.yaml",
+      "sha256": "515f6be14a7c6abb61192fbe7cce6618577f7112f07cbf92ad1cf3ea877319fc"
     }
   ],
   "recipes": [
@@ -25,6 +39,13 @@
       "status": "verified",
       "path": "recipes/historical_data_health.json",
       "sha256": "38b6b1875e7c1a9e9c29f275bccc04553270a068924074a8978994e947b13d07"
+    },
+    {
+      "id": "thesis-tracker",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "recipes/thesis_tracker.json",
+      "sha256": "2e9601c91b4b56f1645ca719b744101507ba027163a7055a77ffae08e8a775b2"
     }
   ]
 }

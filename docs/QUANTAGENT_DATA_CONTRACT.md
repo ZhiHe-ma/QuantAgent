@@ -53,7 +53,7 @@
 
 证据正文和第三方材料始终视为不可信数据。即使通过结构校验，也不能直接成为路径、SQL、Shell 参数、网络目标、插件 ID、Agent 目标或权限声明。
 
-## 预留研究契约（P0 已定义，运行器尚未实现）
+## P2 已实现的研究契约
 
 ### `quantagent.research_request.v1`
 
@@ -73,6 +73,12 @@
 ### `quantagent.thesis_state.v1`
 
 每条观点状态至少包含 `thesis_id`、标的、版本、`as_of`、核心观点、支持与反对证据引用、失效条件、观察项、上一个版本引用和修订原因。研究建议与实际交易动作分离；该契约不携带下单授权。
+
+P2 还使用 `quantagent.thesis_review_input.v1` 数据包封装同一次离线运行的 request、previous thesis 和 evidence bundle。源文件固定为 `quantagent.thesis_review_fixture.v1`；三个嵌套对象分别校验，引用哈希必须与对象 canonical JSON 一致。证据内容哈希覆盖 `excerpt` 与 `structured_facts`，观点状态只保留证据索引和哈希，并明确记录这一信息损失。
+
+P2 的充分性规则是可审计的最低门槛：至少一个支持证据、一个反对证据和两个不同 `origin_ref`。它只表示夹具具备双向证据结构，不代表来源真实、相互独立或结论正确。`human_reviewed` 与 `action_eligible` 不从该规则推导。
+
+## 预留研究契约
 
 ### `quantagent.handoff_request.v1`（P5 才实现执行）
 

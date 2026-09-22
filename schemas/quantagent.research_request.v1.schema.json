@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.research_request.v1.schema.json",
+  "title": "QuantAgent Research Request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_type",
+    "request_id",
+    "requested_at",
+    "as_of",
+    "subject",
+    "objective",
+    "agent_ref",
+    "skill_ref",
+    "recipe_ref",
+    "requested_capabilities",
+    "input_refs",
+    "budget",
+    "review_required",
+    "idempotency_key"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/version" }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset_type", "symbol", "venue", "base_asset", "quote_asset"],
+      "properties": {
+        "asset_type": { "enum": ["cryptoasset", "equity", "fund", "index"] },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "venue": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "base_asset": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "quote_asset": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" }
+      }
+    }
+  },
+  "properties": {
+    "contract_type": { "const": "quantagent.research_request.v1" },
+    "request_id": { "$ref": "#/$defs/id" },
+    "requested_at": { "type": "string", "format": "date-time" },
+    "as_of": { "type": "string", "format": "date-time" },
+    "subject": { "$ref": "#/$defs/subject" },
+    "objective": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "agent_ref": { "$ref": "#/$defs/reference" },
+    "skill_ref": { "$ref": "#/$defs/reference" },
+    "recipe_ref": { "$ref": "#/$defs/reference" },
+    "requested_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "input_refs": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["purpose", "contract_version", "content_sha256"],
+        "properties": {
+          "purpose": { "enum": ["previous_thesis_state", "evidence_bundle"] },
+          "contract_version": {
+            "enum": ["quantagent.thesis_state.v1", "quantagent.evidence_bundle.v1"]
+          },
+          "content_sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_steps", "max_wall_seconds", "max_cost"],
+      "properties": {
+        "max_steps": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "max_wall_seconds": { "type": "integer", "minimum": 1, "maximum": 600 },
+        "max_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["amount_minor", "currency"],
+          "properties": {
+            "amount_minor": { "type": "integer", "minimum": 0 },
+            "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+          }
+        }
+      }
+    },
+    "review_required": { "type": "boolean" },
+    "idempotency_key": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{16,128}$" }
+  }
+}

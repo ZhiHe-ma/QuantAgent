@@ -61,8 +61,7 @@ class AgentRuntimeTests(unittest.TestCase):
 
     def copy_catalog(self) -> tuple[Path, Path]:
         shutil.copytree(ROOT / "agent_catalog", self.root / "agent_catalog")
-        (self.root / "recipes").mkdir()
-        shutil.copy2(RECIPE_PATH, self.root / "recipes" / RECIPE_PATH.name)
+        shutil.copytree(ROOT / "recipes", self.root / "recipes")
         return self.root / "agent_catalog" / "catalog.json", self.root
 
     @staticmethod
@@ -181,8 +180,7 @@ class AgentRuntimeTests(unittest.TestCase):
     def copy_catalog_again(self) -> tuple[Path, Path]:
         second_root = self.root / "second"
         shutil.copytree(ROOT / "agent_catalog", second_root / "agent_catalog")
-        (second_root / "recipes").mkdir()
-        shutil.copy2(RECIPE_PATH, second_root / "recipes" / RECIPE_PATH.name)
+        shutil.copytree(ROOT / "recipes", second_root / "recipes")
         return second_root / "agent_catalog" / "catalog.json", second_root
 
     def test_extra_agent_capability_and_experimental_status_fail_closed(self):

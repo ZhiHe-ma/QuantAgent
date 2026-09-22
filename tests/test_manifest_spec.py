@@ -19,6 +19,12 @@ SCHEMA_PATHS = (
     SCHEMA_DIR / "quantagent.agent_manifest.v1.schema.json",
     SCHEMA_DIR / "quantagent.skill_manifest.v1.schema.json",
 )
+RESEARCH_SCHEMA_PATHS = (
+    SCHEMA_DIR / "quantagent.research_request.v1.schema.json",
+    SCHEMA_DIR / "quantagent.evidence_bundle.v1.schema.json",
+    SCHEMA_DIR / "quantagent.thesis_state.v1.schema.json",
+)
+ALL_SCHEMA_PATHS = SCHEMA_PATHS + RESEARCH_SCHEMA_PATHS
 DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"
 EXAMPLES = {
     SCHEMA_PATHS[0]: ROOT / "examples" / "manifests" / "research-agent.example.json",
@@ -42,7 +48,7 @@ def walk(value: Any):
 
 class ManifestSpecTests(unittest.TestCase):
     def test_schemas_are_parseable_strict_draft_2020_12_documents(self):
-        for path in SCHEMA_PATHS:
+        for path in ALL_SCHEMA_PATHS:
             schema = load_schema(path)
             self.assertEqual(schema["$schema"], DRAFT_2020_12)
             self.assertEqual(schema["type"], "object")
@@ -51,7 +57,7 @@ class ManifestSpecTests(unittest.TestCase):
             self.assertTrue(schema["$id"].endswith(path.name))
 
     def test_local_references_resolve_and_patterns_compile(self):
-        for path in SCHEMA_PATHS:
+        for path in ALL_SCHEMA_PATHS:
             schema = load_schema(path)
             definitions = schema.get("$defs", {})
             for node in walk(schema):
@@ -65,7 +71,7 @@ class ManifestSpecTests(unittest.TestCase):
                     re.compile(pattern)
 
     def test_control_objects_reject_unknown_fields(self):
-        for path in SCHEMA_PATHS:
+        for path in ALL_SCHEMA_PATHS:
             schema = load_schema(path)
             for node in walk(schema):
                 if not isinstance(node, dict) or "properties" not in node:
@@ -111,9 +117,10 @@ class ManifestSpecTests(unittest.TestCase):
             with self.subTest(unsafe_path=unsafe_path), self.assertRaises(ValidationError):
                 Draft202012Validator(skill_schema).validate(unsafe)
 
-    def test_spec_reports_p1_runtime_and_remaining_boundaries(self):
+    def test_spec_reports_p2_thesis_runtime_and_remaining_boundaries(self):
         spec = (ROOT / "docs" / "QUANTAGENT_AGENT_SKILL_SPEC.md").read_text(encoding="utf-8")
-        self.assertIn("P1 最小运行入口已实现", spec)
+        self.assertIn("P2 观点跟踪闭环已实现", spec)
+        self.assertIn("anthropic-financial-services-adapted.thesis-tracker", spec)
         self.assertIn("max_wall_seconds", spec)
         self.assertIn("尚未动态计量", spec)
         self.assertIn("quantagent.agent_manifest.v1.schema.json", spec)

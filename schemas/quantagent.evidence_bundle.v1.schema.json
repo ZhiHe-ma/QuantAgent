@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.evidence_bundle.v1.schema.json",
+  "title": "QuantAgent Evidence Bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_type", "bundle_id", "subject", "as_of", "evidence"],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset_type", "symbol", "venue", "base_asset", "quote_asset"],
+      "properties": {
+        "asset_type": { "enum": ["cryptoasset", "equity", "fund", "index"] },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "venue": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "base_asset": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" },
+        "quote_asset": { "type": "string", "pattern": "^[A-Z0-9._-]{1,32}$" }
+      }
+    }
+  },
+  "properties": {
+    "contract_type": { "const": "quantagent.evidence_bundle.v1" },
+    "bundle_id": { "$ref": "#/$defs/id" },
+    "subject": { "$ref": "#/$defs/subject" },
+    "as_of": { "type": "string", "format": "date-time" },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "claim_refs",
+          "stance",
+          "impact",
+          "source",
+          "event_at",
+          "published_at",
+          "collected_at",
+          "available_at",
+          "content_sha256",
+          "excerpt",
+          "structured_facts",
+          "access_scope",
+          "untrusted",
+          "missing_reasons"
+        ],
+        "properties": {
+          "evidence_id": { "$ref": "#/$defs/id" },
+          "claim_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          },
+          "stance": { "enum": ["support", "oppose", "context"] },
+          "impact": { "enum": ["strengthen", "weaken", "invalidate", "context"] },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "source_type", "title", "uri", "origin_ref"],
+            "properties": {
+              "source_id": { "$ref": "#/$defs/id" },
+              "source_type": {
+                "enum": ["synthetic_fixture", "user_provided", "licensed_dataset", "public_reference"]
+              },
+              "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "uri": { "type": ["string", "null"], "format": "uri" },
+              "origin_ref": { "type": "string", "minLength": 1, "maxLength": 500 }
+            }
+          },
+          "event_at": { "type": ["string", "null"], "format": "date-time" },
+          "published_at": { "type": "string", "format": "date-time" },
+          "collected_at": { "type": "string", "format": "date-time" },
+          "available_at": { "type": "string", "format": "date-time" },
+          "content_sha256": { "$ref": "#/$defs/sha256" },
+          "excerpt": { "type": "string", "minLength": 1, "maxLength": 5000 },
+          "structured_facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["field", "value", "unit", "observed_at"],
+              "properties": {
+                "field": { "$ref": "#/$defs/id" },
+                "value": { "type": ["string", "number", "boolean", "null"] },
+                "unit": { "type": ["string", "null"], "maxLength": 64 },
+                "observed_at": { "type": ["string", "null"], "format": "date-time" }
+              }
+            }
+          },
+          "access_scope": { "enum": ["fixture_only", "internal", "public_reference"] },
+          "untrusted": { "const": true },
+          "missing_reasons": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    }
+  }
+}
