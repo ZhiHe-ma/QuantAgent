@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -91,6 +93,17 @@ def build_parser() -> argparse.ArgumentParser:
     run_agent = subparsers.add_parser("run-agent", help="run an allow-listed Agent through RecipeRunner")
     _add_agent_selection_arguments(run_agent)
     _add_execution_arguments(run_agent)
+
+    serve = subparsers.add_parser(
+        "serve-results",
+        help="serve authenticated read-only run summaries and Markdown reports",
+    )
+    serve.add_argument("--run-root", required=True)
+    serve.add_argument("--subject", default="local-owner")
+    serve.add_argument("--token-env", default="QUANTAGENT_API_BEARER_TOKEN")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--allow-non-loopback", action="store_true")
     return parser
 
 
@@ -127,6 +140,54 @@ def _execution_values(
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.command == "serve-results":
+        if not 1 <= args.port <= 65535:
+            print("Command failed: port must be between 1 and 65535", file=sys.stderr)
+            return 2
+        loopback = args.host == "localhost"
+        if not loopback:
+            try:
+                loopback = ipaddress.ip_address(args.host).is_loopback
+            except ValueError:
+                loopback = False
+        if not loopback and not args.allow_non_loopback:
+            print(
+                "Command failed: non-loopback serving requires --allow-non-loopback",
+                file=sys.stderr,
+            )
+            return 2
+        token = os.environ.get(args.token_env, "")
+        if not token:
+            print(
+                f"Command failed: bearer token environment variable is not set: {args.token_env}",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            import uvicorn
+
+            from .result_api import ApiConfig, create_app
+
+            app = create_app(
+                ApiConfig(
+                    run_root=Path(args.run_root),
+                    owner_subject=args.subject,
+                    bearer_token=token,
+                )
+            )
+        except (ImportError, ValueError) as exc:
+            print(f"Command failed: {exc}", file=sys.stderr)
+            return 2
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            access_log=False,
+            reload=False,
+        )
+        return 0
+
     registry = default_registry()
     runner = RecipeRunner(registry)
 

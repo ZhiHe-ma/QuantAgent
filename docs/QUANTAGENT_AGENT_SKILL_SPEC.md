@@ -1,6 +1,6 @@
 # QuantAgent Agent/Skill Spec v1
 
-状态：P0 规范冻结，P1 最小入口与 P2 观点跟踪闭环已实现。当前仓库可加载精选目录中的确定性 Agent/Skill 并复用现有 RecipeRunner；这不等于模型驱动 Agent、任意 Skill 安装或多 Agent 协作已实现。
+状态：P0 规范冻结，P1 最小入口与 P2 观点跟踪闭环已实现；P3a 已增加只读运行摘要和报告 API。当前仓库可加载精选目录中的确定性 Agent/Skill 并复用现有 RecipeRunner；结果 API 不改变 Agent 执行权限，也不等于模型驱动 Agent、任意 Skill 安装或多 Agent 协作已实现。
 
 ## 1. 职责
 
@@ -90,3 +90,5 @@ P1 已实现严格安全 YAML、Draft 2020-12 Schema、目录 SHA-256、Skill �
 P2 观点跟踪闭环已实现：`builtin.research-agent@1.0.0` 只能选择 `anthropic-financial-services-adapted.thesis-tracker@1.0.0` 和 `thesis-tracker@1.0.0`。Skill 固定上游 commit 和 Apache-2.0 许可证，包含明显修改声明；Crypto 适配移除了企业、持仓、目标价和交易动作字段。
 
 P2 使用研究请求、证据包和观点状态的严格 Schema 与语义校验；验证标的、时区、Point-in-Time、对象/内容哈希、claim 引用、状态一致性和权限请求。Reader 只读显式夹具，Analyst 无文件/网络权限，Writer 只写当前运行目录。报告只显示证据引用和哈希，不渲染原始不可信摘录。相同证据重放保持观点版本不变；研究建议始终 `research_only_*`，`action_eligible` 固定为 false。
+
+P3a 在运行器外增加单用户只读服务，只从已存在的运行目录派生脱敏摘要并校验 Markdown 报告。它没有提交、取消、恢复或重跑入口，不能借读取接口提升 Agent、Skill、Recipe 或插件权限；OpenStock 消费页面和写入型任务 API 仍未实现。

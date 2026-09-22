@@ -36,6 +36,8 @@
 | Agent 入口 | research Agent → adapted thesis-tracker Skill → thesis-tracker Recipe | 固定版本和 SHA-256；Reader/Analyst/Writer 最小权限；无模型、网络、交易权限或 Agent 间调用 |
 | Agent 安全边界 | 不安全 YAML、目录/Skill 篡改、未知版本/Recipe/能力/绑定、非 verified 状态 | 创建运行目录前失败关闭 |
 | 研究契约安全边界 | 未来信息、内容篡改、标的不一致、未知字段、额外能力、伪造派生状态、证据 ID 冲突 | 严格失败关闭；prompt-like 证据文本保持为数据，不能改绑定或权限 |
+| 只读 API | 既有运行包 → 脱敏摘要/Markdown 报告 | `quantagent.read_api.run_summary.v1` Schema、Bearer、ETag、重复 GET 无写入；不创建或重跑任务 |
+| API 安全边界 | 无/错 token、非法运行 ID、跨 subject、路径/符号链接、包或报告篡改 | 401/403/404/409 失败关闭；存储目录被忽略并重新锚定；公共错误不暴露 token、本地路径、原始证据或错误消息 |
 
 CI 在 `ubuntu-latest` 和 `windows-latest` 的 Python 3.12 上运行完整离线 unittest。Qlib 与 `bt` 的普通 CI 使用协议 worker，不导入重型依赖；可选集成测试必须指向独立安装的 Python，并在结果包记录上游及 pandas 等精确版本。真实外部接口仍须单独报告。
 
@@ -66,6 +68,10 @@ Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 96 个测试：94 �
 
 Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 106 个测试：104 个通过、0 个失败、2 个跳过。P2 新增 10 个行为测试，覆盖 Golden Fixture 精确哈希、重复运行确定性、证据重复应用幂等、Point-in-Time 截止、内容篡改、标的不一致、未知字段、证据 ID 冲突、伪造旧状态、额外能力、显式失效条件、Agent 精确身份、三角色最小权限、不可信文本隔离和第三方来源/许可证追溯。全量回归同时重跑原有 Daily、Monitor、P0/P1、Qlib 和 bt 协议测试。两个跳过项仍是未配置专用解释器的真实 Qlib 与 bt 集成测试，未被并入通过数。
 
+## P3a 只读结果 API 本地回归（2026-09-22）
+
+Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 113 个测试：111 个通过、0 个失败、2 个跳过。P3a 新增 7 个行为测试，使用真实 P2 夹具生成运行包，覆盖健康端点脱敏、Bearer 认证、摘要 Schema、内部路径/证据隐藏、Markdown 哈希与 ETag、重复刷新无写入、非法运行 ID、跨 subject、失败运行安全摘要、包/报告篡改拒绝和 CLI loopback/token 闸门。两个跳过项仍是未配置专用解释器的真实 Qlib 与 bt 集成测试；OpenStock 和任何任务写接口未参与验证。
+
 ## Qlib 本地受控验证（2026-09-21）
 
 | 平台 | 组合 | 固定样本结果 | 结论 |
@@ -82,4 +88,4 @@ Windows 11、CPython 3.12.8、`PYTHONUTF8=1` 下完整运行 106 个测试：104
 
 该结果诚实保留负面的相对基线差异，目的只是证明适配器没有挑选“看起来赚钱”的验收样本。样本为合成价格，不验证真实复权、交易日、流动性、容量或订单成交。
 
-未覆盖：真实 DeepSeek 外部联调、在线数据源、真实 thesis 数据适配与来源质量判断、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、模型驱动 Agent、动态工具调用/墙钟/费用限制、人工暂停恢复、Tool Broker、Typed Handoff、OpenStock API/UI、MLflow、Pandera、容器/操作系统级隔离、多来源实盘对账、模型收益评价和实盘交易。
+未覆盖：真实 DeepSeek 外部联调、在线数据源、真实 thesis 数据适配与来源质量判断、Qlib 供应商数据、Qlib 模型训练、真实行情回测语义、模型驱动 Agent、动态工具调用/墙钟/费用限制、人工暂停恢复、Tool Broker、Typed Handoff、OpenStock UI 与任务提交/取消 API、多用户身份/TLS/速率限制、MLflow、Pandera、容器/操作系统级隔离、多来源实盘对账、模型收益评价和实盘交易。

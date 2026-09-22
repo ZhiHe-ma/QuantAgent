@@ -1,2 +1,5 @@
-# P1 currently uses the same locked packages for runtime and tests.
+# Runtime lock plus HTTP client dependencies used by FastAPI TestClient.
 -r requirements.txt
+httpcore2==2.13.0
+httpx2==2.13.0
+truststore==0.10.4

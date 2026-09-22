@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.read_api.run_summary.v1.schema.json",
+  "title": "QuantAgent Read API Run Summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_type",
+    "run_id",
+    "recipe",
+    "status",
+    "started_at",
+    "completed_at",
+    "offline",
+    "selection",
+    "steps",
+    "final",
+    "failure_type",
+    "links"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "properties": {
+    "contract_type": { "const": "quantagent.read_api.run_summary.v1" },
+    "run_id": { "$ref": "#/$defs/id" },
+    "recipe": { "$ref": "#/$defs/ref" },
+    "status": { "enum": ["running", "failed", "completed"] },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" },
+    "offline": { "type": "boolean" },
+    "selection": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "agent", "skill", "recipe"],
+          "properties": {
+            "type": { "const": "agent" },
+            "agent": { "$ref": "#/$defs/ref" },
+            "skill": { "$ref": "#/$defs/ref" },
+            "recipe": { "$ref": "#/$defs/ref" }
+          }
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "plugin_id",
+          "plugin_version",
+          "capability",
+          "output_contract",
+          "output_sha256",
+          "status"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "plugin_id": { "type": "string", "minLength": 1 },
+          "plugin_version": { "type": "string", "minLength": 1 },
+          "capability": { "type": "string", "minLength": 1 },
+          "output_contract": { "type": "string", "minLength": 1 },
+          "output_sha256": { "$ref": "#/$defs/sha256" },
+          "status": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "final": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contract", "content_sha256"],
+          "properties": {
+            "contract": { "type": "string", "minLength": 1 },
+            "content_sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      ]
+    },
+    "failure_type": { "type": ["string", "null"] },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report"],
+      "properties": {
+        "report": { "type": ["string", "null"], "pattern": "^/api/v1/runs/" }
+      }
+    }
+  }
+}
