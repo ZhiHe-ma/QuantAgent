@@ -1,0 +1,30 @@
+{
+  "catalog_version": "1.0.0",
+  "agents": [
+    {
+      "id": "builtin.data-health-research-agent",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/agents/data-health-agent/agent.yaml",
+      "sha256": "02209efe5cc49b6761109a32984e973e73b4f917f57eb469634eb41acc1c82e3"
+    }
+  ],
+  "skills": [
+    {
+      "id": "builtin.signal-data-health",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/skills/signal-data-health/skill.yaml",
+      "sha256": "7e2724443f11c79b45e12abea699cd9af14414b1b8bb8edb21c77c6833ef2faf"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "historical-data-health",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "recipes/historical_data_health.json",
+      "sha256": "38b6b1875e7c1a9e9c29f275bccc04553270a068924074a8978994e947b13d07"
+    }
+  ]
+}

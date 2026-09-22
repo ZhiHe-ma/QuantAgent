@@ -1,0 +1,41 @@
+manifest_type: quantagent.skill_manifest.v1
+skill_id: builtin.signal-data-health
+version: 1.0.0
+source:
+  repository: https://github.com/ZhiHe-ma/QuantAgent
+  path: docs/QUANTAGENT_AGENT_SKILL_SPEC.md
+  commit: 31511061d399a6b8f863f43201447e609d40e84b
+  license: MIT
+  notice_files: []
+  modified: true
+content:
+  entrypoint: SKILL.md
+  files:
+    - path: SKILL.md
+      sha256: dd82272998a2aae8a9e1eadfd0347d25e26094fdef06576bf8fd9b410717850d
+  package_sha256: 50fe66dca7295b74cf575930d28f6ff7c3d3701f81cd99db47c82d7df4c1fcb4
+input_contracts:
+  - quantagent.research_request.v1
+  - quantagent.signal_history.v1
+output_contracts:
+  - quantagent.data_quality.v1
+  - quantagent.report.v1
+required_capabilities:
+  - source.signal_history
+  - quality.signal_history
+  - report.data_quality
+model_requirements:
+  structured_output: false
+  tool_calling: false
+  min_context_tokens: 1
+  offline_replay: false
+compatible_recipes:
+  - id: historical-data-health
+    version: 1.0.0
+test_status:
+  state: fixture_verified
+  evidence_refs:
+    - tests/test_agent_runtime.py
+metadata:
+  deterministic: true
+  execution_status: implemented

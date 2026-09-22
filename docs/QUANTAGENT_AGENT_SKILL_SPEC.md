@@ -1,6 +1,6 @@
 # QuantAgent Agent/Skill Spec v1
 
-状态：P0 规范冻结。本文定义首版机器清单、授权边界和兼容语义；当前仓库尚未实现清单加载器或 Agent Runtime，不能因文件存在而声称 Agent/Skill 已可运行。
+状态：P0 规范冻结，P1 最小运行入口已实现。当前仓库可加载精选目录中的一个确定性数据体检 Agent/Skill，并复用现有 RecipeRunner；这不等于模型驱动 Agent、任意 Skill 安装或多 Agent 已实现。
 
 ## 1. 职责
 
@@ -81,8 +81,10 @@
 
 研究结果至少区分：结构有效、证据充分、人工已审、可用于动作。首版研究 Agent 没有交易能力，任何仓位或买卖文字都只是研究建议。
 
-## 7. 首个受控用例
+## 7. 受控用例与阶段状态
 
-首批目标 Skill 是 `thesis-tracker@1.0.0`：读取旧观点和新证据，输出支持/反对证据、观点修订、失效条件与缺口。Crypto 适配必须移除不适用的企业字段，并将增仓/减仓降为研究建议。
+P1 先接入 `builtin.data-health-research-agent@1.0.0` 和 `builtin.signal-data-health@1.0.0`，映射到现有 `historical-data-health@1.0.0`。该入口不调用模型、不联网、不交接，只验证精选目录、精确版本、清单/内容哈希、契约、能力、权限和三步顺序配方；Agent 入口的身份与哈希写入同一个 `run.json`。
 
-进入 P1 的条件：Schema 和示例可机器校验；未知字段、版本范围、未知能力、非空 `callable_agents` 和越权配方均有拒绝用例；Agent 入口与直接 Recipe 入口共用同一权限、运行器和审计。进入 P2 前还必须有离线 Skill 包、许可证记录和固定夹具。
+P1 已实现严格安全 YAML、Draft 2020-12 Schema、目录 SHA-256、Skill 包哈希、精确 Agent → Skill → Recipe 引用、`verified` 状态、能力等值校验、现有插件权限预检、自动 `before_run` gate 和 `max_steps`。清单中的 `max_tool_calls`、`max_wall_seconds` 和费用只被记录，尚未动态计量；人工 gate 会被拒绝而不是暂停。
+
+P2 目标 Skill 仍是 `thesis-tracker@1.0.0`：读取旧观点和新证据，输出支持/反对证据、观点修订、失效条件与缺口。Crypto 适配必须移除不适用的企业字段，并将增仓/减仓降为研究建议。进入 P2 前还必须有该 Skill 的离线包、许可证记录、固定 Golden Fixtures，以及研究契约的机器 Schema 和正反例。
