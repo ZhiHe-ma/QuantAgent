@@ -6,7 +6,7 @@ P3a 提供一个本地、单用户、只读的 HTTP 边界，让后续 Web 页�
 
 ## 启动
 
-服务要求一个已存在且不是符号链接的运行根目录，以及至少 32 个字符的 Bearer token。token 只从指定环境变量读取：
+服务要求一个已存在且不是符号链接或 Windows junction 的运行根目录，以及至少 32 个字符的 Bearer token。token 只从指定环境变量读取：
 
 ```powershell
 $env:QUANTAGENT_API_BEARER_TOKEN = 'replace-with-at-least-32-random-characters'
