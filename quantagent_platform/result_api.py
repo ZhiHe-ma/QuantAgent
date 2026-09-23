@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import re
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -414,12 +415,23 @@ class ApiConfig:
 def create_app(config: ApiConfig, submission: SubmissionConfig | None = None) -> FastAPI:
     store = ResultStore(config.run_root, owner_subject=config.owner_subject)
     security = HTTPBearer(auto_error=False)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        try:
+            yield
+        finally:
+            worker = getattr(app.state, "local_task_worker", None)
+            if worker is not None:
+                worker.shutdown()
+
     app = FastAPI(
         title="QuantAgent Read API",
         version="1.0.0",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
+        lifespan=lifespan,
     )
 
     def authenticate(
@@ -446,7 +458,7 @@ def create_app(config: ApiConfig, submission: SubmissionConfig | None = None) ->
         return {
             "status": "ok",
             "mode": "controlled_local_submit" if submission is not None else "read_only",
-            "api_version": "v1",
+            "api_version": "v2" if submission is not None else "v1",
         }
 
     @app.get("/api/v1/runs/{run_id}", response_model=RunSummary)
@@ -484,7 +496,9 @@ def create_app(config: ApiConfig, submission: SubmissionConfig | None = None) ->
 
     if submission is not None:
         from .submission_api import install_submission_route
+        from .task_lifecycle_api import install_task_lifecycle_routes
 
         install_submission_route(app, config, store, authenticate, submission)
+        install_task_lifecycle_routes(app, config, store, authenticate, submission)
 
     return app

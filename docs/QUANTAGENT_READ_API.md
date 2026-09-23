@@ -2,6 +2,8 @@
 
 P3a 提供一个本地、单用户、只读的 HTTP 边界，让后续 Web 页面先展示 QuantAgent 已经完成的运行和 Markdown 报告。它不提交、取消或重跑任务，不接入 OpenStock，也不改变 `RecipeRunner` 的执行授权。
 
+本页只描述保留的 P3a v1 只读端点；后续显式启用的本机任务状态与取消入口位于独立的 [`/api/v2/runs` 契约](QUANTAGENT_TASK_LIFECYCLE_API.md)，不会改变本页的摘要 Schema。
+
 ## 启动
 
 服务要求一个已存在且不是符号链接或 Windows junction 的运行根目录，以及至少 32 个字符的 Bearer token。token 只从指定环境变量读取：

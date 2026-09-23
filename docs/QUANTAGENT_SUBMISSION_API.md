@@ -2,6 +2,8 @@
 
 此入口是**显式启用的本机、单用户、离线 thesis 样本提交**，不是任意研究任务网关。原有 `serve-results` 仍然只读。只有 `serve-research` 会增加 `POST /api/v1/runs`；其余 GET 读取和报告完整性校验沿用 P3a。
 
+本页描述保留的同步 v1 入口。`serve-research` 后续增加的异步状态与协作取消入口使用独立的 `/api/v2/runs` 路径；见 [`QUANTAGENT_TASK_LIFECYCLE_API.md`](QUANTAGENT_TASK_LIFECYCLE_API.md)。两版幂等键分属不同命名空间，不能把同一个逻辑请求同时提交到两版。
+
 ## 启动与输入登记
 
 先创建运行目录，选择一份满足 `quantagent.thesis_review_fixture.v1` 的本地 JSON 夹具，并由服务操作者登记它。客户端只能引用登记名，不能传路径或插件/Agent 选择。
