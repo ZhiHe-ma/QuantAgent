@@ -6,7 +6,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse
@@ -14,6 +14,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict
 
 from .contracts import ContractError, DataPacket, parse_aware_timestamp, sha256_json
+
+if TYPE_CHECKING:
+    from .submission_api import SubmissionConfig
 
 
 RUN_SUMMARY_CONTRACT = "quantagent.read_api.run_summary.v1"
@@ -407,7 +410,7 @@ class ApiConfig:
             raise ValueError("bearer_token cannot be whitespace")
 
 
-def create_app(config: ApiConfig) -> FastAPI:
+def create_app(config: ApiConfig, submission: SubmissionConfig | None = None) -> FastAPI:
     store = ResultStore(config.run_root, owner_subject=config.owner_subject)
     security = HTTPBearer(auto_error=False)
     app = FastAPI(
@@ -439,7 +442,11 @@ def create_app(config: ApiConfig) -> FastAPI:
 
     @app.get("/healthz")
     def health() -> dict[str, str]:
-        return {"status": "ok", "mode": "read_only", "api_version": "v1"}
+        return {
+            "status": "ok",
+            "mode": "controlled_local_submit" if submission is not None else "read_only",
+            "api_version": "v1",
+        }
 
     @app.get("/api/v1/runs/{run_id}", response_model=RunSummary)
     def get_run(
@@ -473,5 +480,10 @@ def create_app(config: ApiConfig) -> FastAPI:
             media_type="text/markdown; charset=utf-8",
             headers=headers,
         )
+
+    if submission is not None:
+        from .submission_api import install_submission_route
+
+        install_submission_route(app, config, store, authenticate, submission)
 
     return app

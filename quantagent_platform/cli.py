@@ -37,6 +37,15 @@ def _key_value(value: str) -> tuple[str, object]:
     return key, parsed
 
 
+def _fixture_reference(value: str) -> tuple[str, str]:
+    if "=" not in value:
+        raise argparse.ArgumentTypeError("expected FIXTURE_ID=PATH")
+    fixture_id, path = value.split("=", 1)
+    if not fixture_id or not path:
+        raise argparse.ArgumentTypeError("expected FIXTURE_ID=PATH")
+    return fixture_id, path
+
+
 def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--source", choices=sorted(SOURCE_BINDINGS), required=True)
     parser.add_argument("--input", required=True, dest="input_path")
@@ -104,6 +113,17 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8765)
     serve.add_argument("--allow-non-loopback", action="store_true")
+
+    submit = subparsers.add_parser(
+        "serve-research",
+        help="serve read results and explicit local-only thesis fixture submission",
+    )
+    submit.add_argument("--run-root", required=True)
+    submit.add_argument("--subject", default="local-owner")
+    submit.add_argument("--token-env", default="QUANTAGENT_API_BEARER_TOKEN")
+    submit.add_argument("--host", default="127.0.0.1")
+    submit.add_argument("--port", type=int, default=8765)
+    submit.add_argument("--fixture", action="append", type=_fixture_reference, required=True)
     return parser
 
 
@@ -141,17 +161,22 @@ def _execution_values(
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    if args.command == "serve-results":
+    if args.command in {"serve-results", "serve-research"}:
         if not 1 <= args.port <= 65535:
             print("Command failed: port must be between 1 and 65535", file=sys.stderr)
             return 2
-        loopback = args.host == "localhost"
-        if not loopback:
-            try:
-                loopback = ipaddress.ip_address(args.host).is_loopback
-            except ValueError:
-                loopback = False
-        if not loopback and not args.allow_non_loopback:
+        try:
+            literal_loopback = ipaddress.ip_address(args.host).is_loopback
+        except ValueError:
+            literal_loopback = False
+        loopback = literal_loopback or args.host == "localhost"
+        if args.command == "serve-research" and not literal_loopback:
+            print(
+                "Command failed: submission serving requires a literal loopback IP host",
+                file=sys.stderr,
+            )
+            return 2
+        if args.command == "serve-results" and not loopback and not args.allow_non_loopback:
             print(
                 "Command failed: non-loopback serving requires --allow-non-loopback",
                 file=sys.stderr,
@@ -169,14 +194,24 @@ def main(argv: list[str] | None = None) -> int:
 
             from .result_api import ApiConfig, create_app
 
+            submission = None
+            if args.command == "serve-research":
+                from .submission_api import SubmissionConfig
+
+                fixtures = dict(args.fixture)
+                if len(fixtures) != len(args.fixture):
+                    raise ValueError("fixture ids must be unique")
+                submission = SubmissionConfig(fixtures=fixtures)
+
             app = create_app(
                 ApiConfig(
                     run_root=Path(args.run_root),
                     owner_subject=args.subject,
                     bearer_token=token,
-                )
+                ),
+                submission=submission,
             )
-        except (ImportError, ValueError) as exc:
+        except (ImportError, ValueError, RecipeError) as exc:
             print(f"Command failed: {exc}", file=sys.stderr)
             return 2
         uvicorn.run(

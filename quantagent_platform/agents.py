@@ -284,6 +284,7 @@ class AgentRuntime:
         allowed_permissions: set[str] | None = None,
         offline: bool = True,
         run_id: str | None = None,
+        submission_context: dict[str, Any] | None = None,
     ) -> RunResult:
         plan = self.resolve(
             agent_id=agent_id,
@@ -296,6 +297,9 @@ class AgentRuntime:
             allowed_permissions=allowed_permissions,
             offline=offline,
         )
+        invocation = plan.audit_context()
+        if submission_context is not None:
+            invocation["submission"] = dict(submission_context)
         return self.runner.run(
             plan.recipe,
             params=params,
@@ -306,5 +310,5 @@ class AgentRuntime:
             allowed_permissions=allowed_permissions,
             offline=offline,
             run_id=run_id,
-            invocation=plan.audit_context(),
+            invocation=invocation,
         )
