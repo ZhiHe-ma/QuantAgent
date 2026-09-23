@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -160,6 +161,56 @@ class SubmissionApiTests(unittest.TestCase):
                 submission=SubmissionConfig({"internal": internal_fixture}),
             )
         self.assertEqual(sorted(self.run_root.iterdir()), [internal_fixture])
+
+    def test_symlink_run_root_is_rejected_before_submission(self):
+        target = self.root / "other-runs"
+        target.mkdir()
+        linked_root = self.root / "linked-runs"
+        try:
+            linked_root.symlink_to(target, target_is_directory=True)
+        except OSError as exc:
+            if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+                self.skipTest("Windows symlink creation requires Developer Mode or privilege")
+            raise
+        try:
+            for submission in (None, SubmissionConfig({"thesis": self.fixture_path})):
+                with self.subTest(submission=submission is not None):
+                    with self.assertRaisesRegex(ValueError, "run_root must be an existing non-link"):
+                        create_app(ApiConfig(linked_root, SUBJECT, TOKEN), submission=submission)
+            self.assertEqual(list(target.iterdir()), [])
+        finally:
+            linked_root.unlink()
+
+    @unittest.skipUnless(os.name == "nt", "junctions are Windows-only")
+    def test_junction_run_root_is_rejected_before_submission(self):
+        target = self.root / "other-runs"
+        target.mkdir()
+        linked_root = self.root / "linked-runs"
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(linked_root), str(target)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        try:
+            self.assertTrue(linked_root.is_junction())
+            with self.assertRaisesRegex(ValueError, "run_root must be an existing non-link"):
+                create_app(
+                    ApiConfig(linked_root, SUBJECT, TOKEN),
+                    submission=SubmissionConfig({"thesis": self.fixture_path}),
+                )
+            with patch.dict(os.environ, {"QUANTAGENT_API_BEARER_TOKEN": TOKEN}):
+                with patch("uvicorn.run") as serve, redirect_stderr(StringIO()) as stderr:
+                    code = cli_main([
+                        "serve-research", "--run-root", str(linked_root),
+                        "--fixture", f"thesis={self.fixture_path}",
+                    ])
+            self.assertEqual(code, 2)
+            self.assertIn("run_root must be an existing non-link", stderr.getvalue())
+            serve.assert_not_called()
+            self.assertEqual(list(target.iterdir()), [])
+        finally:
+            linked_root.rmdir()
 
     def test_concurrent_same_key_executes_at_most_once(self):
         with ThreadPoolExecutor(max_workers=4) as pool:
