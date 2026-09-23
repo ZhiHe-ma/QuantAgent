@@ -216,9 +216,10 @@ class ResultStore:
     """Read one subject's immutable run artifacts without trusting stored paths."""
 
     def __init__(self, run_root: str | Path, *, owner_subject: str):
-        root = Path(run_root).expanduser().resolve()
-        if not root.is_dir() or root.is_symlink():
-            raise ValueError("run_root must be an existing non-symlink directory")
+        configured_root = Path(run_root).expanduser()
+        if configured_root.is_symlink() or configured_root.is_junction() or not configured_root.is_dir():
+            raise ValueError("run_root must be an existing non-link directory")
+        root = configured_root.resolve()
         if not isinstance(owner_subject, str) or not owner_subject.strip():
             raise ValueError("owner_subject must be a non-empty string")
         self.root = root
