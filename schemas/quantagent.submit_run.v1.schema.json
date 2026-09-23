@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.submit_run.v1.schema.json",
+  "title": "QuantAgent Controlled Run Submission v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_type", "fixture_id", "fixture_sha256", "request_id"],
+  "properties": {
+    "contract_type": { "const": "quantagent.submit_run.v1" },
+    "fixture_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "fixture_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }
+  }
+}

@@ -6,7 +6,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse
@@ -14,6 +14,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict
 
 from .contracts import ContractError, DataPacket, parse_aware_timestamp, sha256_json
+
+if TYPE_CHECKING:
+    from .submission_api import SubmissionConfig
 
 
 RUN_SUMMARY_CONTRACT = "quantagent.read_api.run_summary.v1"
@@ -213,9 +216,10 @@ class ResultStore:
     """Read one subject's immutable run artifacts without trusting stored paths."""
 
     def __init__(self, run_root: str | Path, *, owner_subject: str):
-        root = Path(run_root).expanduser().resolve()
-        if not root.is_dir() or root.is_symlink():
-            raise ValueError("run_root must be an existing non-symlink directory")
+        configured_root = Path(run_root).expanduser()
+        if configured_root.is_symlink() or configured_root.is_junction() or not configured_root.is_dir():
+            raise ValueError("run_root must be an existing non-link directory")
+        root = configured_root.resolve()
         if not isinstance(owner_subject, str) or not owner_subject.strip():
             raise ValueError("owner_subject must be a non-empty string")
         self.root = root
@@ -407,7 +411,7 @@ class ApiConfig:
             raise ValueError("bearer_token cannot be whitespace")
 
 
-def create_app(config: ApiConfig) -> FastAPI:
+def create_app(config: ApiConfig, submission: SubmissionConfig | None = None) -> FastAPI:
     store = ResultStore(config.run_root, owner_subject=config.owner_subject)
     security = HTTPBearer(auto_error=False)
     app = FastAPI(
@@ -439,7 +443,11 @@ def create_app(config: ApiConfig) -> FastAPI:
 
     @app.get("/healthz")
     def health() -> dict[str, str]:
-        return {"status": "ok", "mode": "read_only", "api_version": "v1"}
+        return {
+            "status": "ok",
+            "mode": "controlled_local_submit" if submission is not None else "read_only",
+            "api_version": "v1",
+        }
 
     @app.get("/api/v1/runs/{run_id}", response_model=RunSummary)
     def get_run(
@@ -473,5 +481,10 @@ def create_app(config: ApiConfig) -> FastAPI:
             media_type="text/markdown; charset=utf-8",
             headers=headers,
         )
+
+    if submission is not None:
+        from .submission_api import install_submission_route
+
+        install_submission_route(app, config, store, authenticate, submission)
 
     return app
