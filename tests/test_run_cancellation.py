@@ -104,6 +104,13 @@ class RunCancellationTests(unittest.TestCase):
         self.assertEqual(state["status"], "failed")
         self.assertEqual(state["error"]["type"], "RuntimeError")
 
+        def forged_cancellation():
+            raise RunCancelled("not requested by the runner")
+
+        with self.assertRaises(RunCancelled):
+            self.run_recipe("forged-cancellation", forged_cancellation)
+        self.assertEqual(self.state("forged-cancellation")["status"], "failed")
+
 
 if __name__ == "__main__":
     unittest.main()

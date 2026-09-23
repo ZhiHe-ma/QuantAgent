@@ -254,9 +254,11 @@ class RecipeRunner:
         state_path = run_dir / "run.json"
         _atomic_json_write(state_path, state)
         packet: DataPacket | None = None
+        cancel_requested = False
         try:
             for index, (step, plugin) in enumerate(resolved, start=1):
                 if cancel_check is not None and cancel_check():
+                    cancel_requested = True
                     raise RunCancelled(f"run cancelled before step {step['id']}")
                 manifest = plugin.manifest
                 config = self._resolve_value(step.get("config", {}), params)
@@ -285,7 +287,7 @@ class RecipeRunner:
                 state["steps"].append(step_result)
                 _atomic_json_write(state_path, state)
         except Exception as exc:
-            state["status"] = "cancelled" if isinstance(exc, RunCancelled) else "failed"
+            state["status"] = "cancelled" if cancel_requested else "failed"
             state["completed_at"] = utc_now()
             state["error"] = {"type": type(exc).__name__, "message": str(exc)}
             _atomic_json_write(state_path, state)
