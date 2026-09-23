@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .manifests import AgentCatalog, CatalogEntry, LoadedManifest, ManifestError
 from .runner import RecipeError, RecipeRunner, RunResult
@@ -285,6 +285,7 @@ class AgentRuntime:
         offline: bool = True,
         run_id: str | None = None,
         submission_context: dict[str, Any] | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> RunResult:
         plan = self.resolve(
             agent_id=agent_id,
@@ -311,4 +312,5 @@ class AgentRuntime:
             offline=offline,
             run_id=run_id,
             invocation=invocation,
+            cancel_check=cancel_check,
         )

@@ -65,3 +65,5 @@ P2 的 `thesis-tracker` 固定为 Reader → Analyst → Writer 三步。输入�
 - 每一步保存精确实现版本、配置摘要、输入/输出包哈希、开始/结束时间、状态和错误。
 - 有副作用动作使用幂等键；重复请求返回已有状态或明确冲突，不重复执行。
 - `paused_for_review`、`cancelled`、`failed` 和 `completed` 分开记录。恢复必须从已验证检查点开始，不能只依赖模型对上次状态的叙述。
+
+当前运行器已支持由可信调用方传入 `cancel_check` 回调，在**每一步开始前**协作检查。命中后抛出 `RunCancelled`，将 `run.json` 记录为 `cancelled`，保留此前已完成步骤的包和审计；原 `run_id` 不能再次执行。无效回调在创建运行目录前被拒绝，回调异常则记为 `failed`。这不是插件内部的强制中断，不能撤销已发生的副作用，也未实现 HTTP 取消、持久队列或重启恢复。P3a 的 `quantagent.read_api.run_summary.v1` 仍不接受 `cancelled` 状态；对外展示需设计版本化的新读契约，不能悄悄扩展 v1 枚举。

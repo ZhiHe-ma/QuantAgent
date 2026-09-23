@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .bt_plugins import BtPortfolioBacktest, MarkdownBacktestReport
 from .builtin_plugins import JsonSignalSource, MarkdownQualityReport, SignalDataQuality, SqliteSignalSource
@@ -35,6 +35,10 @@ from .research_plugins import (
 
 class RecipeError(RuntimeError):
     """A recipe or its selected plugin combination failed validation or execution."""
+
+
+class RunCancelled(RecipeError):
+    """A cooperative cancellation request stopped a run between recipe steps."""
 
 
 @dataclass(frozen=True)
@@ -199,8 +203,11 @@ class RecipeRunner:
         offline: bool = True,
         run_id: str | None = None,
         invocation: dict[str, Any] | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> RunResult:
         self.validate_recipe(recipe)
+        if cancel_check is not None and not callable(cancel_check):
+            raise RecipeError("cancel_check must be callable")
         if invocation is not None:
             if not isinstance(invocation, dict):
                 raise RecipeError("invocation audit context must be an object")
@@ -247,8 +254,12 @@ class RecipeRunner:
         state_path = run_dir / "run.json"
         _atomic_json_write(state_path, state)
         packet: DataPacket | None = None
+        cancel_requested = False
         try:
             for index, (step, plugin) in enumerate(resolved, start=1):
+                if cancel_check is not None and cancel_check():
+                    cancel_requested = True
+                    raise RunCancelled(f"run cancelled before step {step['id']}")
                 manifest = plugin.manifest
                 config = self._resolve_value(step.get("config", {}), params)
                 started_at = utc_now()
@@ -276,7 +287,7 @@ class RecipeRunner:
                 state["steps"].append(step_result)
                 _atomic_json_write(state_path, state)
         except Exception as exc:
-            state["status"] = "failed"
+            state["status"] = "cancelled" if cancel_requested else "failed"
             state["completed_at"] = utc_now()
             state["error"] = {"type": type(exc).__name__, "message": str(exc)}
             _atomic_json_write(state_path, state)
