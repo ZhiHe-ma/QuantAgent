@@ -3,7 +3,7 @@
 from .agents import AgentError, AgentRuntime, ResolvedAgentPlan
 from .contracts import ContractError, DataPacket
 from .manifests import AgentCatalog, ManifestError
-from .runner import RecipeError, RecipeRunner, RunResult, default_registry
+from .runner import RecipeError, RecipeRunner, RunCancelled, RunResult, default_registry
 
 __all__ = [
     "AgentCatalog",
@@ -14,6 +14,7 @@ __all__ = [
     "ManifestError",
     "RecipeError",
     "RecipeRunner",
+    "RunCancelled",
     "ResolvedAgentPlan",
     "RunResult",
     "default_registry",
