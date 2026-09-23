@@ -6,10 +6,11 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from contextlib import redirect_stderr
 from io import StringIO
 from pathlib import Path
+from threading import Event
 from unittest.mock import patch
 
 
@@ -20,6 +21,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 from jsonschema import Draft202012Validator  # noqa: E402
 
 from quantagent_platform.cli import main as cli_main  # noqa: E402
+import quantagent_platform.runner as runner_module  # noqa: E402
+import quantagent_platform.submission_api as submission_module  # noqa: E402
 from quantagent_platform.result_api import ApiConfig, create_app  # noqa: E402
 from quantagent_platform.submission_api import SubmissionConfig, _run_id  # noqa: E402
 
@@ -223,6 +226,89 @@ class SubmissionApiTests(unittest.TestCase):
         self.assertEqual(sorted(response.status_code for response in responses), [200, 200, 200, 201])
         self.assertEqual(len({response.json()["run_id"] for response in responses}), 1)
         self.assertEqual(len(list(self.run_root.iterdir())), 1)
+
+    def test_same_key_waits_while_first_run_has_no_state_file(self):
+        first_state_write = Event()
+        release_first = Event()
+        second_parsed = Event()
+        original_write = runner_module._atomic_json_write
+        original_parse = submission_module._request_value
+
+        def pause_initial_state(path, value):
+            if path.name == "run.json" and value.get("status") == "running":
+                first_state_write.set()
+                if not release_first.wait(10):
+                    raise AssertionError("timed out waiting to release the first run")
+            return original_write(path, value)
+
+        async def observe_second_request(request):
+            value = await original_parse(request)
+            if first_state_write.is_set():
+                second_parsed.set()
+            return value
+
+        with patch.object(runner_module, "_atomic_json_write", side_effect=pause_initial_state):
+            with patch.object(submission_module, "_request_value", side_effect=observe_second_request):
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    first = pool.submit(self.client.post, "/api/v1/runs", json=self.body, headers=self.headers)
+                    try:
+                        self.assertTrue(first_state_write.wait(5))
+                        second = pool.submit(
+                            self.client.post, "/api/v1/runs", json=self.body, headers=self.headers
+                        )
+                        self.assertTrue(second_parsed.wait(5))
+                        try:
+                            early = second.result(timeout=0.5)
+                        except FutureTimeout:
+                            early = None
+                        self.assertIsNone(
+                            early,
+                            f"same-key duplicate returned before the first run completed: {early}",
+                        )
+                    finally:
+                        release_first.set()
+                    first_response = first.result(timeout=10)
+                    second_response = second.result(timeout=10)
+
+        self.assertEqual(first_response.status_code, 201, first_response.text)
+        self.assertEqual(second_response.status_code, 200, second_response.text)
+        self.assertEqual(first_response.json(), second_response.json())
+        self.assertEqual(len(list(self.run_root.iterdir())), 1)
+
+    def test_completed_retry_does_not_wait_for_unrelated_run(self):
+        completed = self.client.post("/api/v1/runs", json=self.body, headers=self.headers)
+        self.assertEqual(completed.status_code, 201)
+        new_headers = {**self.headers, "Idempotency-Key": "another-fixture-request-001"}
+        first_state_write = Event()
+        release_first = Event()
+        original_write = runner_module._atomic_json_write
+
+        def pause_new_run(path, value):
+            if path.name == "run.json" and value.get("status") == "running":
+                first_state_write.set()
+                if not release_first.wait(10):
+                    raise AssertionError("timed out waiting to release the new run")
+            return original_write(path, value)
+
+        with patch.object(runner_module, "_atomic_json_write", side_effect=pause_new_run):
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                new_run = pool.submit(
+                    self.client.post, "/api/v1/runs", json=self.body, headers=new_headers
+                )
+                try:
+                    self.assertTrue(first_state_write.wait(5))
+                    retry = pool.submit(
+                        self.client.post, "/api/v1/runs", json=self.body, headers=self.headers
+                    )
+                    try:
+                        repeated = retry.result(timeout=1)
+                    except FutureTimeout:
+                        self.fail("completed-run retry waited for an unrelated new run")
+                    self.assertEqual(repeated.status_code, 200, repeated.text)
+                    self.assertEqual(repeated.json(), completed.json())
+                finally:
+                    release_first.set()
+                self.assertEqual(new_run.result(timeout=10).status_code, 201)
 
     def test_cli_requires_literal_loopback_and_registered_input(self):
         stderr = StringIO()

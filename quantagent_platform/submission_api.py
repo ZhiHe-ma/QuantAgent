@@ -193,17 +193,31 @@ def install_submission_route(
     )
     run_lock = Lock()
 
-    def execute(source: RegisteredFixture, **kwargs: Any) -> None:
+    def execute(
+        source: RegisteredFixture, request_sha256: str, request_id: str, **kwargs: Any
+    ) -> tuple[int, RunSummary]:
+        run_id = kwargs["run_id"]
         with run_lock:
+            if (store.root / run_id).exists() or (store.root / run_id).is_symlink():
+                return existing(run_id, request_sha256)
             try:
                 content = _read_bounded(source.path, _MAX_FIXTURE_BYTES)
+                if hashlib.sha256(content).hexdigest() != source.sha256:
+                    raise FixtureChanged()
+                validated = validate_review_fixture(_decode_fixture(content))
+                if validated["research_request"]["request_id"] != request_id:
+                    raise InvalidSubmission()
             except ArtifactIntegrityError as exc:
                 raise FixtureChanged() from exc
-            if hashlib.sha256(content).hexdigest() != source.sha256:
-                raise FixtureChanged()
-            runtime.run(**kwargs)
+            except (ContractError, ValueError) as exc:
+                raise FixtureChanged() from exc
+            try:
+                runtime.run(**kwargs)
+            except FileExistsError:
+                return existing(run_id, request_sha256)
+            return 201, store.summary(run_id, requester_subject=api_config.owner_subject)
 
-    def existing(run_id: str, request_sha256: str) -> tuple[int, Any]:
+    def existing(run_id: str, request_sha256: str) -> tuple[int, RunSummary]:
         run_dir = store.root / run_id
         state_path = run_dir / "run.json"
         if run_dir.is_symlink() or state_path.is_symlink():
@@ -232,22 +246,21 @@ def install_submission_route(
             raise InvalidSubmission()
         request_sha256 = sha256_json(body.model_dump(mode="json"))
         run_id = _run_id(subject, idempotency_key)
+        completed = None
         if (store.root / run_id).exists() or (store.root / run_id).is_symlink():
-            status, summary = existing(run_id, request_sha256)
+            try:
+                completed = existing(run_id, request_sha256)
+            except SubmissionPending:
+                pass
+        if completed is not None and completed[1].status != "running":
+            status, summary = completed
         else:
             try:
-                content = _read_bounded(fixture.path, _MAX_FIXTURE_BYTES)
-                if hashlib.sha256(content).hexdigest() != fixture.sha256:
-                    raise FixtureChanged()
-                validated = validate_review_fixture(_decode_fixture(content))
-                if validated["research_request"]["request_id"] != body.request_id:
-                    raise InvalidSubmission()
-            except (ArtifactIntegrityError, ContractError, ValueError) as exc:
-                raise FixtureChanged() from exc
-            try:
-                await run_in_threadpool(
+                status, summary = await run_in_threadpool(
                     execute,
                     fixture,
+                    request_sha256,
+                    body.request_id,
                     **_SELECTION,
                     params={"source_path": str(fixture.path), "report_title": "QuantAgent thesis review"},
                     output_dir=store.root,
@@ -263,13 +276,8 @@ def install_submission_route(
                         "fixture_sha256": fixture.sha256,
                     },
                 )
-            except FileExistsError:
-                status, summary = existing(run_id, request_sha256)
             except (AgentError, RecipeError) as exc:
                 raise ExecutionFailed() from exc
-            else:
-                status = 201
-                summary = store.summary(run_id, requester_subject=subject)
         response.status_code = status
         response.headers["Cache-Control"] = "private, no-store"
         response.headers["Location"] = f"/api/v1/runs/{run_id}"
