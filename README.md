@@ -48,10 +48,11 @@ Daily 本身不负责 RSS 新闻采集。首次直接运行 Daily 时，新闻�
 | `recipes/offline_outcome_backfill.json` | 离线重放、结果评价及可选事务回填套餐 |
 | `recipes/offline_daily_research.json` | 日报上下文、分析模型和报告生成套餐 |
 | `recipes/thesis_tracker.json` | 旧观点、离线证据、确定性状态修订和观点报告套餐 |
-| `docs/QUANTAGENT_*.md` | 数据、插件、配方、Agent/Skill 和只读结果 API 规范 |
-| `schemas/` | Agent/Skill 清单、P2 研究对象及 P3a 运行摘要的 Draft 2020-12 Schema |
+| `docs/QUANTAGENT_*.md` | 数据、插件、配方、Agent/Skill 和受控服务 API 规范 |
+| `schemas/` | Agent/Skill、P2 研究对象、运行摘要与任务状态的 Draft 2020-12 Schema |
 | `docs/QUANTAGENT_READ_API.md` | P3a 本地只读 API 的端点、认证、完整性检查和部署边界 |
 | `docs/QUANTAGENT_SUBMISSION_API.md` | P3c 首步：显式启用的本机离线样本提交、幂等和未实现边界 |
+| `docs/QUANTAGENT_TASK_LIFECYCLE_API.md` | P3e 本机异步状态与协作取消；重启后不自动恢复 |
 | `docs/COMPATIBILITY_*.md` | 兼容声明规则和实测矩阵 |
 | `docs/P0_BASELINE_REPORT.md` | 锁定提交、环境、测试结果、跳过项和固定夹具哈希 |
 | `deploy/` | cron 与 systemd 配置参考，使用前需修改运行用户和安装路径 |
@@ -164,6 +165,8 @@ python -m quantagent_platform serve-results `
 授权请求可读取 `GET /api/v1/runs/{run_id}` 和 `GET /api/v1/runs/{run_id}/report`。刷新或重复 GET 不会修改运行目录、创建新任务或调用模型；报告响应会重新校验运行状态、最终数据包与 Markdown 文件哈希。详细契约和错误语义见 `docs/QUANTAGENT_READ_API.md`。
 
 需要验证第一条写路径时，可改用 `serve-research` 显式登记本机 thesis 样本，并通过有幂等键的 `POST /api/v1/runs` 运行固定的离线研究 Agent。它不接受浏览器提供的路径或任意能力，也不是长任务队列或多用户 API；启动、契约和限制见 `docs/QUANTAGENT_SUBMISSION_API.md`。
+
+同一 `serve-research` 服务还提供 `POST /api/v2/runs`、版本化状态查询和协作取消。它使用单进程有界工作线程，重启后不会自动重跑未完成任务；细节和限制见 `docs/QUANTAGENT_TASK_LIFECYCLE_API.md`。
 
 ## 离线重放与结果回填
 
