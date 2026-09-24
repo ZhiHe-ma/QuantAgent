@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.agent_handoff.v1.schema.json",
+  "title": "QuantAgent fixed SEC Agent handoff v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version", "handoff_id", "idempotency_key", "coordinator_id",
+    "parent_run_id", "parent", "source_pins", "bundle", "task_type", "target",
+    "created_at", "expires_at", "deadline_at", "depth",
+    "remaining_handoff_calls", "remaining_wall_seconds", "model_cost_minor",
+    "model_currency", "effective_permissions", "policy_version",
+    "policy_sha256"
+  ],
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"},
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "version": {"$ref": "#/$defs/version"}
+      }
+    },
+    "pinned_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "manifest_sha256"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "version": {"$ref": "#/$defs/version"},
+        "manifest_sha256": {"$ref": "#/$defs/hash"}
+      }
+    }
+  },
+  "properties": {
+    "contract_version": {"const": "quantagent.agent_handoff.v1"},
+    "handoff_id": {"$ref": "#/$defs/hash"},
+    "idempotency_key": {"type": "string", "minLength": 1, "maxLength": 128},
+    "coordinator_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "parent_run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "parent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "skill", "recipe", "step_id"],
+      "properties": {
+        "agent": {"$ref": "#/$defs/pinned_reference"},
+        "skill": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "manifest_sha256", "package_sha256"],
+          "properties": {
+            "id": {"$ref": "#/$defs/id"},
+            "version": {"$ref": "#/$defs/version"},
+            "manifest_sha256": {"$ref": "#/$defs/hash"},
+            "package_sha256": {"$ref": "#/$defs/hash"}
+          }
+        },
+        "recipe": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "sha256"],
+          "properties": {
+            "id": {"$ref": "#/$defs/id"},
+            "version": {"$ref": "#/$defs/version"},
+            "sha256": {"$ref": "#/$defs/hash"}
+          }
+        },
+        "step_id": {"const": "prepare-sec-evidence"}
+      }
+    },
+    "source_pins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approved_source_id", "run_id", "recipe", "source_plugin",
+        "packet_sha256", "report_sha256", "raw_sha256", "registry_sha256"
+      ],
+      "properties": {
+        "approved_source_id": {"$ref": "#/$defs/id"},
+        "run_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+        "recipe": {"$ref": "#/$defs/reference"},
+        "source_plugin": {"$ref": "#/$defs/reference"},
+        "packet_sha256": {"$ref": "#/$defs/hash"},
+        "report_sha256": {"$ref": "#/$defs/hash"},
+        "registry_sha256": {"$ref": "#/$defs/hash"},
+        "raw_sha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sec-mara-submissions.json", "sec-mara-companyfacts.json",
+            "sec-riot-submissions.json", "sec-riot-companyfacts.json"
+          ],
+          "properties": {
+            "sec-mara-submissions.json": {"$ref": "#/$defs/hash"},
+            "sec-mara-companyfacts.json": {"$ref": "#/$defs/hash"},
+            "sec-riot-submissions.json": {"$ref": "#/$defs/hash"},
+            "sec-riot-companyfacts.json": {"$ref": "#/$defs/hash"}
+          }
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "records_sha256", "file_sha256"],
+      "properties": {
+        "contract": {"const": "quantagent.sec_evidence_bundle.v1"},
+        "records_sha256": {"$ref": "#/$defs/hash"},
+        "file_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "task_type": {"const": "sec.review_fy2025_mara_riot.v1"},
+    "target": {"$ref": "#/$defs/reference"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "deadline_at": {"type": "string", "format": "date-time"},
+    "depth": {"const": 1},
+    "remaining_handoff_calls": {"const": 1},
+    "remaining_wall_seconds": {"type": "integer", "minimum": 1, "maximum": 120},
+    "model_cost_minor": {"const": 0},
+    "model_currency": {"const": "USD"},
+    "effective_permissions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["filesystem:read", "filesystem:write"]}
+    },
+    "policy_version": {"const": "quantagent.p5_sec_route.v1"},
+    "policy_sha256": {"$ref": "#/$defs/hash"}
+  }
+}
