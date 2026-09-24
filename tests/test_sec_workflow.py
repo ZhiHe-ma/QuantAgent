@@ -4,11 +4,18 @@ import json
 import os
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from fastapi.testclient import TestClient
+from jsonschema import Draft202012Validator, FormatChecker
+
+from quantagent_platform.cli import build_parser, main as cli_main
 from quantagent_platform.contracts import DataPacket
 from quantagent_platform.plugins import PluginError
+from quantagent_platform.result_api import ApiConfig, create_app
 from quantagent_platform.runner import RecipeError, RecipeRunner, default_registry
 from quantagent_platform.sec_contracts import SEC_FACTS_CONTRACT, normalize_sample
 from tests.test_sec_contracts import ISSUERS, make_payloads, make_responses
@@ -164,6 +171,88 @@ class SecWorkflowTests(unittest.TestCase):
         for path in result.run_dir.iterdir():
             if path.is_file():
                 self.assertNotIn(CONTACT.encode(), path.read_bytes())
+
+    def test_cli_source_input_rules_and_live_preflight(self):
+        args = build_parser().parse_args([
+            "run", str(RECIPE_PATH), "--source", "sec-edgar",
+            "--online", "--allow-permission", "network:https",
+        ])
+        self.assertIsNone(args.input_path)
+        cases = (
+            (["--source", "json"], "--input is required"),
+            (["--source", "sqlite"], "--input is required"),
+            (["--source", "sec-replay"], "--input is required"),
+            (["--source", "sec-edgar", "--input", str(self.packet_path)],
+             "does not accept --input"),
+            (["--source", "sec-edgar", "--allow-permission", "network:https"],
+             "network access in offline mode"),
+            (["--source", "sec-edgar", "--online"], "denied permissions"),
+        )
+        for flags, expected in cases:
+            with self.subTest(flags=flags):
+                error = StringIO()
+                with redirect_stderr(error):
+                    code = cli_main(["run", str(RECIPE_PATH), *flags,
+                                     "--output-dir", str(self.runs)])
+                self.assertEqual(code, 2)
+                self.assertIn(expected, error.getvalue())
+                self.assertFalse(self.runs.exists())
+
+        out = StringIO()
+        with redirect_stdout(out):
+            code = cli_main(["validate-recipe", str(RECIPE_PATH),
+                             "--source", "sec-edgar", "--online",
+                             "--allow-permission", "network:https"])
+        self.assertEqual(code, 0)
+        self.assertIn("validation passed", out.getvalue().lower())
+
+    def test_cli_replay_report_is_authenticated_integrity_checked_and_read_only(self):
+        out, error = StringIO(), StringIO()
+        with patch.dict(os.environ, {"SEC_USER_AGENT": CONTACT}):
+            with redirect_stdout(out), redirect_stderr(error):
+                code = cli_main([
+                    "run", str(RECIPE_PATH), "--source", "sec-replay",
+                    "--input", str(self.packet_path), "--output-dir", str(self.runs),
+                ])
+        self.assertEqual(code, 0, error.getvalue())
+        run_id = json.loads(out.getvalue())["run_id"]
+        run_dir = self.runs / run_id
+        token = "p4-test-token-with-at-least-thirty-two-characters"
+        client = TestClient(create_app(ApiConfig(run_root=self.runs,
+                                                owner_subject="fixture-owner",
+                                                bearer_token=token)))
+        headers = {"Authorization": f"Bearer {token}"}
+        snapshot = {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in run_dir.iterdir() if path.is_file()}
+        try:
+            self.assertEqual(client.get(f"/api/v1/runs/{run_id}").status_code, 401)
+            summary = client.get(f"/api/v1/runs/{run_id}", headers=headers)
+            self.assertEqual(summary.status_code, 200)
+            schema = json.loads((ROOT / "schemas" /
+                                 "quantagent.read_api.run_summary.v1.schema.json")
+                                .read_text(encoding="utf-8"))
+            Draft202012Validator(schema, format_checker=FormatChecker()).validate(
+                summary.json())
+            self.assertEqual(summary.json()["status"], "completed")
+            report = client.get(f"/api/v1/runs/{run_id}/report", headers=headers)
+            self.assertEqual(report.status_code, 200)
+            self.assertIn("## Sector overview", report.text)
+            digest = hashlib.sha256(report.content).hexdigest()
+            self.assertEqual(report.headers["etag"], f'"{digest}"')
+            self.assertEqual(client.get(f"/api/v1/runs/{run_id}/report",
+                                        headers={**headers,
+                                                 "If-None-Match": report.headers["etag"]})
+                             .status_code, 304)
+            self.assertEqual(snapshot, {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                                        for path in run_dir.iterdir() if path.is_file()})
+            (run_dir / "sec_industry_peers.md").write_bytes(report.content + b"tampered")
+            self.assertEqual(client.get(f"/api/v1/runs/{run_id}/report",
+                                        headers=headers).status_code, 409)
+            self.assertNotIn(CONTACT, summary.text + report.text + error.getvalue())
+            self.assertTrue(all(CONTACT.encode() not in path.read_bytes()
+                                for path in run_dir.iterdir() if path.is_file()))
+        finally:
+            client.close()
 
 
 if __name__ == "__main__":

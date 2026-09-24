@@ -18,6 +18,8 @@ SOURCE_BINDINGS = {
     "json": ("source.signal_history", "builtin.json-signal-source"),
     "qlib-csv": ("research.factor", "builtin.qlib-factor-research"),
     "replay": ("source.signal_history", "builtin.packet-replay-source"),
+    "sec-edgar": ("source.sec_company_facts", "builtin.sec-edgar-source"),
+    "sec-replay": ("source.sec_company_facts", "builtin.sec-replay-source"),
     "sqlite": ("source.signal_history", "builtin.sqlite-signal-source"),
     "thesis-json": ("source.thesis_review", "builtin.json-thesis-review-source"),
 }
@@ -48,7 +50,7 @@ def _fixture_reference(value: str) -> tuple[str, str]:
 
 def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--source", choices=sorted(SOURCE_BINDINGS), required=True)
-    parser.add_argument("--input", required=True, dest="input_path")
+    parser.add_argument("--input", dest="input_path")
     parser.add_argument("--output-dir", default="artifacts/runs")
     parser.add_argument("--allow-read-root", action="append", default=[])
     parser.add_argument("--allow-write-root", action="append", default=[])
@@ -85,6 +87,8 @@ def build_parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate-recipe", help="validate recipe structure and plugin compatibility")
     validate.add_argument("recipe")
     validate.add_argument("--source", choices=sorted(SOURCE_BINDINGS), default="sqlite")
+    validate.add_argument("--allow-permission", action="append", default=[])
+    validate.add_argument("--online", action="store_true")
 
     validate_agent = subparsers.add_parser(
         "validate-agent", help="validate an exact Agent/Skill/Recipe selection"
@@ -140,14 +144,21 @@ def _selection_kwargs(args: argparse.Namespace) -> dict[str, str | None]:
 
 def _execution_values(
     args: argparse.Namespace,
-) -> tuple[Path, list[Path], list[Path], dict[str, object], dict[str, str], set[str]]:
-    input_path = Path(args.input_path).expanduser().resolve()
+) -> tuple[Path | None, list[Path], list[Path], dict[str, object], dict[str, str], set[str]]:
+    if args.source == "sec-edgar":
+        if args.input_path:
+            raise RecipeError("sec-edgar does not accept --input")
+        input_path = None
+    else:
+        if not args.input_path:
+            raise RecipeError(f"--input is required for --source {args.source}")
+        input_path = Path(args.input_path).expanduser().resolve()
     roots = [Path(value).expanduser().resolve() for value in args.allow_read_root]
-    if not roots:
+    if not roots and input_path is not None:
         roots = [input_path.parent]
     write_roots = [Path(value).expanduser().resolve() for value in args.allow_write_root]
     params: dict[str, object] = {
-        "source_path": str(input_path),
+        "source_path": str(input_path) if input_path is not None else "",
         "report_title": args.title,
     }
     params.update(dict(args.param))
@@ -267,8 +278,8 @@ def main(argv: list[str] | None = None) -> int:
             runner._preflight(
                 recipe,
                 {source_capability: source_plugin},
-                {"filesystem:read", "filesystem:write", "process:spawn"},
-                offline=True,
+                {"filesystem:read", "filesystem:write", "process:spawn", *args.allow_permission},
+                offline=not args.online,
             )
             print("Recipe validation passed")
             return 0

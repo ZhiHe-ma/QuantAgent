@@ -39,6 +39,23 @@ Invoke-WebRequest http://127.0.0.1:8765/api/v1/runs/<run-id>/report -Headers $he
 
 `run_id` 只定位资源，不承担认证。重复请求和浏览器刷新不会创建运行、写文件、调用模型或增加研究版本。
 
+## P4 SEC 行业与同行样本
+
+P4 的 `sec-industry-peers` 配方把 MARA 与 Riot 的 FY2025 SEC 申报筛选为一份行业样本概览和同行比较报告。实时来源仅访问四个固定的 SEC JSON 地址；先在进程环境设置含项目联系人的 `SEC_USER_AGENT`，不要把其值写进命令历史、仓库或报告。下面的 `artifacts/` 目录已由仓库忽略；保存其中的 SEC 响应和运行包时，应限制本机访问。
+
+```powershell
+$live = python -m quantagent_platform run recipes/sec_industry_peers.json `
+  --source sec-edgar --online --allow-permission network:https `
+  --output-dir artifacts/sec-runs | ConvertFrom-Json
+
+$packet = Join-Path $live.run_dir '01-load-sec-facts.json'
+$replay = python -m quantagent_platform run recipes/sec_industry_peers.json `
+  --source sec-replay --input $packet --output-dir artifacts/sec-runs |
+  ConvertFrom-Json
+```
+
+用同一个 `artifacts/sec-runs` 作为 `serve-results --run-root`，然后以 `$live.run_id` 或 `$replay.run_id` 请求本页的两个已有端点。实时运行必须显式传 `--online` 和 `network:https`；离线重放不请求网络。报告里的 `as_of` 是本次 SEC 响应全部取回后的时间，不是历史时点快照。两家公司样本和不齐全的指标会在报告中标明；专用 OpenStock 页面后接。
+
 ## 访问与完整性规则
 
 - P3a 的 subject 由服务配置固定，所有有效 token 请求都映射到该 subject；这只是单用户部署边界，不是多租户身份系统。
