@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -71,9 +72,11 @@ class SecEdgarSource:
             normalized = normalize_sample(responses)
         except ContractError as exc:
             raise PluginError(str(exc)) from exc
+        contact_tokens = [contact, *re.findall(r"[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", contact)]
+        if any(token.encode("utf-8") in response.raw
+               for response in responses for token in contact_tokens):
+            raise PluginError("SEC response unexpectedly contains the project contact")
         for response, name in zip(responses, _RAW_NAMES):
-            if contact.encode("utf-8") in response.raw:
-                raise PluginError("SEC response unexpectedly contains the contact header")
             try:
                 (Path(context.run_dir) / name).write_bytes(response.raw)
             except OSError:

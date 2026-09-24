@@ -57,7 +57,7 @@ def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--allow-permission", action="append", default=[])
     parser.add_argument("--param", action="append", type=_key_value, default=[], metavar="KEY=VALUE")
     parser.add_argument("--bind", action="append", type=_key_value, default=[], metavar="CAPABILITY=PLUGIN")
-    parser.add_argument("--title", default="QuantAgent 历史数据体检报告")
+    parser.add_argument("--title")
     parser.add_argument("--online", action="store_true", help="allow recipes to use network-enabled plugins")
 
 
@@ -157,9 +157,12 @@ def _execution_values(
     if not roots and input_path is not None:
         roots = [input_path.parent]
     write_roots = [Path(value).expanduser().resolve() for value in args.allow_write_root]
+    default_title = ("QuantAgent SEC 行业与同行样本报告"
+                     if args.source in {"sec-edgar", "sec-replay"}
+                     else "QuantAgent 历史数据体检报告")
     params: dict[str, object] = {
         "source_path": str(input_path) if input_path is not None else "",
-        "report_title": args.title,
+        "report_title": args.title if args.title is not None else default_title,
     }
     params.update(dict(args.param))
     source_capability, source_plugin = SOURCE_BINDINGS[args.source]

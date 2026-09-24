@@ -172,6 +172,24 @@ class SecWorkflowTests(unittest.TestCase):
             if path.is_file():
                 self.assertNotIn(CONTACT.encode(), path.read_bytes())
 
+    def test_live_source_rejects_response_echoing_contact_email_only(self):
+        payloads = make_payloads()
+        payloads[("submissions", ISSUERS[0][0])]["name"] = "test-contact@example.invalid"
+        responses = make_responses(payloads)
+        with patch.dict(os.environ, {"SEC_USER_AGENT": CONTACT}):
+            with patch("quantagent_platform.sec_plugins.fetch_sample", return_value=responses):
+                with self.assertRaises(RecipeError):
+                    self.runner.run(
+                        self.recipe,
+                        params={"source_path": "", "report_title": "SEC sample"},
+                        output_dir=self.runs, allowed_read_roots=[],
+                        allowed_permissions={"filesystem:write", "network:https"},
+                        offline=False, run_id="contact-echo")
+        run_dir = self.runs / "contact-echo"
+        self.assertFalse(list(run_dir.glob("sec-*-*.json")))
+        self.assertNotIn("test-contact@example.invalid",
+                         (run_dir / "run.json").read_text(encoding="utf-8"))
+
     def test_cli_source_input_rules_and_live_preflight(self):
         args = build_parser().parse_args([
             "run", str(RECIPE_PATH), "--source", "sec-edgar",
@@ -236,6 +254,7 @@ class SecWorkflowTests(unittest.TestCase):
             self.assertEqual(summary.json()["status"], "completed")
             report = client.get(f"/api/v1/runs/{run_id}/report", headers=headers)
             self.assertEqual(report.status_code, 200)
+            self.assertTrue(report.text.startswith("# QuantAgent SEC 行业与同行样本报告\n"))
             self.assertIn("## Sector overview", report.text)
             digest = hashlib.sha256(report.content).hexdigest()
             self.assertEqual(report.headers["etag"], f'"{digest}"')
