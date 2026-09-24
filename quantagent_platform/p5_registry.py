@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import stat
@@ -65,12 +66,20 @@ def _reject_constant(value: str) -> None:
     raise ApprovedSourceError("approved JSON has a non-finite number")
 
 
+def _finite_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ApprovedSourceError("approved JSON has a non-finite number")
+    return parsed
+
+
 def strict_json(raw: bytes) -> dict[str, Any]:
     try:
         value = json.loads(
             raw.decode("utf-8"),
             object_pairs_hook=_unique_object,
             parse_constant=_reject_constant,
+            parse_float=_finite_float,
         )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ApprovedSourceError("approved JSON is not strict UTF-8") from exc

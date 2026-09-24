@@ -368,6 +368,18 @@ class P5Coordinator:
                 model_cost_minor=0,
             )
             return ChainResult.from_ledger(self.ledger.get(chain_id))
+        except KeyboardInterrupt:
+            self.cancel_event.set()
+            record = self.ledger.get(chain_id)
+            if record["status"] in {
+                "completed", "failed", "cancelled", "timed_out", "interrupted",
+            }:
+                return ChainResult.from_ledger(record)
+            self.ledger.transition(
+                chain_id, "cancelled", failure_code="cancel_requested",
+                wall_ms=self._elapsed_ms(started),
+            )
+            return ChainResult.from_ledger(self.ledger.get(chain_id))
         except Exception as exc:
             # Persist a non-sensitive code; source content and local paths never enter audit.
             code = "handoff_invalid" if isinstance(exc, HandoffError) else "internal_error"

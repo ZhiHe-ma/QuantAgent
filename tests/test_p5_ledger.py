@@ -78,6 +78,15 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(record["events"][-1]["status"], "interrupted")
         self.assertEqual(reopened.recover_interrupted(), 0)
 
+    def test_timeout_records_actual_wall_time_beyond_route_budget(self) -> None:
+        chain_id, _ = self.ledger.reserve("operator-slow-timeout", FINGERPRINT)
+        self.ledger.transition(chain_id, "parent_running", parent_id="parent-run")
+        self.ledger.transition(chain_id, "timed_out",
+                               failure_code="deadline_exceeded", wall_ms=120_001)
+        record = self.ledger.get(chain_id)
+        self.assertEqual(record["status"], "timed_out")
+        self.assertEqual(record["wall_ms"], 120_001)
+
     def test_opening_existing_v1_ledger_does_not_rewrite_database(self) -> None:
         chain_id, _ = self.ledger.reserve("operator-readonly", FINGERPRINT)
         before = self.ledger.path.stat().st_mtime_ns

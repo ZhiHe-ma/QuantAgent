@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import signal
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -16,6 +17,7 @@ from fastapi.testclient import TestClient
 
 from quantagent_platform.cli import main as cli_main
 from quantagent_platform.contracts import canonical_json
+from quantagent_platform.p5_coordinator import ChainResult
 from quantagent_platform.p5_registry import RAW_NAMES
 from quantagent_platform.result_api import ApiConfig, create_app
 from quantagent_platform.runner import RecipeRunner, default_registry
@@ -138,6 +140,40 @@ class P5CliApiTests(unittest.TestCase):
         self.assertEqual(result["failure_code"], "parent_failed")
         self.assertIsNone(result["child_run_id"])
         self.assertNotIn(str(self.p4_root), out + err)
+
+    def test_sigint_sets_cancellation_event_for_coordinator(self) -> None:
+        previous_handler = signal.getsignal(signal.SIGINT)
+
+        class InterruptingCoordinator:
+            def __init__(self, **kwargs):
+                self.cancel_event = kwargs.get("cancel_event")
+
+            def run(self, source_id, request_id):
+                signal.raise_signal(signal.SIGINT)
+                self_assert.assertIsNotNone(self.cancel_event)
+                self_assert.assertTrue(self.cancel_event.is_set())
+                return ChainResult("chain-test", "cancelled", None, None, None,
+                                   0, 0, 0, "cancel_requested")
+
+        self_assert = self
+        out, err = StringIO(), StringIO()
+        with patch("quantagent_platform.p5_coordinator.P5Coordinator",
+                   InterruptingCoordinator):
+            try:
+                with redirect_stdout(out), redirect_stderr(err):
+                    code = cli_main([
+                        "review-sec-evidence",
+                        "--approved-registry", str(self.registry_path),
+                        "--approved-run-root", str(self.p4_root),
+                        "--run-root", str(self.run_root),
+                        "--source-id", "synthetic-p4",
+                        "--request-id", "request-sigint",
+                    ])
+            except KeyboardInterrupt:
+                self.fail("SIGINT escaped without cancelling the P5 chain")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(out.getvalue())["status"], "cancelled")
+        self.assertIs(signal.getsignal(signal.SIGINT), previous_handler)
 
     def test_generic_agent_and_recipe_commands_reject_p5_route(self) -> None:
         for agent_id in (

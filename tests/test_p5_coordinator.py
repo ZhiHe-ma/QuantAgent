@@ -163,6 +163,27 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(self.ledger.get(result.chain_id)["failure_code"],
                          "internal_error")
 
+    def test_timeout_over_budget_still_has_terminal_audit(self) -> None:
+        def slow_timeout(spec, deadline, cancel_event):
+            return WorkerResult("timed_out", spec.run_id)
+        coordinator = self.coordinator(worker=slow_timeout)
+        with patch.object(coordinator, "_elapsed_ms", return_value=120_001):
+            result = coordinator.run("synthetic-p4", "request-slow-timeout")
+        self.assertEqual(result.status, "timed_out")
+        self.assertEqual(result.wall_ms, 120_001)
+        self.assertEqual(self.ledger.get(result.chain_id)["events"][-1]["status"],
+                         "timed_out")
+
+    def test_keyboard_interrupt_cancels_chain_and_worker_event(self) -> None:
+        def interrupted(spec, deadline, cancel_event):
+            raise KeyboardInterrupt
+        coordinator = self.coordinator(worker=interrupted)
+        result = coordinator.run("synthetic-p4", "request-keyboard-interrupt")
+        self.assertTrue(coordinator.cancel_event.is_set())
+        self.assertEqual(result.status, "cancelled")
+        self.assertEqual(self.ledger.get(result.chain_id)["failure_code"],
+                         "cancel_requested")
+
     def test_permission_expansion_fails_before_parent(self) -> None:
         coordinator = self.coordinator(
             caller_permissions=frozenset({"filesystem:read"}))

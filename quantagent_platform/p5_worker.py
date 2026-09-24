@@ -220,16 +220,14 @@ class WorkerSupervisor:
             args=(child_pipe, child_cancel, spec.to_bytes()),
         )
         try:
-            process.start()
-        except (OSError, RuntimeError):
-            parent_pipe.close()
+            try:
+                process.start()
+            except (OSError, RuntimeError):
+                return WorkerResult("interrupted", spec.run_id)
             child_pipe.close()
-            return WorkerResult("interrupted", spec.run_id)
-        child_pipe.close()
-        response: dict[str, Any] | None = None
-        reason: str | None = None
-        cancel_until: float | None = None
-        try:
+            response: dict[str, Any] | None = None
+            reason: str | None = None
+            cancel_until: float | None = None
             while True:
                 try:
                     if parent_pipe.poll(0.02):
@@ -267,7 +265,21 @@ class WorkerSupervisor:
                 return WorkerResult("timed_out", spec.run_id)
             return self._verified_result(spec, response)
         finally:
-            parent_pipe.close()
+            child_pipe.close()
+            try:
+                if process.pid is not None and process.is_alive():
+                    # Also runs when Ctrl+C interrupts the supervisor loop. Let
+                    # a cooperative worker stop before forcing termination.
+                    child_cancel.set()
+                    process.join(timeout=5)
+                    if process.is_alive():
+                        process.terminate()
+                        process.join(timeout=5)
+                    if process.is_alive():
+                        process.kill()
+                        process.join(timeout=5)
+            finally:
+                parent_pipe.close()
 
 
 def run_worker(spec: WorkerSpec, deadline: float, cancel_event) -> WorkerResult:

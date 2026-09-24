@@ -4,7 +4,9 @@ import argparse
 import ipaddress
 import json
 import os
+import signal
 import sys
+import threading
 from dataclasses import asdict
 from pathlib import Path
 
@@ -192,6 +194,12 @@ def main(argv: list[str] | None = None) -> int:
         from .p5_ledger import IdempotencyConflict, LedgerError
         from .p5_registry import ApprovedSourceError
 
+        cancel_event = threading.Event()
+        previous_sigint = None
+        if threading.current_thread() is threading.main_thread():
+            previous_sigint = signal.getsignal(signal.SIGINT)
+            signal.signal(signal.SIGINT,
+                          lambda signum, frame: cancel_event.set())
         try:
             result = P5Coordinator(
                 registry_path=Path(args.approved_registry),
@@ -199,12 +207,16 @@ def main(argv: list[str] | None = None) -> int:
                 run_root=Path(args.run_root),
                 policy_path=(Path(__file__).resolve().parents[1] / "policies"
                              / "p5_sec_route.v1.json"),
+                cancel_event=cancel_event,
             ).run(args.source_id, args.request_id)
         except (ApprovedSourceError, HandoffError, IdempotencyConflict,
                 LedgerError, AgentError, ManifestError, RecipeError,
                 OSError, TypeError, ValueError) as exc:
             print(f"SEC review admission failed: {type(exc).__name__}", file=sys.stderr)
             return 2
+        finally:
+            if previous_sigint is not None:
+                signal.signal(signal.SIGINT, previous_sigint)
         print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
         return 0 if result.status == "completed" else 1
 

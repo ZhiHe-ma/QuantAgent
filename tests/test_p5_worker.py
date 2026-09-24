@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import _thread
 import json
 import multiprocessing
 import os
@@ -129,6 +130,36 @@ class WorkerTests(unittest.TestCase):
         self.assertTrue(marker.exists())
         self.assertEqual(outcome.status, "cancelled")
         self.assertIsNone(outcome.packet_path)
+
+    def test_keyboard_interrupt_reaps_spawned_worker(self) -> None:
+        marker = self.root / "output" / "worker-started"
+        before = {child.pid for child in multiprocessing.active_children()}
+
+        def interrupt_after_start() -> None:
+            until = time.monotonic() + 3
+            while not marker.exists() and time.monotonic() < until:
+                time.sleep(0.01)
+            if marker.exists():
+                time.sleep(0.1)
+                _thread.interrupt_main()
+
+        trigger = threading.Thread(target=interrupt_after_start)
+        trigger.start()
+        leaked = []
+        try:
+            with self.assertRaises(KeyboardInterrupt):
+                WorkerSupervisor(_test_entrypoint=cancel_aware_worker).run(
+                    self.spec(), deadline=time.monotonic() + 4,
+                    cancel_event=multiprocessing.Event())
+        finally:
+            trigger.join(timeout=4)
+            leaked = [child for child in multiprocessing.active_children()
+                      if child.pid not in before]
+            for child in leaked:
+                child.terminate()
+                child.join(timeout=2)
+        self.assertTrue(marker.exists())
+        self.assertEqual(leaked, [])
 
     def test_abrupt_exit_after_packet_is_interrupted(self) -> None:
         outcome = WorkerSupervisor(_test_entrypoint=abrupt_worker).run(

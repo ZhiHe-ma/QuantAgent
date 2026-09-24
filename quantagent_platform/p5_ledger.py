@@ -90,8 +90,10 @@ def _validated_fields(fields: dict[str, Any]) -> dict[str, Any]:
                 raise LedgerError("audit timestamp is invalid") from exc
             output[key] = value
         elif key == "wall_ms":
-            if type(value) is not int or not 0 <= value <= 120_000:
-                raise LedgerError("audit wall time exceeds route budget")
+            # This measures what happened, including termination and cleanup
+            # after the route deadline; it is not the execution budget itself.
+            if type(value) is not int or not 0 <= value <= 2**63 - 1:
+                raise LedgerError("audit wall time must be a nonnegative SQLite integer")
             output[key] = value
         elif key == "handoff_calls":
             if type(value) is not int or value not in (0, 1):

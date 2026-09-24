@@ -16,6 +16,7 @@ from quantagent_platform.p5_registry import (
     ApprovedRunRegistry,
     ApprovedSourceError,
     read_approved_source,
+    strict_json,
 )
 from quantagent_platform.runner import RecipeRunner, default_registry
 from tests.test_sec_contracts import make_responses
@@ -89,6 +90,12 @@ class ApprovedRunRegistryTests(unittest.TestCase):
         self.assertEqual(evidence.packet.content_sha256, evidence.record_sha256)
         self.assertEqual(set(evidence.raw), set(RAW_NAMES))
         self.assertEqual(evidence.report_sha256, source.report_sha256)
+
+    def test_nested_exponent_overflow_is_not_accepted_as_finite_json(self) -> None:
+        for number in (b"1e999", b"-1e999"):
+            with self.subTest(number=number):
+                with self.assertRaises(ApprovedSourceError):
+                    strict_json(b'{"unused":{"value":' + number + b'}}')
 
     def test_unknown_source_and_path_escape_fail_closed(self) -> None:
         registry = ApprovedRunRegistry.load(self.registry_path, self.runs)
@@ -201,6 +208,37 @@ class ApprovedRunRegistryTests(unittest.TestCase):
         finally:
             self.run_dir.rmdir()
             outside.rename(self.run_dir)
+
+    @unittest.skipUnless(os.name == "nt", "junctions are a Windows feature")
+    def test_junction_swap_between_validation_and_open_fails_closed(self) -> None:
+        packet_path = self.run_dir / "01-load-sec-facts.json"
+        outside = self.root / "race-outside-run"
+        original_open = registry_module._windows_open_nofollow
+
+        def swap_then_open(path: Path) -> int:
+            self.run_dir.rename(outside)
+            environment = {**os.environ, "P5_JUNCTION_PATH": str(self.run_dir),
+                           "P5_JUNCTION_TARGET": str(outside)}
+            created = subprocess.run(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                 "New-Item -ItemType Junction -Path $env:P5_JUNCTION_PATH "
+                 "-Target $env:P5_JUNCTION_TARGET | Out-Null"],
+                env=environment, capture_output=True, text=True, check=False,
+            )
+            if created.returncode != 0:
+                self.skipTest("junction creation is unavailable")
+            return original_open(path)
+
+        try:
+            with patch.object(registry_module, "_windows_open_nofollow",
+                              side_effect=swap_then_open):
+                with self.assertRaises(ApprovedSourceError):
+                    registry_module.bounded_regular_file(packet_path, 2 * 1024 * 1024)
+        finally:
+            if self.run_dir.is_junction():
+                self.run_dir.rmdir()
+            if outside.exists():
+                outside.rename(self.run_dir)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any
@@ -36,12 +37,20 @@ def _reject_constant(value: str) -> None:
     raise IndependentReviewError("frozen SEC JSON has a non-finite number")
 
 
+def _finite_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise IndependentReviewError("frozen SEC JSON has a non-finite number")
+    return parsed
+
+
 def _strict_object(raw: bytes) -> dict[str, Any]:
     try:
         value = json.loads(
             raw.decode("utf-8"),
             object_pairs_hook=_unique_object,
             parse_constant=_reject_constant,
+            parse_float=_finite_float,
         )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise IndependentReviewError("frozen SEC response is not strict JSON") from exc

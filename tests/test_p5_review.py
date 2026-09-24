@@ -15,6 +15,7 @@ from unittest.mock import patch
 from quantagent_platform.p5_registry import ApprovedRunRegistry, read_approved_source
 from quantagent_platform.p5_review import (
     IndependentReviewError,
+    _strict_object,
     render_review_report,
     review_evidence,
     select_issuer_facts,
@@ -96,6 +97,7 @@ class IndependentReviewTests(unittest.TestCase):
     def test_recomputes_issuer_values_and_two_company_totals(self) -> None:
         findings = review_evidence(self.evidence, self.bundle)
         self.assertEqual(findings["status"], "pass")
+
         self.assertEqual(findings["coverage"]["Revenues"],
                          {"available": 2, "total": 2})
         self.assertEqual(findings["coverage"]["Assets"],
@@ -113,6 +115,12 @@ class IndependentReviewTests(unittest.TestCase):
         self.assertIn(findings["as_of"].encode(), report)
         self.assertIn(reviewed_at.encode(), report)
         self.assertIn(b"two-issuer sample", report)
+
+    def test_frozen_sec_json_rejects_exponent_overflow_anywhere(self) -> None:
+        for number in (b"1e999", b"-1e999"):
+            with self.subTest(number=number):
+                with self.assertRaises(IndependentReviewError):
+                    _strict_object(b'{"unused":{"value":' + number + b'}}')
 
     def test_rejects_wrong_p4_derived_value_with_raw_bytes_unchanged(self) -> None:
         changed = copy.deepcopy(self.bundle)
