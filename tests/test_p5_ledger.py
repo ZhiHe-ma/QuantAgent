@@ -78,6 +78,13 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(record["events"][-1]["status"], "interrupted")
         self.assertEqual(reopened.recover_interrupted(), 0)
 
+    def test_opening_existing_v1_ledger_does_not_rewrite_database(self) -> None:
+        chain_id, _ = self.ledger.reserve("operator-readonly", FINGERPRINT)
+        before = self.ledger.path.stat().st_mtime_ns
+        reopened = HandoffLedger(self.root)
+        self.assertEqual(reopened.get(chain_id)["status"], "admitted")
+        self.assertEqual(self.ledger.path.stat().st_mtime_ns, before)
+
     def test_invalid_fields_and_illegal_jump_leave_audit_unchanged(self) -> None:
         chain_id, _ = self.ledger.reserve("operator-004", FINGERPRINT)
         for fields in (

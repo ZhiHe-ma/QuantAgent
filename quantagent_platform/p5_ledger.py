@@ -118,6 +118,14 @@ class HandoffLedger:
         if self.path.is_symlink():
             raise LedgerError("P5 audit database path is a symlink")
         try:
+            if self.path.exists():
+                existing = self._connect()
+                try:
+                    version = existing.execute("PRAGMA user_version").fetchone()[0]
+                finally:
+                    existing.close()
+                if version == 1:
+                    return
             with self._connection() as connection:
                 connection.execute("BEGIN IMMEDIATE")
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
