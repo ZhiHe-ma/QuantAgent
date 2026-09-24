@@ -1,0 +1,125 @@
+{
+  "policy_version": "quantagent.p5_sec_route.v1",
+  "task_type": "sec.review_fy2025_mara_riot.v1",
+  "source_contract": "quantagent.sec_approved_run.v1",
+  "catalog_sha256": "cf3cc83bd597b2366d85b973917f7fc4b51255fdcb099ad577543bbb028d1af2",
+  "parent": {
+    "agent": {
+      "id": "builtin.sec-evidence-producer-agent",
+      "version": "1.0.0",
+      "manifest_sha256": "dbfe4549a677c22ebe8f9394fd14a8a96ab7f4a5af713b8961e37dd6defde570"
+    },
+    "skill": {
+      "id": "builtin.sec-evidence-preparation",
+      "version": "1.0.0",
+      "manifest_sha256": "db24659ede8a8a1582ebd0c88ca584da2912a39e02fcc3ae805b65705f0e533e",
+      "package_sha256": "bb3ec4f96d3e8c07db84cfb592f23521048c71615f22dcfed12f0843438ace34"
+    },
+    "recipe": {
+      "id": "sec-evidence-producer",
+      "version": "1.0.0",
+      "sha256": "1c8910d54a354b6f740489846df8f1d965d8bb9b194ccb0c0e236146bca084fe"
+    },
+    "plugins": [
+      {
+        "step_id": "load-approved-sec-run",
+        "plugin_id": "builtin.sec-approved-run-source",
+        "version": "1.0.0",
+        "capability": "source.sec_approved_run",
+        "input_contracts": [],
+        "output_contract": "quantagent.sec_approved_run.v1",
+        "permissions": [
+          "filesystem:read"
+        ],
+        "network_access": false
+      },
+      {
+        "step_id": "prepare-sec-evidence",
+        "plugin_id": "builtin.sec-evidence-preparer",
+        "version": "1.0.0",
+        "capability": "research.sec_evidence_bundle",
+        "input_contracts": [
+          "quantagent.sec_approved_run.v1"
+        ],
+        "output_contract": "quantagent.sec_evidence_bundle.v1",
+        "permissions": [],
+        "network_access": false
+      }
+    ],
+    "permissions": [
+      "filesystem:read",
+      "filesystem:write"
+    ]
+  },
+  "child": {
+    "agent": {
+      "id": "builtin.sec-evidence-review-agent",
+      "version": "1.0.0",
+      "manifest_sha256": "a206a4e8bc59c9c51e32fb0ef0f07a4f4a295467ebb594e94ea636bf3414c48e"
+    },
+    "skill": {
+      "id": "builtin.sec-evidence-independent-review",
+      "version": "1.0.0",
+      "manifest_sha256": "624ccf0872418c8d98b4fdd78b9feef1d2a4a240e1f5e98f13e013fc875b7dce",
+      "package_sha256": "f2abed815edd1e66ae36452fbac9ee637bcfe0abd835dd45c4c72bf778635b38"
+    },
+    "recipe": {
+      "id": "sec-evidence-review",
+      "version": "1.0.0",
+      "sha256": "bc03d01b6da03fd70c87c77c5202ea7cc1c8514bd7bb57d24b0c1457cc610d10"
+    },
+    "plugins": [
+      {
+        "step_id": "load-sec-handoff",
+        "plugin_id": "builtin.sec-handoff-source",
+        "version": "1.0.0",
+        "capability": "source.sec_agent_handoff",
+        "input_contracts": [],
+        "output_contract": "quantagent.agent_handoff.v1",
+        "permissions": [
+          "filesystem:read"
+        ],
+        "network_access": false
+      },
+      {
+        "step_id": "review-sec-evidence",
+        "plugin_id": "builtin.sec-independent-review",
+        "version": "1.0.0",
+        "capability": "research.sec_independent_review",
+        "input_contracts": [
+          "quantagent.agent_handoff.v1"
+        ],
+        "output_contract": "quantagent.sec_independent_review.v1",
+        "permissions": [
+          "filesystem:read"
+        ],
+        "network_access": false
+      },
+      {
+        "step_id": "write-sec-review",
+        "plugin_id": "builtin.markdown-sec-independent-review",
+        "version": "1.0.0",
+        "capability": "report.sec_independent_review",
+        "input_contracts": [
+          "quantagent.sec_independent_review.v1"
+        ],
+        "output_contract": "quantagent.report.v1",
+        "permissions": [
+          "filesystem:write"
+        ],
+        "network_access": false
+      }
+    ],
+    "permissions": [
+      "filesystem:read",
+      "filesystem:write"
+    ]
+  },
+  "limits": {
+    "max_depth": 1,
+    "max_handoffs": 1,
+    "max_wall_seconds": 120,
+    "max_model_cost_minor": 0,
+    "currency": "USD"
+  }
+}

@@ -7,16 +7,17 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from .agents import ResolvedAgentPlan
 from .contracts import ContractError, DataPacket, canonical_json, parse_aware_timestamp, sha256_json
 from .p5_registry import (
     ApprovedRun, ApprovedSourceError, bounded_regular_file, strict_json,
 )
-from .runner import RunResult
+if TYPE_CHECKING:
+    from .agents import ResolvedAgentPlan
+    from .runner import RunResult
 
 
 HANDOFF_CONTRACT = "quantagent.agent_handoff.v1"

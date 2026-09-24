@@ -1,0 +1,41 @@
+manifest_type: quantagent.skill_manifest.v1
+skill_id: builtin.sec-evidence-independent-review
+version: 1.0.0
+source:
+  repository: https://github.com/ZhiHe-ma/QuantAgent
+  path: docs/superpowers/specs/2026-09-24-p5-sec-evidence-handoff-design.md
+  commit: 43f3938b60e4bc0b09596478c369c59ddc7135fe
+  license: MIT
+  notice_files: []
+  modified: true
+content:
+  entrypoint: SKILL.md
+  files:
+    - path: SKILL.md
+      sha256: 1d59cc0d3939e5ddf2132c406e26ad68db67bad0c8c391d5968b5dc78cc635b5
+  package_sha256: f2abed815edd1e66ae36452fbac9ee637bcfe0abd835dd45c4c72bf778635b38
+input_contracts:
+  - quantagent.agent_handoff.v1
+output_contracts:
+  - quantagent.sec_independent_review.v1
+  - quantagent.report.v1
+required_capabilities:
+  - source.sec_agent_handoff
+  - research.sec_independent_review
+  - report.sec_independent_review
+model_requirements:
+  structured_output: false
+  tool_calling: false
+  min_context_tokens: 1
+  offline_replay: false
+compatible_recipes:
+  - id: sec-evidence-review
+    version: 1.0.0
+test_status:
+  state: fixture_verified
+  evidence_refs:
+    - tests/test_p5_agents.py
+metadata:
+  deterministic: true
+  coordinator_only: true
+  trading_authority: false

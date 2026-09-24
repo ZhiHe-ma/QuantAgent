@@ -1,0 +1,23 @@
+{
+  "recipe_id": "sec-evidence-producer",
+  "recipe_version": "1.0.0",
+  "description": "Offline handoff preparation from one approved frozen P4 SEC run.",
+  "steps": [
+    {
+      "id": "load-approved-sec-run",
+      "capability": "source.sec_approved_run",
+      "plugin": "builtin.sec-approved-run-source",
+      "config": {
+        "registry_path": "${registry_path}",
+        "approved_run_root": "${approved_run_root}",
+        "approved_source_id": "${approved_source_id}"
+      }
+    },
+    {
+      "id": "prepare-sec-evidence",
+      "capability": "research.sec_evidence_bundle",
+      "plugin": "builtin.sec-evidence-preparer",
+      "config": {}
+    }
+  ]
+}

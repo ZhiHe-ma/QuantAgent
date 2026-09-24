@@ -1,0 +1,29 @@
+{
+  "recipe_id": "sec-evidence-review",
+  "recipe_version": "1.0.0",
+  "description": "Offline independent verification of one pinned SEC evidence handoff.",
+  "steps": [
+    {
+      "id": "load-sec-handoff",
+      "capability": "source.sec_agent_handoff",
+      "plugin": "builtin.sec-handoff-source",
+      "config": {
+        "handoff_path": "${handoff_path}",
+        "handoff_sha256": "${handoff_sha256}",
+        "bundle_path": "${bundle_path}"
+      }
+    },
+    {
+      "id": "review-sec-evidence",
+      "capability": "research.sec_independent_review",
+      "plugin": "builtin.sec-independent-review",
+      "config": {"approved_run_root": "${approved_run_root}"}
+    },
+    {
+      "id": "write-sec-review",
+      "capability": "report.sec_independent_review",
+      "plugin": "builtin.markdown-sec-independent-review",
+      "config": {}
+    }
+  ]
+}

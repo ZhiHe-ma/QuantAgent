@@ -24,6 +24,13 @@ from .outcome_plugins import (
     SignalOutcomeEvaluator,
     SqliteOutcomeWriter,
 )
+from .p5_plugins import (
+    MarkdownSecIndependentReview,
+    SecApprovedRunSource,
+    SecEvidencePreparer,
+    SecHandoffSource,
+    SecIndependentReview,
+)
 from .plugins import PluginError, PluginRegistry, RunContext
 from .qlib_plugins import MarkdownFactorResearchReport, QlibFactorResearch
 from .research_plugins import (
@@ -90,6 +97,11 @@ def default_registry() -> PluginRegistry:
         SecSectorOverview(),
         SecPeerComparison(),
         MarkdownSecResearchReport(),
+        SecApprovedRunSource(),
+        SecEvidencePreparer(),
+        SecHandoffSource(),
+        SecIndependentReview(),
+        MarkdownSecIndependentReview(),
     ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:

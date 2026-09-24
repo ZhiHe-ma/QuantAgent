@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.0",
+  "catalog_version": "1.1.0",
   "agents": [
     {
       "id": "builtin.data-health-research-agent",
@@ -14,6 +14,20 @@
       "status": "verified",
       "path": "agent_catalog/agents/research-agent/agent.yaml",
       "sha256": "afe46bccab2d0e3e09a8a477a6c193faa03b92eb9f529a855f3cc60f5a340286"
+    },
+    {
+      "id": "builtin.sec-evidence-producer-agent",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/agents/sec-evidence-producer-agent/agent.yaml",
+      "sha256": "dbfe4549a677c22ebe8f9394fd14a8a96ab7f4a5af713b8961e37dd6defde570"
+    },
+    {
+      "id": "builtin.sec-evidence-review-agent",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/agents/sec-evidence-review-agent/agent.yaml",
+      "sha256": "a206a4e8bc59c9c51e32fb0ef0f07a4f4a295467ebb594e94ea636bf3414c48e"
     }
   ],
   "skills": [
@@ -30,6 +44,20 @@
       "status": "verified",
       "path": "agent_catalog/skills/thesis-tracker/skill.yaml",
       "sha256": "515f6be14a7c6abb61192fbe7cce6618577f7112f07cbf92ad1cf3ea877319fc"
+    },
+    {
+      "id": "builtin.sec-evidence-preparation",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/skills/sec-evidence-preparation/skill.yaml",
+      "sha256": "db24659ede8a8a1582ebd0c88ca584da2912a39e02fcc3ae805b65705f0e533e"
+    },
+    {
+      "id": "builtin.sec-evidence-independent-review",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "agent_catalog/skills/sec-evidence-independent-review/skill.yaml",
+      "sha256": "624ccf0872418c8d98b4fdd78b9feef1d2a4a240e1f5e98f13e013fc875b7dce"
     }
   ],
   "recipes": [
@@ -46,6 +74,20 @@
       "status": "verified",
       "path": "recipes/thesis_tracker.json",
       "sha256": "2e9601c91b4b56f1645ca719b744101507ba027163a7055a77ffae08e8a775b2"
+    },
+    {
+      "id": "sec-evidence-producer",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "recipes/sec_evidence_producer.json",
+      "sha256": "1c8910d54a354b6f740489846df8f1d965d8bb9b194ccb0c0e236146bca084fe"
+    },
+    {
+      "id": "sec-evidence-review",
+      "version": "1.0.0",
+      "status": "verified",
+      "path": "recipes/sec_evidence_review.json",
+      "sha256": "bc03d01b6da03fd70c87c77c5202ea7cc1c8514bd7bb57d24b0c1457cc610d10"
     }
   ]
 }

@@ -1,0 +1,39 @@
+manifest_type: quantagent.skill_manifest.v1
+skill_id: builtin.sec-evidence-preparation
+version: 1.0.0
+source:
+  repository: https://github.com/ZhiHe-ma/QuantAgent
+  path: docs/superpowers/specs/2026-09-24-p5-sec-evidence-handoff-design.md
+  commit: 43f3938b60e4bc0b09596478c369c59ddc7135fe
+  license: MIT
+  notice_files: []
+  modified: true
+content:
+  entrypoint: SKILL.md
+  files:
+    - path: SKILL.md
+      sha256: fc917063d6be61199792faed754c8f2abf6cf583eaec06f013d2ebf8f258e7d7
+  package_sha256: bb3ec4f96d3e8c07db84cfb592f23521048c71615f22dcfed12f0843438ace34
+input_contracts:
+  - quantagent.sec_approved_run.v1
+output_contracts:
+  - quantagent.sec_evidence_bundle.v1
+required_capabilities:
+  - source.sec_approved_run
+  - research.sec_evidence_bundle
+model_requirements:
+  structured_output: false
+  tool_calling: false
+  min_context_tokens: 1
+  offline_replay: false
+compatible_recipes:
+  - id: sec-evidence-producer
+    version: 1.0.0
+test_status:
+  state: fixture_verified
+  evidence_refs:
+    - tests/test_p5_agents.py
+metadata:
+  deterministic: true
+  coordinator_only: true
+  trading_authority: false

@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.6.0",
+  "catalog_version": "1.7.0",
   "plugins": [
     {
       "plugin_id": "builtin.json-signal-source",
@@ -192,6 +192,46 @@
       "upstream": "QuantAgent built-in",
       "license": "MIT",
       "notes": "Writes source-traceable P4 sample report for the existing authenticated Result API."
+    },
+    {
+      "plugin_id": "builtin.sec-approved-run-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Reads one approved frozen P4 SEC run offline."
+    },
+    {
+      "plugin_id": "builtin.sec-evidence-preparer",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Creates the bounded, hash-linked P5 evidence bundle."
+    },
+    {
+      "plugin_id": "builtin.sec-handoff-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Verifies one canonical broker-owned handoff and parent bundle."
+    },
+    {
+      "plugin_id": "builtin.sec-independent-review",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Independently reselects SEC facts from frozen raw responses."
+    },
+    {
+      "plugin_id": "builtin.markdown-sec-independent-review",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Writes one local review report for the Result API."
     }
   ]
 }

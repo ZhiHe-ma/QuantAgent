@@ -1,0 +1,42 @@
+manifest_type: quantagent.agent_manifest.v2
+agent_id: builtin.sec-evidence-review-agent
+version: 1.0.0
+skills:
+  - id: builtin.sec-evidence-independent-review
+    version: 1.0.0
+recipes:
+  - id: sec-evidence-review
+    version: 1.0.0
+model_policy:
+  required_capabilities:
+    text_generation: false
+    structured_output: false
+    tool_calling: false
+    min_context_tokens: 1
+    offline_replay: false
+  allowed_models: []
+  allow_recorded_replay: false
+  selection: ordered_allowlist
+input_contract: quantagent.agent_handoff.v1
+output_contract: quantagent.report.v1
+required_capabilities:
+  - source.sec_agent_handoff
+  - research.sec_independent_review
+  - report.sec_independent_review
+review_gates:
+  - gate_id: validate-before-run
+    trigger: before_run
+    action: automatic_validation
+    on_reject: fail
+limits:
+  max_steps: 3
+  max_tool_calls: 0
+  max_wall_seconds: 120
+  max_cost:
+    amount_minor: 0
+    currency: USD
+callable_agents: []
+metadata:
+  deterministic: true
+  coordinator_only: true
+  trading_authority: false
