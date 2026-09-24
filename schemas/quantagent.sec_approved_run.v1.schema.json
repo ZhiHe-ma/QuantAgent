@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ZhiHe-ma/QuantAgent/schemas/quantagent.sec_approved_run.v1.schema.json",
+  "title": "QuantAgent private approved SEC run registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registry_version", "entries"],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}
+      }
+    }
+  },
+  "properties": {
+    "registry_version": {"const": "quantagent.sec_approved_run.v1"},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "approved_source_id", "run_id", "recipe", "source_plugin",
+          "packet_sha256", "report_sha256", "raw_sha256"
+        ],
+        "properties": {
+          "approved_source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+          },
+          "run_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "recipe": {"$ref": "#/$defs/reference"},
+          "source_plugin": {"$ref": "#/$defs/reference"},
+          "packet_sha256": {"$ref": "#/$defs/hash"},
+          "report_sha256": {"$ref": "#/$defs/hash"},
+          "raw_sha256": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sec-mara-submissions.json",
+              "sec-mara-companyfacts.json",
+              "sec-riot-submissions.json",
+              "sec-riot-companyfacts.json"
+            ],
+            "properties": {
+              "sec-mara-submissions.json": {"$ref": "#/$defs/hash"},
+              "sec-mara-companyfacts.json": {"$ref": "#/$defs/hash"},
+              "sec-riot-submissions.json": {"$ref": "#/$defs/hash"},
+              "sec-riot-companyfacts.json": {"$ref": "#/$defs/hash"}
+            }
+          }
+        }
+      }
+    }
+  }
+}
