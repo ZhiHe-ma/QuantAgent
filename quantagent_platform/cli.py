@@ -5,6 +5,7 @@ import ipaddress
 import json
 import os
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from .agents import AgentError, AgentRuntime, default_agent_catalog_path
@@ -128,6 +129,16 @@ def build_parser() -> argparse.ArgumentParser:
     submit.add_argument("--host", default="127.0.0.1")
     submit.add_argument("--port", type=int, default=8765)
     submit.add_argument("--fixture", action="append", type=_fixture_reference, required=True)
+
+    review = subparsers.add_parser(
+        "review-sec-evidence",
+        help="review one approved frozen SEC run through the fixed P5 Agent handoff",
+    )
+    review.add_argument("--approved-registry", required=True)
+    review.add_argument("--approved-run-root", required=True)
+    review.add_argument("--run-root", required=True)
+    review.add_argument("--source-id", required=True)
+    review.add_argument("--request-id", required=True)
     return parser
 
 
@@ -174,6 +185,28 @@ def _execution_values(
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.command == "review-sec-evidence":
+        from .p5_coordinator import P5Coordinator
+        from .p5_handoff import HandoffError
+        from .p5_ledger import IdempotencyConflict, LedgerError
+        from .p5_registry import ApprovedSourceError
+
+        try:
+            result = P5Coordinator(
+                registry_path=Path(args.approved_registry),
+                approved_run_root=Path(args.approved_run_root),
+                run_root=Path(args.run_root),
+                policy_path=(Path(__file__).resolve().parents[1] / "policies"
+                             / "p5_sec_route.v1.json"),
+            ).run(args.source_id, args.request_id)
+        except (ApprovedSourceError, HandoffError, IdempotencyConflict,
+                LedgerError, AgentError, ManifestError, RecipeError,
+                OSError, TypeError, ValueError) as exc:
+            print(f"SEC review admission failed: {type(exc).__name__}", file=sys.stderr)
+            return 2
+        print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        return 0 if result.status == "completed" else 1
 
     if args.command in {"serve-results", "serve-research"}:
         if not 1 <= args.port <= 65535:
@@ -250,6 +283,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
+        if args.command == "run-agent":
+            selected_catalog = AgentCatalog.load(args.agent_catalog)
+            selected_agent = selected_catalog.get(
+                "agent", args.agent_id, args.agent_version)
+            if selected_agent.artifact.data.get("metadata", {}).get("coordinator_only"):
+                raise AgentError("this Agent requires the P5 coordinator command")
+        if args.command == "run":
+            selected_recipe = runner.load_recipe(args.recipe)
+            if selected_recipe["recipe_id"] in {
+                "sec-evidence-producer", "sec-evidence-review",
+            }:
+                raise RecipeError("this Recipe requires the P5 coordinator command")
         if args.command == "agent-catalog":
             catalog = AgentCatalog.load(args.catalog)
             rows = catalog.rows()
@@ -301,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
                 offline=not args.online,
             )
         else:
-            recipe = runner.load_recipe(args.recipe)
+            recipe = selected_recipe
             result = runner.run(
                 recipe,
                 params=params,
