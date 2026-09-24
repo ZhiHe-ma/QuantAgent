@@ -138,7 +138,6 @@ class SecHandoffSource:
                 or len(bundle.records) != 1
                 or bundle.source != "builtin.sec-evidence-preparer"
                 or bundle_path.name != "02-prepare-sec-evidence.json"
-                or bundle_path.parent.name != handoff.envelope["parent_run_id"]
             ):
                 raise PluginError("parent SEC bundle differs from handoff")
             return DataPacket.create(
