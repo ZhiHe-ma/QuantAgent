@@ -6,7 +6,7 @@ import random
 import hashlib
 import html as html_lib
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 import requests
@@ -100,6 +100,56 @@ class QuantAgent:
         if not date_str:
             date_str = datetime.now().strftime("%Y-%m-%d")
         return os.path.join(self.daily_dir, f"{date_str}_news_buffer.json")
+
+    def _factor_timestamp(self, factor, buffer_date):
+        """优先使用发布时间；旧缓冲的时分秒按文件日期和本地时区解释。"""
+        for field in ("published", "observed_at", "time"):
+            value = factor.get(field)
+            if not isinstance(value, str) or not value.strip():
+                continue
+            value = value.strip()
+            if field == "time" and len(value) <= 15 and ":" in value:
+                value = f"{buffer_date}T{value}"
+            try:
+                # astimezone also resolves the local offset for legacy naive times.
+                return datetime.fromisoformat(value).astimezone(timezone.utc)
+            except ValueError:
+                continue
+        return None
+
+    def _load_recent_news(self, now):
+        """读取跨日缓冲，按真实时间筛选过去24小时，并去掉重复来源记录。"""
+        end = now.astimezone(timezone.utc)
+        start = end - timedelta(hours=24)
+        buffer_date = start.astimezone().date()
+        last_date = end.astimezone().date()
+        recent = []
+        while buffer_date <= last_date:
+            date_str = buffer_date.isoformat()
+            factors = self._safe_json_load(self._get_buffer_path(date_str), [])
+            if isinstance(factors, list):
+                for factor in factors:
+                    if not isinstance(factor, dict):
+                        continue
+                    event_time = self._factor_timestamp(factor, date_str)
+                    if event_time is not None and start <= event_time <= end:
+                        recent.append((event_time, factor))
+            buffer_date += timedelta(days=1)
+
+        recent.sort(key=lambda item: item[0], reverse=True)
+        selected = []
+        seen_ids, seen_fingerprints = set(), set()
+        for _, factor in recent:
+            news_id = str(factor.get("id") or "")
+            fingerprint = str(factor.get("fingerprint") or "")
+            if (news_id and news_id in seen_ids) or (fingerprint and fingerprint in seen_fingerprints):
+                continue
+            if news_id:
+                seen_ids.add(news_id)
+            if fingerprint:
+                seen_fingerprints.add(fingerprint)
+            selected.append(factor)
+        return selected
 
     def _safe_json_load(self, path, default):
         try:
@@ -433,8 +483,14 @@ class QuantAgent:
             confidence = capsule.get("confidence")
             if isinstance(confidence, bool) or not isinstance(confidence, int) or not 0 <= confidence <= 100:
                 raise ValueError("confidence must be an integer from 0 to 100")
+            for field in ("core_thesis", "invalid_if", "today_check"):
+                value = capsule.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError(f"{field} must be a non-empty string")
             if not isinstance(capsule.get("watch_items"), list):
                 raise ValueError("watch_items must be a list")
+            if any(not isinstance(item, str) or not item.strip() for item in capsule["watch_items"]):
+                raise ValueError("watch_items must contain non-empty strings")
             capsule["date"] = today_str
             return capsule
         except Exception as e:
@@ -573,14 +629,23 @@ class QuantAgent:
 
         compact = []
         for n in sorted_factors:
-            compact.append({
+            factor = {
                 "time": self._clamp_str(n.get("time", ""), 12),
                 "source": self._clamp_str(n.get("source", ""), 40),
                 "title": self._clamp_str(n.get("title", ""), 120),
                 "sentiment": self._clamp_str(n.get("sentiment", "中性"), 12),
                 "weight": self._clamp_str(n.get("weight", "Low"), 12),
                 "reason": self._clamp_str(n.get("reason", ""), 80),
-            })
+            }
+            # These bounded ingestion fields identify the exact source used by the
+            # model and must also survive into signal_factors.raw_json.
+            for key in (
+                "id", "fingerprint", "url", "published", "observed_at",
+                "calibrated_from", "calibration_reason",
+            ):
+                if key in n:
+                    factor[key] = n[key]
+            compact.append(factor)
         return compact
 
     # =========================
@@ -799,6 +864,11 @@ class QuantAgent:
             content = message.get("content") if isinstance(message, dict) else None
             if not isinstance(content, str) or not content.strip():
                 raise DeepSeekError("DeepSeek响应content为空或结构非法")
+            finish_reason = choices[0].get("finish_reason")
+            if finish_reason != "stop":
+                raise DeepSeekError(
+                    f"DeepSeek响应未正常完成: finish_reason={self._clamp_str(finish_reason, 80)}"
+                )
             return content.strip()
         except DeepSeekError:
             raise
@@ -844,6 +914,18 @@ class QuantAgent:
         failed_news_records = self._safe_json_load(self.failed_news_file, {})
         if not isinstance(failed_news_records, dict):
             failed_news_records = {}
+        pending_batch = None
+
+        def commit_pending_batch():
+            nonlocal pending_batch, processed_ids, processed_fingerprints, failed_news_records
+            if pending_batch is None:
+                return
+            for path, data in pending_batch["writes"]:
+                self._safe_json_write(path, data)
+            processed_ids = pending_batch["ids"]
+            processed_fingerprints = pending_batch["fingerprints"]
+            failed_news_records = pending_batch["failures"]
+            pending_batch = None
 
         sys_prompt_monitor = (
             "你是一个极端保守的微观量化因子标记器。请直接分析给定新闻对加密货币（主要是BTC与主流代币）价格的影响。\n"
@@ -855,6 +937,9 @@ class QuantAgent:
 
         while True:
             try:
+                # Retry the original batch before polling again, even if the RSS
+                # item disappeared or the local date changed after a write failed.
+                commit_pending_batch()
                 flash_news_list = self.fetch_crypto_flash_news()
                 buffer_path = self._get_buffer_path()
                 day_buffers = self._safe_json_load(buffer_path, [])
@@ -863,6 +948,11 @@ class QuantAgent:
 
                 has_updates = False
                 failure_state_changed = False
+                # Stage acknowledgements until all writes succeed. If any write
+                # fails, the next poll can retry against the last committed state.
+                next_processed_ids = processed_ids.copy()
+                next_processed_fingerprints = processed_fingerprints.copy()
+                next_failed_news_records = failed_news_records.copy()
 
                 candidates = []
                 for news in flash_news_list:
@@ -901,6 +991,7 @@ class QuantAgent:
                             "id": news_id,
                             "fingerprint": fingerprint,
                             "time": datetime.now().strftime("%H:%M:%S"),
+                            "observed_at": datetime.now().astimezone().isoformat(timespec="seconds"),
                             "source": self._clamp_str(news.get("source", "rss"), 40),
                             "published": self._clamp_str(news.get("published", ""), 40),
                             "title": title,
@@ -923,10 +1014,10 @@ class QuantAgent:
                             factor_node["calibration_reason"] = calibrate_reason
                             print(f" ╰─> [评级校准] {original_weight} -> {calibrated_weight} | {calibrate_reason}")
 
-                        processed_ids.add(news_id)
-                        processed_fingerprints.add(fingerprint)
-                        if fingerprint in failed_news_records:
-                            failed_news_records.pop(fingerprint, None)
+                        next_processed_ids.add(news_id)
+                        next_processed_fingerprints.add(fingerprint)
+                        if fingerprint in next_failed_news_records:
+                            next_failed_news_records.pop(fingerprint, None)
                             failure_state_changed = True
 
                         if self._weight_rank(factor_node["weight"]) >= self._weight_rank(self.min_store_weight):
@@ -939,7 +1030,7 @@ class QuantAgent:
                             print(f" ╰─> [低权重丢弃] 定性: {factor_node['sentiment']} | 评级: {factor_node['weight']}，不写入蓄水池。")
                     except Exception as parse_err:
                         raw_preview = self._clamp_str(locals().get("ai_raw_decision", ""), 240)
-                        previous_failure = failed_news_records.get(fingerprint, {})
+                        previous_failure = next_failed_news_records.get(fingerprint, {})
                         previous_attempts = (
                             previous_failure.get("attempts", 0)
                             if isinstance(previous_failure, dict)
@@ -961,8 +1052,8 @@ class QuantAgent:
 
                         if attempts >= self.max_news_ai_retries:
                             failure_record["status"] = "quarantined"
-                            processed_ids.add(news_id)
-                            processed_fingerprints.add(fingerprint)
+                            next_processed_ids.add(news_id)
+                            next_processed_fingerprints.add(fingerprint)
                             has_updates = True
                             print(
                                 f"🧯 因子提取连续失败 {attempts} 次，已进入隔离区并移出主队列: "
@@ -974,17 +1065,27 @@ class QuantAgent:
                                 f"未写入已处理库，等待重试: {parse_err} | raw={raw_preview}"
                             )
 
-                        failed_news_records[fingerprint] = failure_record
-                        if len(failed_news_records) > 1000:
-                            failed_news_records = dict(list(failed_news_records.items())[-1000:])
+                        next_failed_news_records[fingerprint] = failure_record
+                        if len(next_failed_news_records) > 1000:
+                            next_failed_news_records = dict(list(next_failed_news_records.items())[-1000:])
                         failure_state_changed = True
 
+                writes = []
                 if failure_state_changed:
-                    self._safe_json_write(self.failed_news_file, failed_news_records)
+                    writes.append((self.failed_news_file, next_failed_news_records))
                 if has_updates:
-                    self._safe_json_write(buffer_path, day_buffers)
-                    self._safe_json_write(self.dedup_file, list(processed_ids))
-                    self._safe_json_write(self.fingerprint_file, list(processed_fingerprints)[-50000:])
+                    writes.extend([
+                        (buffer_path, day_buffers),
+                        (self.dedup_file, list(next_processed_ids)),
+                        (self.fingerprint_file, list(next_processed_fingerprints)[-50000:]),
+                    ])
+                pending_batch = {
+                    "writes": writes,
+                    "ids": next_processed_ids,
+                    "fingerprints": next_processed_fingerprints,
+                    "failures": next_failed_news_records,
+                }
+                commit_pending_batch()
 
             except Exception as loop_err:
                 print(f"❌ 监听回路发生运行时异常，策略熔断器保护，3秒后自动软重启: {loop_err}")
@@ -998,8 +1099,9 @@ class QuantAgent:
 
     def run_daily_pipeline(self):
         """每日 08:00 周期收敛宏观内参生成核心流水线"""
-        started_at = datetime.now().astimezone().isoformat(timespec="seconds")
-        today_str = datetime.now().strftime("%Y-%m-%d")
+        started = datetime.now().astimezone()
+        started_at = started.isoformat(timespec="seconds")
+        today_str = started.strftime("%Y-%m-%d")
         print(f"🌅 [Daily] 启动清晨 08:00 周期收敛引擎，执行日期: {today_str}")
 
         raw_memory_state = self.load_memory_state()
@@ -1024,9 +1126,8 @@ class QuantAgent:
 
         metrics = self.fetch_market_signals()
 
-        buffer_path = self._get_buffer_path()
         filtered_news_context = []
-        all_news = self._safe_json_load(buffer_path, [])
+        all_news = self._load_recent_news(started)
         if isinstance(all_news, list):
             from collections import Counter
             weight_counter = Counter(str(n.get("weight", "Low")) for n in all_news if isinstance(n, dict))
