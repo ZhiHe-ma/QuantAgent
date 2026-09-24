@@ -24,7 +24,7 @@ The registry and raw response bodies remain private. The P4 source run was alrea
 
 ## Exact implementation pins
 
-The accepted code through the read-only ledger fix is commit `3411804d123c72f9f28d32498a3b2f21c7fd6f73`. Agent catalog version is `1.1.0`, SHA-256 `cf3cc83bd597b2366d85b973917f7fc4b51255fdcb099ad577543bbb028d1af2`. Plugin catalog version is `1.7.0`, SHA-256 `426bfa3043165dbee425339603237b08d44b9de43c5e367afae861405e7c41cf`. The route policy is `quantagent.p5_sec_route.v1`, SHA-256 `089ffb2d24af9263e8a29c6b385d85a59b28eb481abf8d78cf67e41f2b5a07e2`.
+The code used for the observed chain, including independent review fixes, is commit `ca60204b24d5a48469e53b71cf091414ddf608f1`. Agent catalog version is `1.1.0`, SHA-256 `cf3cc83bd597b2366d85b973917f7fc4b51255fdcb099ad577543bbb028d1af2`. Plugin catalog version is `1.7.0`, SHA-256 `426bfa3043165dbee425339603237b08d44b9de43c5e367afae861405e7c41cf`. The route policy is `quantagent.p5_sec_route.v1`, SHA-256 `089ffb2d24af9263e8a29c6b385d85a59b28eb481abf8d78cf67e41f2b5a07e2`.
 
 | Role | Exact ID and version | Manifest or Recipe SHA-256 | Skill package SHA-256 |
 | --- | --- | --- | --- |
@@ -39,13 +39,13 @@ The accepted code through the read-only ledger fix is commit `3411804d123c72f9f2
 
 | Item | Observed value |
 | --- | --- |
-| Chain | `p5-81929ff73209407b96d99c95076ccec3` |
-| Parent run | `p5p-81929ff73209407b96d99c95076ccec3` |
-| Child run | `p5c-81929ff73209407b96d99c95076ccec3` |
+| Chain | `p5-a3a4b85e1d57458fa2d1199b77a446dc` |
+| Parent run | `p5p-a3a4b85e1d57458fa2d1199b77a446dc` |
+| Child run | `p5c-a3a4b85e1d57458fa2d1199b77a446dc` |
 | Broker bundle file SHA-256 | `9804df4e0747efee86d070f4d8960334434eca0b2e76774b68fc8cb639117853` |
-| Canonical handoff SHA-256 | `8bd5164c276ad555b0c61db417690f65e68192e22d6575c3261a849bce5a5cb3` |
-| Child report byte SHA-256 | `d8710809cab43f5e257b6b39a55fe4de5afbc087427b22c5b05f793784de2e0a` |
-| Measured wall time | 2,327 ms |
+| Canonical handoff SHA-256 | `0e3212d43c98c26b6abe23d5a12641df8b2091c3f0824a5036c369ad8be38c32` |
+| Child report byte SHA-256 | `304d6111143d3788ba1ba4574a1501b5eb15fc5315a01e275c3a2660045752a0` |
+| Measured wall time | 2,344 ms |
 | Handoffs / model cost | 1 / USD 0 minor units |
 
 The append-only audit sequence is `admitted → parent_running → parent_completed → handoff_ready → child_running → completed`. Parent and child `run.json` records show the exact Agent selection, shared chain ID, offline execution, and their completed steps. Reusing the same request ID returns the stored chain and creates no second child run. A different request ID against the same approved synthetic source reproduced the numeric findings.
@@ -64,9 +64,10 @@ Coverage is `2/2` for each metric. These are two-company sample sums, not indust
 
 ## Verification and rejection cases
 
-- The private live-run acceptance test passed with `QUANTAGENT_P5_APPROVED_P4_ROOT` pointing to the approved P4 run root. The full suite ran **217 tests: 212 passed, 5 skipped** with `PYTHONDONTWRITEBYTECODE=1` and `PYTHONUTF8=1`. The skips concern optional external bt/Qlib runtimes and Windows link privileges; the private P4 acceptance test did not skip.
-- Authenticated Result API readback of the child run returned `200` for summary and report; unauthenticated summary returned `401`. The report ETag matched the exact `d871…e0a` report bytes, and GET changed no artifact. Synthetic tampering of a report returned `409`.
+- The private live-run acceptance test passed with `QUANTAGENT_P5_APPROVED_P4_ROOT` pointing to the approved P4 run root. The full suite ran **225 tests: 220 passed, 5 skipped** with `PYTHONDONTWRITEBYTECODE=1` and `PYTHONUTF8=1`. The skips concern optional external bt/Qlib runtimes and Windows link privileges; the private P4 acceptance test and the real Windows junction-swap test did not skip.
+- Authenticated Result API readback of the child run returned `200` for summary and report; unauthenticated summary returned `401`. The report ETag matched the exact `304d…2a0` report bytes, and GET changed no artifact. Synthetic tampering of a report returned `409`.
 - Focused tests rejected changed target/version, cycle, second hop, expired envelope, modified non-record handoff fields, changed catalog/Recipe/plugin pins, network or permission expansion, altered source/packet/report/raw hashes, unapproved source IDs, duplicate request ID with different evidence, and malformed worker results. Parent/child failure, cancellation, timeout, and abrupt process exit left terminal audit states without a completed child report.
+- Independent review fixes verified audit duration beyond the 120-second route deadline, Ctrl+C cancellation and spawned-worker cleanup, rejection of exponent-overflow JSON anywhere in approved or frozen SEC data, and a real Windows directory-junction replacement between path validation and open.
 - `git diff --check` and a repository scan for the project contact, private directory names, and raw SEC response content are final release checks. The private registry, raw responses, and private run root are not committed.
 
 ## Reproduction and limits
