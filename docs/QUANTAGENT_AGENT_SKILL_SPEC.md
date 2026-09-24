@@ -1,6 +1,6 @@
-# QuantAgent Agent/Skill Spec v1
+# QuantAgent Agent/Skill Spec v1/v2
 
-状态：P0 规范冻结，P1 最小入口与 P2 观点跟踪闭环已实现；P3a 有只读结果 API，P3c/P3e 增加本机固定夹具提交、任务状态和协作取消。当前仓库可加载精选目录中的确定性 Agent/Skill 并复用现有 RecipeRunner；这些 API 不扩大 Agent 执行权限，也不等于模型驱动 Agent、任意 Skill 安装或多 Agent 协作已实现。
+状态：P0 规范冻结，P1 最小入口与 P2 观点跟踪闭环已实现；P3a 有只读结果 API，P3c/P3e 增加本机固定夹具提交、任务状态和协作取消。P5 已为获准的 P4 SEC 样本实现固定双 Agent、单跳离线交接。当前仓库可加载精选目录中的确定性 Agent/Skill 并复用现有 RecipeRunner；通用多 Agent 路由、模型驱动 Agent 与任意 Skill 安装仍未实现。
 
 ## 1. 职责
 
@@ -9,7 +9,7 @@
 - Recipe 把方法映射为可检查、可重放的执行顺序。
 - Plugin/Connector 执行动作；现有 `PluginRegistry`、`RecipeRunner`、`DataPacket` 和运行审计仍是唯一执行底座。
 
-第一版只允许一个研究 Agent，`callable_agents` 必须为空。Reader/Analyst/Writer 是最小权限角色，不要求分别启动 LLM；Writer 首选确定性渲染器。
+AgentManifest v1 只允许一个研究 Agent，`callable_agents` 必须为空。v2 在 P5 固定路线中允许生产者列出唯一、精确版本的复核者；复核者的列表仍为空。Reader/Analyst/Writer 是最小权限角色，不要求分别启动 LLM；Writer 首选确定性渲染器。
 
 ## 2. 文件与解析规则
 
@@ -21,11 +21,11 @@
 
 ## 3. AgentManifest
 
-机器 Schema：`schemas/quantagent.agent_manifest.v1.schema.json`。
+机器 Schema：`schemas/quantagent.agent_manifest.v1.schema.json` 和 `schemas/quantagent.agent_manifest.v2.schema.json`。加载器按明确的 `manifest_type` 选择 Schema，未知类型失败关闭。
 
 | 字段 | 规则 |
 | --- | --- |
-| `manifest_type` | 固定 `quantagent.agent_manifest.v1` |
+| `manifest_type` | 精确的 `quantagent.agent_manifest.v1` 或 `quantagent.agent_manifest.v2` |
 | `agent_id` / `version` | 稳定身份和精确版本 |
 | `skills` | 允许的 Skill 精确引用；不能由模型临时安装 |
 | `recipes` | 允许的 Recipe 精确引用 |
@@ -34,7 +34,7 @@
 | `required_capabilities` | Agent 可请求的业务能力，不是执行权限 |
 | `review_gates` | 自动校验/人工审查触发点和拒绝处理 |
 | `limits` | 最大步骤、工具调用、墙钟时间和费用 |
-| `callable_agents` | 允许交接的精确 Agent 引用；首版必须为空 |
+| `callable_agents` | v1 必须为空；v2 在 P5 生产者中只有固定复核者 ID/版本，复核者为空 |
 | `metadata` | 不参与授权的描述信息 |
 
 模型能力至少分别表示 `text_generation`、`structured_output`、`tool_calling`、`min_context_tokens` 和 `offline_replay`。实际运行时能力不足必须拒绝或选择允许名单中的替代模型，不能仅因模型名不同就假设兼容。
@@ -92,3 +92,5 @@ P2 观点跟踪闭环已实现：`builtin.research-agent@1.0.0` 只能选择 `an
 P2 使用研究请求、证据包和观点状态的严格 Schema 与语义校验；验证标的、时区、Point-in-Time、对象/内容哈希、claim 引用、状态一致性和权限请求。Reader 只读显式夹具，Analyst 无文件/网络权限，Writer 只写当前运行目录。报告只显示证据引用和哈希，不渲染原始不可信摘录。相同证据重放保持观点版本不变；研究建议始终 `research_only_*`，`action_eligible` 固定为 false。
 
 P3a 在运行器外增加单用户只读服务，只从已存在的运行目录派生脱敏摘要并校验 Markdown 报告。后续 P3c/P3e 以显式本机模式允许固定离线夹具提交、版本化状态查询和步骤边界的协作取消；它们不提供重启恢复、通用长任务队列或任意能力选择。OpenStock 消费页面与写界面仍是独立里程碑。
+
+P5 的 `review-sec-evidence` 命令只接受私有获准来源 ID 和请求 ID。固定路由策略钉住 Agent、Skill、Recipe、Plugin、目录哈希与权限；协调器先原子预约请求，再在 120 秒预算内启动生产者，把完成的证据包复制到私有 broker 目录，校验完整文件哈希后生成带时限的规范交接信封，只调用一次复核者。复核者从冻结 SEC 响应独立选择财务事实，检查 P4 派生结果和固定报告数字表，并写入现有 Result API 可读的 Markdown 报告。账本保存单调事件、重复请求状态与失败代码，重启仅标记中断而不自动重投。两位 Agent 的 `metadata.coordinator_only` 为 true；通用 `run-agent` 和 `run` 命令拒绝直接运行这条 P5 路线。该用例无模型、网络或交易权限；验收证据见 `docs/P5_SEC_HANDOFF_ACCEPTANCE.md`。
