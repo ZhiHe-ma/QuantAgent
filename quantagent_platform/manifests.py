@@ -191,7 +191,14 @@ def load_agent_manifest(path: str | Path) -> LoadedManifest:
     manifest_path = Path(path).resolve()
     raw = _read_bounded(manifest_path, _MAX_MANIFEST_BYTES, "AgentManifest")
     data = _load_strict_yaml(manifest_path)
-    schema_path = Path(__file__).resolve().parents[1] / "schemas" / "quantagent.agent_manifest.v1.schema.json"
+    schema_names = {
+        "quantagent.agent_manifest.v1": "quantagent.agent_manifest.v1.schema.json",
+        "quantagent.agent_manifest.v2": "quantagent.agent_manifest.v2.schema.json",
+    }
+    schema_name = schema_names.get(data.get("manifest_type"))
+    if schema_name is None:
+        raise ManifestError("unsupported AgentManifest version")
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / schema_name
     _validate_schema(data, schema_path, "AgentManifest")
     return LoadedManifest(path=manifest_path, sha256=_sha256_bytes(raw), data=data)
 
