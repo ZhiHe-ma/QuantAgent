@@ -1,0 +1,31 @@
+{
+  "recipe_id": "sec-industry-peers",
+  "recipe_version": "1.0.0",
+  "description": "Source-traceable MARA and Riot FY2025 SEC sample research with offline packet replay.",
+  "steps": [
+    {
+      "id": "load-sec-facts",
+      "capability": "source.sec_company_facts",
+      "plugin": "builtin.sec-edgar-source",
+      "config": {"path": "${source_path}"}
+    },
+    {
+      "id": "summarize-sector",
+      "capability": "research.sec_sector_overview",
+      "plugin": "builtin.sec-sector-overview",
+      "config": {}
+    },
+    {
+      "id": "compare-peers",
+      "capability": "research.sec_peer_comparison",
+      "plugin": "builtin.sec-peer-comparison",
+      "config": {}
+    },
+    {
+      "id": "write-sec-report",
+      "capability": "report.sec_research",
+      "plugin": "builtin.markdown-sec-research-report",
+      "config": {"title": "${report_title}"}
+    }
+  ]
+}

@@ -31,6 +31,13 @@ from .research_plugins import (
     JsonThesisReviewSource,
     MarkdownThesisReport,
 )
+from .sec_plugins import (
+    MarkdownSecResearchReport,
+    SecEdgarSource,
+    SecPeerComparison,
+    SecReplaySource,
+    SecSectorOverview,
+)
 
 
 class RecipeError(RuntimeError):
@@ -78,6 +85,11 @@ def default_registry() -> PluginRegistry:
         JsonThesisReviewSource(),
         DeterministicThesisTracker(),
         MarkdownThesisReport(),
+        SecEdgarSource(),
+        SecReplaySource(),
+        SecSectorOverview(),
+        SecPeerComparison(),
+        MarkdownSecResearchReport(),
     ):
         entry = catalog.get(plugin.manifest.plugin_id)
         if entry is None:
