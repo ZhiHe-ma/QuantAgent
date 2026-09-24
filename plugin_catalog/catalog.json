@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.5.0",
+  "catalog_version": "1.6.0",
   "plugins": [
     {
       "plugin_id": "builtin.json-signal-source",
@@ -152,6 +152,46 @@
       "upstream": "QuantAgent built-in",
       "license": "MIT",
       "notes": "Writes a deterministic thesis review report without rendering raw untrusted evidence excerpts."
+    },
+    {
+      "plugin_id": "builtin.sec-edgar-source",
+      "version": "1.0.0",
+      "status": "experimental",
+      "upstream": "U.S. SEC EDGAR Submissions and Company Facts APIs",
+      "license": "MIT adapter; SEC public filing reuse and fair-access terms apply",
+      "notes": "Opt-in, fixed four-request MARA/Riot FY2025 source; requires runtime contact and explicit network permission."
+    },
+    {
+      "plugin_id": "builtin.sec-replay-source",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Validates and replays a frozen selected SEC packet without network access."
+    },
+    {
+      "plugin_id": "builtin.sec-sector-overview",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Deterministic two-issuer sample coverage and admitted USD sums."
+    },
+    {
+      "plugin_id": "builtin.sec-peer-comparison",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Deterministic same-concept, period, unit peer comparison with explicit omissions."
+    },
+    {
+      "plugin_id": "builtin.markdown-sec-research-report",
+      "version": "1.0.0",
+      "status": "verified",
+      "upstream": "QuantAgent built-in",
+      "license": "MIT",
+      "notes": "Writes source-traceable P4 sample report for the existing authenticated Result API."
     }
   ]
 }
