@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .contracts import ContractError, DataPacket, canonical_json
-from .p5_registry import ApprovedSourceError, bounded_regular_file, strict_json
+from .p5_registry import ApprovedSourceError, _path_signatures, bounded_regular_file, strict_json
 
 
 _MAX_SPEC = 64 * 1024
@@ -186,10 +186,20 @@ class WorkerSupervisor:
         role = _ROLES[spec.agent_id]
         expected_dir = Path(os.path.abspath(spec.output_root)) / spec.run_id
         path = Path(response["packet_path"])
-        if Path(os.path.abspath(path)).parent != expected_dir or path.name != role[3]:
+        if path.name != role[3]:
             return WorkerResult("interrupted", spec.run_id)
         try:
+            expected_signatures = _path_signatures(expected_dir)
+            reported_signatures = _path_signatures(path.parent)
+            if Path(os.path.abspath(path)).parent != expected_dir:
+                # Windows 8.3 and long names can identify the same directory.
+                # Reject links/junctions before accepting an identity match.
+                if not path.parent.samefile(expected_dir):
+                    return WorkerResult("interrupted", spec.run_id)
             raw = bounded_regular_file(path, _MAX_PACKET)
+            if (_path_signatures(expected_dir) != expected_signatures
+                    or _path_signatures(path.parent) != reported_signatures):
+                return WorkerResult("interrupted", spec.run_id)
             packet = DataPacket.from_dict(strict_json(raw))
             if (
                 packet.contract_version != role[4]
@@ -229,13 +239,17 @@ class WorkerSupervisor:
             reason: str | None = None
             cancel_until: float | None = None
             while True:
-                try:
-                    if parent_pipe.poll(0.02):
-                        raw = parent_pipe.recv_bytes(_MAX_RESULT)
-                        response = strict_json(raw)
+                if response is None:
+                    try:
+                        if parent_pipe.poll(0.02):
+                            raw = parent_pipe.recv_bytes(_MAX_RESULT)
+                            response = strict_json(raw)
+                    except (EOFError, OSError, ApprovedSourceError):
                         break
-                except (EOFError, OSError, ApprovedSourceError):
-                    break
+                else:
+                    # A result can arrive before interpreter cleanup finishes.
+                    # Keep supervising exit under the same deadline/cancellation.
+                    process.join(timeout=0.02)
                 if not process.is_alive():
                     break
                 now = time.monotonic()
@@ -263,6 +277,8 @@ class WorkerSupervisor:
                 return WorkerResult("interrupted", spec.run_id)
             if time.monotonic() >= deadline:
                 return WorkerResult("timed_out", spec.run_id)
+            if cancel_until is not None:
+                return WorkerResult("cancelled", spec.run_id)
             return self._verified_result(spec, response)
         finally:
             child_pipe.close()
