@@ -44,6 +44,24 @@ def sleeping_worker(connection, cancel_flag, spec_raw: bytes) -> None:
     time.sleep(10)
 
 
+def slow_exit_worker(connection, cancel_flag, spec_raw: bytes) -> None:
+    fixture_worker(connection, cancel_flag, spec_raw)
+    spec = json.loads(spec_raw)
+    (Path(spec["output_root"]) / "result-sent").write_text("ready")
+    cancel_flag.wait(0.6)
+    (Path(spec["output_root"]) / "cleanup-finished").write_text("done")
+
+
+def stuck_after_result_worker(connection, cancel_flag, spec_raw: bytes) -> None:
+    fixture_worker(connection, cancel_flag, spec_raw)
+    time.sleep(10)
+
+
+def crash_after_result_worker(connection, cancel_flag, spec_raw: bytes) -> None:
+    fixture_worker(connection, cancel_flag, spec_raw)
+    raise SystemExit(7)
+
+
 def cancel_aware_worker(connection, cancel_flag, spec_raw: bytes) -> None:
     spec = json.loads(spec_raw)
     Path(spec["output_root"]).mkdir(parents=True, exist_ok=True)
@@ -110,6 +128,56 @@ class WorkerTests(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 6)
         self.assertFalse((self.root / "output" / "worker-run" /
                           "03-write-sec-review.json").exists())
+
+    def test_valid_result_waits_for_clean_worker_exit(self) -> None:
+        outcome = WorkerSupervisor(_test_entrypoint=slow_exit_worker).run(
+            self.spec(), deadline=time.monotonic() + 8,
+            cancel_event=multiprocessing.Event())
+        self.assertEqual(outcome.status, "completed")
+        self.assertTrue((self.root / "output" / "cleanup-finished").is_file())
+        self.assertTrue(outcome.packet_path.is_file())
+
+    def test_result_does_not_bypass_exit_deadline(self) -> None:
+        before = {child.pid for child in multiprocessing.active_children()}
+        started = time.monotonic()
+        outcome = WorkerSupervisor(_test_entrypoint=stuck_after_result_worker).run(
+            self.spec(), deadline=started + 3,
+            cancel_event=multiprocessing.Event())
+        self.assertTrue((self.root / "output" / "worker-run" /
+                         "02-prepare-sec-evidence.json").is_file())
+        self.assertEqual(outcome.status, "timed_out")
+        self.assertIsNone(outcome.packet_path)
+        self.assertLess(time.monotonic() - started, 8)
+        self.assertEqual({child.pid for child in multiprocessing.active_children()}, before)
+
+    def test_cancellation_after_result_is_honored_while_exiting(self) -> None:
+        cancel = multiprocessing.Event()
+        marker = self.root / "output" / "result-sent"
+
+        def cancel_after_result() -> None:
+            until = time.monotonic() + 5
+            while not marker.exists() and time.monotonic() < until:
+                time.sleep(0.01)
+            if marker.exists():
+                cancel.set()
+
+        trigger = threading.Thread(target=cancel_after_result)
+        trigger.start()
+        try:
+            outcome = WorkerSupervisor(_test_entrypoint=slow_exit_worker).run(
+                self.spec(), deadline=time.monotonic() + 8, cancel_event=cancel)
+        finally:
+            trigger.join(timeout=6)
+        self.assertTrue(marker.is_file())
+        self.assertEqual(outcome.status, "cancelled")
+        self.assertIsNone(outcome.packet_path)
+
+    def test_valid_result_followed_by_crash_is_interrupted(self) -> None:
+        outcome = WorkerSupervisor(_test_entrypoint=crash_after_result_worker).run(
+            self.spec(), deadline=time.monotonic() + 8,
+            cancel_event=multiprocessing.Event())
+        self.assertEqual(outcome.status, "interrupted")
+        self.assertIsNone(outcome.packet_path)
 
     def test_cancel_during_worker_returns_cancelled(self) -> None:
         cancel = multiprocessing.Event()

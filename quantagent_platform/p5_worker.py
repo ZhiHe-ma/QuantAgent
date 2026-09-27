@@ -229,13 +229,17 @@ class WorkerSupervisor:
             reason: str | None = None
             cancel_until: float | None = None
             while True:
-                try:
-                    if parent_pipe.poll(0.02):
-                        raw = parent_pipe.recv_bytes(_MAX_RESULT)
-                        response = strict_json(raw)
+                if response is None:
+                    try:
+                        if parent_pipe.poll(0.02):
+                            raw = parent_pipe.recv_bytes(_MAX_RESULT)
+                            response = strict_json(raw)
+                    except (EOFError, OSError, ApprovedSourceError):
                         break
-                except (EOFError, OSError, ApprovedSourceError):
-                    break
+                else:
+                    # A result can arrive before interpreter cleanup finishes.
+                    # Keep supervising exit under the same deadline/cancellation.
+                    process.join(timeout=0.02)
                 if not process.is_alive():
                     break
                 now = time.monotonic()
@@ -263,6 +267,8 @@ class WorkerSupervisor:
                 return WorkerResult("interrupted", spec.run_id)
             if time.monotonic() >= deadline:
                 return WorkerResult("timed_out", spec.run_id)
+            if cancel_until is not None:
+                return WorkerResult("cancelled", spec.run_id)
             return self._verified_result(spec, response)
         finally:
             child_pipe.close()
