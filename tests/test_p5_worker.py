@@ -7,10 +7,12 @@ import _thread
 import json
 import multiprocessing
 import os
+import subprocess
 import tempfile
 import threading
 import time
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -42,6 +44,18 @@ def fixture_worker(connection, cancel_flag, spec_raw: bytes) -> None:
 
 def sleeping_worker(connection, cancel_flag, spec_raw: bytes) -> None:
     time.sleep(10)
+
+
+def canonical_path_worker(connection, cancel_flag, spec_raw: bytes) -> None:
+    spec = json.loads(spec_raw)
+    spec["output_root"] = str(Path(spec["output_root"]).resolve())
+    fixture_worker(connection, cancel_flag, canonical_json(spec).encode())
+
+
+def outside_path_worker(connection, cancel_flag, spec_raw: bytes) -> None:
+    spec = json.loads(spec_raw)
+    spec["output_root"] += "-outside"
+    fixture_worker(connection, cancel_flag, canonical_json(spec).encode())
 
 
 def slow_exit_worker(connection, cancel_flag, spec_raw: bytes) -> None:
@@ -118,6 +132,61 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(outcome.run_id, "worker-run")
         self.assertEqual(outcome.packet_sha256,
                          hashlib.sha256(outcome.packet_path.read_bytes()).hexdigest())
+
+    @unittest.skipUnless(os.name == "nt", "DOS short paths are Windows-only")
+    def test_short_output_root_accepts_same_directory_long_path(self) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        output = self.root / "long-output-directory"
+        output.mkdir()
+        get_short = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        get_short.argtypes = (wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD)
+        get_short.restype = wintypes.DWORD
+        buffer = ctypes.create_unicode_buffer(32768)
+        size = get_short(str(output), buffer, len(buffer))
+        if not size or size >= len(buffer):
+            self.skipTest("DOS short path lookup unavailable")
+        short_output = buffer.value
+        if Path(short_output) == output.resolve():
+            self.skipTest("8.3 names are disabled on this volume")
+        outcome = WorkerSupervisor(_test_entrypoint=canonical_path_worker).run(
+            replace(self.spec(), output_root=short_output),
+            deadline=time.monotonic() + 8, cancel_event=multiprocessing.Event())
+        self.assertEqual(outcome.status, "completed")
+        self.assertTrue(outcome.packet_path.parent.samefile(output / "worker-run"))
+
+    def test_result_from_different_directory_is_interrupted(self) -> None:
+        (self.root / "output" / "worker-run").mkdir(parents=True)
+        outcome = WorkerSupervisor(_test_entrypoint=outside_path_worker).run(
+            self.spec(), deadline=time.monotonic() + 8,
+            cancel_event=multiprocessing.Event())
+        self.assertEqual(outcome.status, "interrupted")
+        self.assertIsNone(outcome.packet_path)
+
+    @unittest.skipUnless(os.name == "nt", "junctions are Windows-only")
+    def test_junction_output_root_rejects_canonical_result(self) -> None:
+        target = self.root / "real-output"
+        target.mkdir()
+        link = self.root / "linked-output"
+        environment = {**os.environ, "P5_TEST_LINK": str(link),
+                       "P5_TEST_TARGET": str(target)}
+        created = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command",
+             "New-Item -ItemType Junction -Path $env:P5_TEST_LINK "
+             "-Target $env:P5_TEST_TARGET | Out-Null"],
+            env=environment, capture_output=True, text=True, check=False,
+        )
+        if created.returncode != 0:
+            self.skipTest("junction creation is unavailable")
+        try:
+            outcome = WorkerSupervisor(_test_entrypoint=canonical_path_worker).run(
+                replace(self.spec(), output_root=str(link)),
+                deadline=time.monotonic() + 8, cancel_event=multiprocessing.Event())
+            self.assertEqual(outcome.status, "interrupted")
+            self.assertIsNone(outcome.packet_path)
+        finally:
+            link.rmdir()
 
     def test_deadline_terminates_blocked_worker(self) -> None:
         started = time.monotonic()
