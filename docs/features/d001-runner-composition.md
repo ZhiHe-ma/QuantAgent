@@ -4,6 +4,7 @@
 {
   "branch": "refactor/d001-runner-composition",
   "base_commit": "76382aa8062c03141c29ad51e1562ff6b3124708",
+  "tested_commit": "7d7a840dcda0635f0512a21a1a1bab5c70f4e74b",
   "components": ["runner", "default-composition", "compatibility-exports", "architecture", "acceptance-tests"],
   "readme_unchanged": {}
 }
@@ -30,6 +31,8 @@ runner 增加默认注册表工厂的公开注入接口；bootstrap 负责具体
 ## 测试证据
 
 实施环境：2026-10-02，Windows 11 10.0.22631、仓库外 Python 3.12.8，原 `.venv/Lib/site-packages`，Import Linter 2.8、grimp 3.13；UTF-8 输出。基线为首个 JSON 的提交。
+
+完整离线测试针对实现提交 `7d7a840dcda0635f0512a21a1a1bab5c70f4e74b` 的代码内容；后续验收记录提交只补充文档。
 
 基线 `python -m unittest discover -s tests -v`：283 项，0 失败，原 6 项跳过，57.791 秒。
 
