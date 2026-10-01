@@ -11,7 +11,7 @@
 
 ## 对外接口
 
-components.json version=1：每项能力包含 id、kind、modules、public_modules、allows、readme、data_owner、assets。modules/依赖/豁免禁止通配；assets 中目录以 / 结尾，映射文档变更范围。legacy-baseline.json 保存原始提交、具体规则/引用/成员、理由与整改任务。
+components.json version=1：每项能力包含 id、kind、modules、public_modules、allows、external_dependencies、readme、data_owner、assets。modules/依赖/豁免禁止通配；assets 中目录以 / 结尾，映射文档变更范围；directory_roots 发现 Agent/Skill 的独立子目录，必须单独登记并拥有 README。legacy-baseline.json 保存原始提交、具体规则/引用/成员、理由与整改任务。
 
 ## 依赖规则
 

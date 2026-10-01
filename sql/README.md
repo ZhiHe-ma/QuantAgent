@@ -2,15 +2,16 @@
 
 ## 职责与边界
 
-信号审计持久化。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
+保存 signal_audit 的 SQLite 建表迁移；审计运行、规范信号、因素及历史结果由 SignalAuditStore 管理。该审计记录不替代 OpenStock 的用户决定、理由和私有回证。
 
 ## 文件导航
 
 - `signal-audit`：[signal_audit](../signal_audit.py)。
+- [001_signal_audit.sql](001_signal_audit.sql)：事务、外键、唯一键和值域约束。
 
 ## 对外接口
 
-通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
+SignalAuditStore.initialize 创建/迁移指定数据库；record_completed_signal 验证记录并事务写入；get_canonical_signal 读取日期、资产和周期对应的规范信号。值域、必填内容或冲突由 SignalAuditValidationError/SignalAuditError 报错；初始化和写入会修改数据库，读取不应绕过所属模块。
 
 ## 依赖规则
 

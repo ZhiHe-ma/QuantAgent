@@ -32,9 +32,9 @@ README 描述当前状态；功能分支说明记录本次目标、非目标、�
 
 ## CI 与人工审查
 
-CI 使用 Python 3.12，在 Windows/Linux 分别运行全部离线测试和 architecture 检查。GitHub 设置中需要将 `Architecture / Python 3.12 / ubuntu-latest`、`Architecture / Python 3.12 / windows-latest` 以及原有两项测试检查设为 main 必需检查，并要求人工审核；CODEOWNERS 覆盖治理工具、规则、文档和 workflow。仅提交 workflow 或 CODEOWNERS 不等于远端保护已生效。设置状态在分支验收记录中单列。
+CI 使用 Python 3.12，在 Windows/Linux 分别运行全部离线测试和 architecture 检查。远端 main 已将 `Architecture / Python 3.12 / ubuntu-latest`、`Architecture / Python 3.12 / windows-latest` 以及原有两项测试设为必需检查，绑定 GitHub Actions 提供方，并要求合并前分支与目标保持最新。CODEOWNERS 覆盖治理工具、规则、文档和 workflow；人工审核按仓库规范执行。本批没有启用 GitHub 审批人数门禁，管理员保持默认豁免，不能将其描述为不可绕过的管理员保护。仅提交 workflow 或 CODEOWNERS 不等于远端保护生效；设置和回读结果在分支验收记录单列。
 
-机械检查不能判断职责是否合理、文档是否真实或运行时是否越权；人工必须审查这些语义及豁免理由。代码所有者自己提交的 PR 需要另一位有权限的审阅者才能满足有效审批，不能自己审批自己。源码与文档检查通过后，只能称为首批治理门禁建立；全部存量清零后才可声明四条约束全部符合。
+机械检查不能判断职责是否合理、文档是否真实或运行时是否越权；人工必须审查这些语义及豁免理由，并留下审查证据。若后续启用 GitHub 正式审批，代码所有者自己提交的 PR 需要另一位有权限的审阅者，不能自己审批自己。源码与文档检查通过后，只能称为首批治理门禁建立；全部存量清零后才可声明四条约束全部符合。
 
 ## 验证与兼容
 

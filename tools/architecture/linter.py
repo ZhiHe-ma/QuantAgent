@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import configparser
+from itertools import combinations, product
 import os
 from pathlib import Path
 import subprocess
@@ -49,10 +50,14 @@ def configuration(registry: dict, exceptions: list[dict], package_roots: list[st
             layers.append(" : ".join(modules))
     if len(layers) > 1:
         add("directional-layers", "layers", {"layers": "\n" + "\n".join(layers)})
-    business = sorted(m for c in components.values() if c["kind"] == "module"
-                      for m in c["modules"] if internal(m))
-    if len(business) > 1:
-        add("business-independence", "independence", {"modules": "\n" + "\n".join(business)})
+    business = [(c["id"], sorted(m for m in c["modules"] if internal(m)))
+                for c in components.values() if c["kind"] == "module"]
+    # Independence is between capabilities; files inside one capability may
+    # collaborate. Flat legacy modules cannot be represented as package groups.
+    for (left_id, left), (right_id, right) in combinations(business, 2):
+        for index, pair in enumerate(product(left, right)):
+            add(f"business-independence-{left_id}-{right_id}-{index}", "independence",
+                {"modules": "\n" + "\n".join(pair)})
     from io import StringIO
     output = StringIO(); config.write(output)
     return output.getvalue()

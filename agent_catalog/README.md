@@ -2,15 +2,17 @@
 
 ## 职责与边界
 
-Agent 与 Skill 精选目录。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
+锁定 Agent、Skill、Recipe 的 ID、版本、验证状态、相对路径与 SHA256。只决定可用清单；权限预检和运行由 AgentRunner/RecipeRunner 负责，新增清单条目不自动授予执行权限。
 
 ## 文件导航
 
 - [catalog.json](catalog.json)
+- [agents/README.md](agents/README.md)：各 Agent 的声明。
+- [skills/thesis-tracker/README.md](skills/thesis-tracker/README.md)：研究假设跟踪示例。
 
 ## 对外接口
 
-通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
+AgentCatalog.load 读取 catalog.json；get 按精确 ID/版本返回验证后的声明。路径越界、重复标识、哈希或身份不一致触发 ManifestError；AgentRunner 继续核对 Agent、Skill、Recipe 的能力集合与执行预算。目录变更需同时核对清单锁定关系。
 
 ## 依赖规则
 

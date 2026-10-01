@@ -303,6 +303,14 @@ class GuardrailTests(unittest.TestCase):
         self.write("qa/contracts.py", "from .domain import Evidence\n")
         self.assertNotEqual(0, run(self.root, self.registry, [])["exit_code"])
 
+    def test_internal_business_files_can_depend_on_each_other(self):
+        from tools.architecture.linter import run
+        self.registry["components"][2]["modules"].append("qa.domain_helper")
+        self.write("qa/domain_helper.py", "def helper(): pass\n")
+        self.write("qa/domain.py", "from .domain_helper import helper\n")
+        self.assertEqual([], self.inspect()["violations"])
+        self.assertEqual(0, run(self.root, self.registry, [])["exit_code"])
+
     def test_allowlisted_contract_can_depend_on_another_contract(self):
         from tools.architecture.linter import run
         self.registry["components"].append(component("inner-contract", ["qa.inner"], "contract"))

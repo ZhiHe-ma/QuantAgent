@@ -41,7 +41,12 @@
     "skill-sec-evidence-independent-review",
     "skill-sec-evidence-preparation",
     "skill-signal-data-health",
-    "skill-thesis-tracker"
+    "skill-thesis-tracker",
+    "agent-data-health-agent",
+    "agent-research-agent",
+    "agent-sec-evidence-producer-agent",
+    "agent-sec-evidence-review-agent",
+    "agent-definitions"
   ],
   "readme_unchanged": {}
 }
@@ -65,13 +70,17 @@
 
 ## 测试证据
 
-实施基线：远端 main ccded244593942fc6de7c10983d6b0f795c36a47（重新获取，替代计划参考 bc9d647）；分支 feature/architecture-guardrails，Windows、Python 3.12。初始 30 个门禁测试先失败后通过；独立审查后扩充为 46 个测试，覆盖嵌套目录、包根属性、局部别名、未登记 SDK、独立 Skill、能力与资产删除。审查反例先产生 8 个失败与 1 个错误，修复后纳入完整通过结果。
+实施基线：远端 main ccded244593942fc6de7c10983d6b0f795c36a47（重新获取，替代计划参考 bc9d647）；分支 feature/architecture-guardrails，Windows、Python 3.12。初始 30 个门禁测试先失败后通过；独立审查后扩充为 47 个测试，覆盖嵌套目录、包根属性、局部别名、未登记 SDK、独立 Skill、能力与资产删除。审查反例先产生 8 个失败与 1 个错误，修复后纳入完整通过结果。
 
-最终本地命令 `python -m unittest discover -s tests -v`：278 项、0 失败、6 项跳过；其中原有 232 项未修改，新增 46 项门禁用例。跳过项为真实 Qlib/bt 后端 2 项、缺少私有 P4 固定运行样本 1 项、Windows 无符号链接权限 3 项。使用仓库外 Python 3.12，PYTHONUTF8=1，PYTHONPATH 指向本工作树 .venv/Lib/site-packages 的锁定依赖。初始仓库内 .venv 运行触发原有 Qlib 可执行文件目录负向测试的环境假设；换用仓库外解释器后通过，未放宽规则或更改产品/原有测试。
+最终本地命令 `python -m unittest discover -s tests -v`：279 项、0 失败、6 项跳过；其中原有 232 项未修改，新增 47 项门禁用例。跳过项为真实 Qlib/bt 后端 2 项、缺少私有 P4 固定运行样本 1 项、Windows 无符号链接权限 3 项。使用仓库外 Python 3.12，PYTHONUTF8=1，PYTHONPATH 指向本工作树 .venv/Lib/site-packages 的锁定依赖。初始仓库内 .venv 运行触发原有 Qlib 可执行文件目录负向测试的环境假设；换用仓库外解释器后通过，未放宽规则或更改产品/原有测试。
 
-最终本地命令 `python -m tools.architecture --base-ref ccded244593942fc6de7c10983d6b0f795c36a47 --branch feature/architecture-guardrails --report artifacts/architecture/local-gate.json`：退出 0，PARTIAL_COMPLIANCE，42 个模块（35 个产品、7 个治理工具）、42 条精确存量违规、两组环；Import Linter 退出 0。`git diff --check` 无错误。原始日志在忽略的 artifacts/architecture；测试未导入业务来构建依赖图，未联网。代码版本为上述基线加本分支本次提交内容；提交后复核结果另行补录。
+最终本地命令 `python -m tools.architecture --base-ref ccded244593942fc6de7c10983d6b0f795c36a47 --branch feature/architecture-guardrails --report artifacts/architecture/local-gate.json`：退出 0，PARTIAL_COMPLIANCE，42 个模块（35 个产品、7 个治理工具）、42 条精确存量违规、两组环；Import Linter 退出 0。`git diff --check` 无错误。原始日志在忽略的 artifacts/architecture；测试未导入业务来构建依赖图，未联网。首个被测实现提交为 2825bb37dae787338e2d7c9573a964601981ac77；最终复核还修正了同一业务能力内部文件不应被独立性契约拒绝的误报（失败用例先复现），补全 Agent 子目录文档并收录证据。最终完整测试为 279 项；门禁按完整目标与前次提交分别复核。
 
-CI：待分支发布后验证；远端 main 当前 protected=false，连接器无管理权限（保护 API 返回 403），浏览器管理页未登录，必需检查尚未启用。真实模型、行情抓取、真实 Qlib/bt 后端、部署和生产未验证。
+CI：提交 2825bb37dae787338e2d7c9573a964601981ac77 的 [PR 运行 36879145351](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/36879145351) 四项均 success：Python 3.12 / ubuntu-latest、Python 3.12 / windows-latest、Architecture / Python 3.12 / ubuntu-latest、Architecture / Python 3.12 / windows-latest。运行步骤执行锁定依赖安装、上述完整离线测试，以及 `python -m unittest discover -s tests/architecture -v`、`python -m tools.architecture --report artifacts/architecture/ci-report.json`。草稿 [PR #21](https://github.com/ZhiHe-ma/QuantAgent/pull/21) 保持未合并。
+
+远端保护：2026-10-01 使用现有 Git 登录读取管理权限（连接器自身无 admin 权限），确认此前 main 没有保护或 ruleset；只新增上述四项必需检查，绑定 GitHub Actions app_id=15368、strict=true，PUT 后 GET 回读 200，检查名称及提供方完全一致。管理员保持默认豁免（enforce_admins=false），未启用正式审批人数门禁；人工语义审核仍是仓库规范要求。额外启用管理员强制保护曾被自动审批审查拒绝，随后移除此额外设置并完成原定检查配置。回读证据在忽略的 artifacts/architecture/remote-protection-after.json，不保存凭据。
+
+真实模型、行情抓取、真实 Qlib/bt 后端、部署和生产未验证。
 
 ## 回滚方式
 

@@ -2,9 +2,11 @@
 
 ## 职责与边界
 
-离线验证与验收。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
+使用固定样本验证公开 Python、CLI、HTTP、配方、权限、审计和恢复行为；architecture 子包验证架构与文档门禁。测试证据按本地、CI、外部后端分开记录，不负责运行生产任务。
 
 ## 文件导航
+
+- [architecture/test_guardrails.py](architecture/test_guardrails.py)：合法分层、违规、基线收缩、文档同步及同一能力内部协作的正反例。
 
 - [test_agent_runtime.py](test_agent_runtime.py)
 - [test_bt_plugins.py](test_bt_plugins.py)

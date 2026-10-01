@@ -677,15 +677,80 @@
       "assets": [
         "agent_catalog/skills/thesis-tracker/"
       ]
+    },
+    {
+      "id": "agent-data-health-agent",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/agents/data-health-agent/README.md",
+      "assets": [
+        "agent_catalog/agents/data-health-agent/"
+      ],
+      "data_owner": "QuantAgent: public research and audit"
+    },
+    {
+      "id": "agent-research-agent",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/agents/research-agent/README.md",
+      "assets": [
+        "agent_catalog/agents/research-agent/"
+      ],
+      "data_owner": "QuantAgent: public research and audit"
+    },
+    {
+      "id": "agent-sec-evidence-producer-agent",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/agents/sec-evidence-producer-agent/README.md",
+      "assets": [
+        "agent_catalog/agents/sec-evidence-producer-agent/"
+      ],
+      "data_owner": "QuantAgent: public research and audit"
+    },
+    {
+      "id": "agent-sec-evidence-review-agent",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/agents/sec-evidence-review-agent/README.md",
+      "assets": [
+        "agent_catalog/agents/sec-evidence-review-agent/"
+      ],
+      "data_owner": "QuantAgent: public research and audit"
+    },
+    {
+      "id": "agent-definitions",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/agents/README.md",
+      "assets": [
+        "agent_catalog/agents/"
+      ],
+      "data_owner": "QuantAgent: public research and audit"
     }
   ],
   "additional_readmes": [
     "docs/architecture/README.md",
     "docs/features/README.md",
-    "examples/manifests/README.md",
-    "agent_catalog/agents/README.md"
+    "examples/manifests/README.md"
   ],
   "directory_roots": [
-    "agent_catalog/skills/"
+    "agent_catalog/skills/",
+    "agent_catalog/agents/"
   ]
 }

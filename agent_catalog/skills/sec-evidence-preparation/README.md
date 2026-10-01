@@ -2,7 +2,7 @@
 
 ## 职责与边界
 
-本 Skill 由目录清单锁定版本和哈希，经现有 Agent/Recipe 权限预检调用。工作流说明见 SKILL.md，技能不能自行扩大权限、改路由或取得私人数据。
+围绕 source.sec_approved_run, research.sec_evidence_bundle 提供声明和使用步骤。由目录清单锁定版本和哈希，经 Agent/Recipe 权限预检调用；详见 SKILL.md，不自行扩大权限、改路由或取得私人数据。
 
 ## 文件导航
 
@@ -11,7 +11,7 @@
 
 ## 对外接口
 
-通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
+Skill `builtin.sec-evidence-preparation@1.0.0` 声明输入 `quantagent.sec_approved_run.v1`，输出 `quantagent.sec_evidence_bundle.v1`；由兼容配方调用。内容文件及 package_sha256 在 skill.yaml 锁定，哈希或能力不匹配会被现有预检拒绝。说明文字本身不执行工具；实际副作用取决于授权插件。
 
 ## 依赖规则
 
