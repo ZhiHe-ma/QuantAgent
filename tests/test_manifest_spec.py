@@ -13,7 +13,7 @@ except ImportError:  # CI and the P1 Agent runtime install requirements-test.txt
     ValidationError = None
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 SCHEMA_DIR = ROOT / "schemas"
 SCHEMA_PATHS = (
     SCHEMA_DIR / "quantagent.agent_manifest.v1.schema.json",

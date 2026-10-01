@@ -11,7 +11,7 @@ from threading import Event
 from unittest.mock import patch
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 sys.path.insert(0, str(ROOT))
 
 from fastapi.testclient import TestClient  # noqa: E402

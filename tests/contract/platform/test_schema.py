@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 MIGRATION = ROOT / "sql" / "001_signal_audit.sql"
 
 

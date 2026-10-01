@@ -8,10 +8,12 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
+
+from tests.support.paths import ROOT
 from unittest import mock
 
 
-SOURCE_PATH = Path(__file__).resolve().parents[1] / "agent_engine.py"
+SOURCE_PATH = ROOT / "agent_engine.py"
 
 
 def load_agent_module():

@@ -10,7 +10,7 @@ from quantagent_platform.sec_analysis import (
     build_sector,
 )
 from quantagent_platform.sec_contracts import normalize_sample
-from tests.test_sec_contracts import ISSUERS, make_payloads, make_responses
+from tests.support.sec_samples import ISSUERS, make_payloads, make_responses
 
 
 class SecAnalysisTests(unittest.TestCase):

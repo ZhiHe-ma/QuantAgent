@@ -748,7 +748,20 @@
   "additional_readmes": [
     "docs/architecture/README.md",
     "docs/features/README.md",
-    "examples/manifests/README.md"
+    "examples/manifests/README.md",
+    "tests/unit/README.md",
+    "tests/unit/research/README.md",
+    "tests/contract/README.md",
+    "tests/contract/sec/README.md",
+    "tests/contract/platform/README.md",
+    "tests/integration/README.md",
+    "tests/integration/sec/README.md",
+    "tests/integration/p5/README.md",
+    "tests/integration/audit/README.md",
+    "tests/support/fakes/README.md",
+    "tests/fixtures/README.md",
+    "tests/architecture/README.md",
+    "tests/support/README.md"
   ],
   "directory_roots": [
     "agent_catalog/skills/",

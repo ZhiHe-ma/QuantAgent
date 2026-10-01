@@ -21,10 +21,10 @@ from quantagent_platform.p5_coordinator import ChainResult
 from quantagent_platform.p5_registry import RAW_NAMES
 from quantagent_platform.result_api import ApiConfig, create_app
 from quantagent_platform.runner import RecipeRunner, default_registry
-from tests.test_sec_contracts import make_responses
+from tests.support.sec_samples import make_responses
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 TOKEN = "p5-test-token-with-at-least-thirty-two-characters"
 
 

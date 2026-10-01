@@ -18,10 +18,10 @@ from quantagent_platform.plugins import PluginError
 from quantagent_platform.result_api import ApiConfig, create_app
 from quantagent_platform.runner import RecipeError, RecipeRunner, default_registry
 from quantagent_platform.sec_contracts import SEC_FACTS_CONTRACT, normalize_sample
-from tests.test_sec_contracts import ISSUERS, make_payloads, make_responses
+from tests.support.sec_samples import ISSUERS, make_payloads, make_responses
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 RECIPE_PATH = ROOT / "recipes" / "sec_industry_peers.json"
 CONTACT = "QuantAgent test-contact@example.invalid"
 

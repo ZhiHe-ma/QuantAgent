@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 sys.path.insert(0, str(ROOT))
 
 from quantagent_platform import (  # noqa: E402

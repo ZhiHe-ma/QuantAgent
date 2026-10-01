@@ -2,62 +2,66 @@
 
 ## 职责与边界
 
-使用固定样本验证公开 Python、CLI、HTTP、配方、权限、审计和恢复行为；architecture 子包验证架构与文档门禁。测试证据按本地、CI、外部后端分开记录，不负责运行生产任务。
+使用固定样本与替身验证原公开 Python、CLI、HTTP、配方、权限、审计与恢复行为。测试、CI 和生产证据分开记录。按 [开发与测试归属](../docs/DEVELOPMENT_TESTING.md) 首批只迁移六个文件，不以目录位置推断完全隔离的单元测试。
 
 ## 文件导航
 
-文件归属与试点规则见 [开发与测试分类](../docs/DEVELOPMENT_TESTING.md)。本批先保留平铺用例；六个 SEC/schema/P5/API/audit 文件将按 [实施计划](../docs/superpowers/plans/2026-10-02-file-classification.md) 分到 unit、contract、integration，迁移后本节同步更新实际链接。其余文件随对应能力整改，不因整理目录扩大验收范围。
+| 分类 | 实际入口 | 试点范围 |
+| --- | --- | --- |
+| 模块规则 | [unit](unit/README.md) | SEC 分析 |
+| 公开契约 | [contract](contract/README.md) | SEC 标准化、审计 SQL schema |
+| 跨组件 | [integration](integration/README.md) | SEC 工作流、P5 CLI/HTTP、引擎审计 |
+| 架构门禁 | [architecture](architecture/README.md) | 原正反例保持原位 |
+| 共享支持 | [support](support/README.md) | ROOT、SEC 合成构造器、[fakes](support/fakes/README.md) |
+| 静态样本 | [fixtures](fixtures/README.md) | JSON/CSV/TXT 字节不变 |
 
-- [architecture/test_guardrails.py](architecture/test_guardrails.py)：合法分层、违规、基线收缩、文档同步及同一能力内部协作的正反例。
+剩余平铺文件及主要类别如下。混合范围保留，后续随对应能力整改，不在本批强拆：
 
-- [test_agent_runtime.py](test_agent_runtime.py)
-- [test_bt_plugins.py](test_bt_plugins.py)
-- [test_daily_plugins.py](test_daily_plugins.py)
-- [test_dry_run.py](test_dry_run.py)
-- [test_idempotency_error_isolation.py](test_idempotency_error_isolation.py)
-- [test_manifest_spec.py](test_manifest_spec.py)
-- [test_outcome_replay.py](test_outcome_replay.py)
-- [test_p5_agents.py](test_p5_agents.py)
-- [test_p5_cli_api.py](test_p5_cli_api.py)
-- [test_p5_coordinator.py](test_p5_coordinator.py)
-- [test_p5_handoff.py](test_p5_handoff.py)
-- [test_p5_ledger.py](test_p5_ledger.py)
-- [test_p5_live_acceptance.py](test_p5_live_acceptance.py)
-- [test_p5_manifest.py](test_p5_manifest.py)
-- [test_p5_registry.py](test_p5_registry.py)
-- [test_p5_review.py](test_p5_review.py)
-- [test_p5_worker.py](test_p5_worker.py)
-- [test_platform.py](test_platform.py)
-- [test_qlib_plugins.py](test_qlib_plugins.py)
-- [test_result_api.py](test_result_api.py)
-- [test_run_cancellation.py](test_run_cancellation.py)
-- [test_schema.py](test_schema.py)
-- [test_sec_analysis.py](test_sec_analysis.py)
-- [test_sec_client.py](test_sec_client.py)
-- [test_sec_contracts.py](test_sec_contracts.py)
-- [test_sec_workflow.py](test_sec_workflow.py)
-- [test_signal_audit.py](test_signal_audit.py)
-- [test_signal_audit_integration.py](test_signal_audit_integration.py)
-- [test_submission_api.py](test_submission_api.py)
-- [test_task_lifecycle_api.py](test_task_lifecycle_api.py)
-- [test_thesis_tracker.py](test_thesis_tracker.py)
+| 文件 | 主要类别与混合范围 |
+| --- | --- |
+| [test_agent_runtime.py](test_agent_runtime.py) | 集成：Agent 与固定配方协作，兼含入口契约 |
+| [test_bt_plugins.py](test_bt_plugins.py) | 契约/集成混合：bt 子进程协议、权限、失败与可选真实后端 |
+| [test_daily_plugins.py](test_daily_plugins.py) | 规则/集成混合：日报插件与固定样本 |
+| [test_dry_run.py](test_dry_run.py) | 集成：旧引擎 dry-run，模型与网络替身 |
+| [test_idempotency_error_isolation.py](test_idempotency_error_isolation.py) | 集成：旧引擎幂等及错误隔离 |
+| [test_manifest_spec.py](test_manifest_spec.py) | 契约：manifest 格式、输入与拒绝条件 |
+| [test_outcome_replay.py](test_outcome_replay.py) | 集成：结果回放与插件 |
+| [test_p5_agents.py](test_p5_agents.py) | 契约/集成混合：Agent manifest 与 P5 数据 |
+| [test_p5_coordinator.py](test_p5_coordinator.py) | 集成：P5 编排 |
+| [test_p5_handoff.py](test_p5_handoff.py) | 契约/规则混合：交接载荷与校验 |
+| [test_p5_ledger.py](test_p5_ledger.py) | 规则/存储混合：追加账本与恢复 |
+| [test_p5_live_acceptance.py](test_p5_live_acceptance.py) | 可选私有本地验收：原环境开关、固定 P4 数据 |
+| [test_p5_manifest.py](test_p5_manifest.py) | 契约：P5 manifest |
+| [test_p5_registry.py](test_p5_registry.py) | 集成：登记、持久化与权限 |
+| [test_p5_review.py](test_p5_review.py) | 规则/契约混合：复核结果与拒绝条件 |
+| [test_p5_worker.py](test_p5_worker.py) | 集成：worker 生命周期、隔离和失败关闭 |
+| [test_platform.py](test_platform.py) | 契约/集成混合：平台与 runner |
+| [test_qlib_plugins.py](test_qlib_plugins.py) | 契约/集成混合：Qlib 子进程协议、权限与可选真实后端 |
+| [test_result_api.py](test_result_api.py) | 集成：HTTP 读取与隔离 |
+| [test_run_cancellation.py](test_run_cancellation.py) | 集成：运行取消 |
+| [test_sec_client.py](test_sec_client.py) | 契约：SEC transport 替身与失败处理 |
+| [test_signal_audit.py](test_signal_audit.py) | 规则/存储混合：审计记录、SQL 与完整性 |
+| [test_submission_api.py](test_submission_api.py) | 集成：受控 HTTP 提交 |
+| [test_support_paths.py](test_support_paths.py) | 规则：共享仓库定位（新增三项） |
+| [test_task_lifecycle_api.py](test_task_lifecycle_api.py) | 集成：任务生命周期 HTTP |
+| [test_thesis_tracker.py](test_thesis_tracker.py) | 规则/集成混合：观点跟踪与样本回放 |
 
 ## 对外接口
 
-通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
+主命令 `python -m unittest discover -s tests -v` 保持。共享数据由 tests.support 导入，用例文件不作为共享库；原 TestCase 和方法名保持，六项模块前缀映射见 [实施计划](../docs/superpowers/plans/2026-10-02-file-classification.md)。
 
 ## 依赖规则
 
-允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则见 [架构规范](../docs/ARCHITECTURE.md)。42 条存量违规仅按具体引用豁免，新增违规立即失败。
+测试使用对应公开产品接口、原替身、标准库和共享支持；产品代码不依赖 tests。生产依赖仍按 [components.json](../docs/architecture/components.json) 管理，本批只增加文档路径，不扩大允许依赖或豁免。
 
 ## 数据与权限
 
-QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；运行目录与文件权限沿用原有控制。私有档案、规则、决定和回证由 OpenStock 管理，不得跨账户读取或直接写入。
+保留临时目录、固定样本、原可执行根和子进程权限；无私人账号种子或新增现场 manual 脚本。QuantAgent 管理公共证据，OpenStock 拥有私人档案、规则、决定与回证，测试支持不得绕过所有者写入。
 
 ## 测试与验收
 
-根命令 `python -m unittest discover -s tests -v` 会发现 architecture 子包；单独运行 `python -m unittest discover -s tests/architecture -v`。外部后端验收按既有环境开关运行，跳过项不代表已验收。Windows 本地 Python 应位于仓库外，避免 Qlib 负向用例的可执行路径落入允许仓库根目录。
+从仓库根运行主命令及 `python -m unittest discover -s tests/unit -t . -v`、contract/integration 同类非零发现命令。子目录命令须加 `-t .` 固定仓库为包根，避免 contract/platform 遮住 Python 标准库 platform。使用仓库外 Python，避免 Qlib 负向权限误判。原 279 唯一用例按六项模块前缀逐项对应，加三项路径测试；实测与跳过见 [分支说明](../docs/features/file-classification.md)。
 
 ## 已知限制
 
-当前部分符合。存量循环和混合职责尚未整改；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。
+当前部分符合，42 条存量问题和循环尚未整改；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

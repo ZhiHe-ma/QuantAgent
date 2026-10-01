@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 sys.path.insert(0, str(ROOT))
 
 from quantagent_platform import RecipeError, RecipeRunner  # noqa: E402
@@ -18,7 +18,7 @@ from quantagent_platform.bt_worker import _require_aware_timestamp, lagged_equal
 
 RECIPE_PATH = ROOT / "recipes" / "bt_portfolio_backtest.json"
 DATA_FIXTURE = ROOT / "tests" / "fixtures" / "sample_bt_panel.csv"
-FAKE_WORKER = ROOT / "tests" / "fixtures" / "fake_bt_worker.py"
+FAKE_WORKER = ROOT / "tests" / "support" / "fakes" / "fake_bt_worker.py"
 
 
 class BtPluginTests(unittest.TestCase):

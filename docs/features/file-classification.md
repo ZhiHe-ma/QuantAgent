@@ -21,7 +21,7 @@ architecture 增加 [文件归属规范](../DEVELOPMENT_TESTING.md) 和仓库内
 
 ## 接口或数据变化
 
-新增测试支持接口 `repository_root(start: Path) -> Path`、`ROOT` 和共享 SEC 合成数据构造器，后续按 [实施计划](../superpowers/plans/2026-10-02-file-classification.md) 迁移。产品 Python 导出、CLI、HTTP、公共数据契约不变。私人原始证据留在仓库外。
+新增测试支持接口 `repository_root(start: Path) -> Path`、`ROOT` 和共享 SEC 合成数据构造器，六个测试文件已按 [实施计划](../superpowers/plans/2026-10-02-file-classification.md) 迁移；两个 fake worker 原字节移入 support/fakes。产品 Python 导出、CLI、HTTP、公共数据契约不变。私人原始证据留在仓库外。
 
 ## 新增依赖
 
@@ -33,7 +33,11 @@ architecture 增加 [文件归属规范](../DEVELOPMENT_TESTING.md) 和仓库内
 
 F1：2026-10-02，在同一 Windows/Python 环境运行本地引用检查，106 个链接、0 个缺失；运行 `python -m tools.architecture --base-ref 3006e57069b7da92caf0f869c307bd4b0e7a1ea4 --branch feature/file-classification`，结果为 PARTIAL_COMPLIANCE、42 条已登记问题、Import Linter 退出 0、无文档错误。原始报告保存在本地忽略产物目录。
 
-测试迁移尚未运行，因为 F1 只交付导航；后续实测完成后追加本节。生产、真实模型、真实行情和真实外部后端未运行，首批只验收离线整理。
+F3：同环境执行 `python -m unittest discover -s tests -p test_support_paths.py -v`，先因缺少 tests.support 模块失败，随后三个路径用例通过。原主命令实测 282 项、0 失败、6 跳过，50.972 秒。原 279 项只按六项模块前缀映射，零缺失、零重复；新增三个路径用例单列。共享 SEC 构造器源片段、两个 fake worker 原字节保持。
+
+子目录命令 `python -m unittest discover -s tests/unit -t . -v` 实测 3 项；contract 同类命令 13 项；integration 同类命令 22 项，均零失败。首次 contract 命令未指定包根，platform 子包遮住标准库，改为明确 `-t .` 后通过；已同步各 README。bt 专项 8 项、跳过 1，Qlib 专项 5 项、跳过 1，均零失败，保留原真实后端启用条件。
+
+这些是当前整理工作树的 Windows 本地结果，最终完整提交及验收交接记录完成后追加。CI/Linux、生产、真实模型、真实行情和真实外部后端未运行，本批仅验收离线整理。
 
 ## 回滚方式
 
