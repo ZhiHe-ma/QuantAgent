@@ -490,7 +490,9 @@
       "readme": "docs/architecture/legacy-engine/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [
-        "README.md"
+        "README.md",
+        "README.zh-CN.md",
+        "docs/USAGE.md"
       ],
       "external_dependencies": []
     },
@@ -539,6 +541,7 @@
         ".github/",
         "docs/architecture/",
         "docs/ARCHITECTURE.md",
+        "docs/COMPATIBILITY_POLICY.md",
         "docs/features/",
         "AGENTS.md",
         "requirements-architecture.txt",

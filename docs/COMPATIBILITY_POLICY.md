@@ -41,8 +41,8 @@
 
 私有生产数据只保存受控哈希和脱敏/合成 Golden Fixtures；不能因测试需要公开原始新闻、账户或商业数据。报告名称使用“版本化兼容报告”，明确为项目自测。
 
-## 当前声明
+## 能力与证据入口
 
-当前固定套餐为 `historical-data-health@1.0.0`、`offline-outcome-backfill@1.0.0`、`offline-daily-research@1.0.0`、`qlib-factor-research@1.0.0`、`bt-portfolio-backtest@1.0.0` 和 `thesis-tracker@1.0.0`，证据范围见测试矩阵。P1/P2 分别验证数据体检 Agent 和 `builtin.research-agent@1.0.0` → `anthropic-financial-services-adapted.thesis-tracker@1.0.0` → `thesis-tracker@1.0.0` 的精确离线组合。P3a 的只读 API 仅以这些本地运行包作为 `offline_fixture`，验证摘要、认证、访问和完整性行为；它不扩大底层套餐的兼容声明。
+套餐、版本及精确组合以[兼容性矩阵](COMPATIBILITY_TEST_MATRIX.md)为准；SEC 样本研究与固定单跳复核分别见[P4](P4_SEC_RESEARCH_ACCEPTANCE.md)、[P5](P5_SEC_HANDOFF_ACCEPTANCE.md)验收。旧段落中的“当前”和“未覆盖”只对应其记录日期与版本。
 
-AgentManifest/SkillManifest 严格加载、精选目录、P2 研究契约、离线 `thesis-tracker`、P3a 单用户只读结果 API，以及 P3c/P3e 固定夹具的本机提交、状态和协作取消已有 `offline_fixture` 行为证据。该证据只覆盖合成夹具、确定性转换、受控读写和失败关闭，不是外部来源真实性、投资有效性、OpenStock 集成或生产级网络安全验证。模型驱动选择、动态预算执行、Tool Broker、Typed Handoff、OpenStock 页面、通用任务提交/取消和持久队列仍只有规范或尚未实现。真实 DeepSeek 调用仍为实验性外部联调项，不属于离线兼容声明。
+只读结果、固定样本提交和本机任务生命周期的接口范围见[v1 读取](QUANTAGENT_READ_API.md)、[v1 提交](QUANTAGENT_SUBMISSION_API.md)、[v2 状态与取消](QUANTAGENT_TASK_LIFECYCLE_API.md)。固定 P5 交接与 v2 协作取消不代表通用模型选路、多用户授权、跨进程持久恢复或生产可用。真实 DeepSeek 调用不属于离线兼容声明。
