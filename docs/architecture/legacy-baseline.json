@@ -1,0 +1,351 @@
+{
+  "version": 1,
+  "origin_commit": "ccded244593942fc6de7c10983d6b0f795c36a47",
+  "status": "partial_compliance",
+  "tasks": {
+    "D001": "Separate RecipeRunner execution from concrete plugin composition.",
+    "D002": "Separate P5 protocol validation and storage/model adapters from workflow execution.",
+    "D003": "Remove cyclic API installation and private cross-boundary references.",
+    "D004": "Move SEC response contracts out of the concrete transport client.",
+    "D005": "Replace cross-adapter helper/constant imports with owned public contracts.",
+    "D006": "Migrate legacy engine entry and audit persistence through workflows and ports."
+  },
+  "exceptions": [
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.agents",
+      "target": "quantagent_platform.manifests",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.agents",
+      "target": "quantagent_platform.runner",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.manifests",
+      "target": "quantagent_platform.runner",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.p5_handoff",
+      "target": "quantagent_platform.agents",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.p5_handoff",
+      "target": "quantagent_platform.runner",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.p5_plugins",
+      "target": "quantagent_platform.p5_handoff",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.result_api",
+      "target": "quantagent_platform.submission_api",
+      "member": "",
+      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D003"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.result_api",
+      "target": "quantagent_platform.task_lifecycle_api",
+      "member": "",
+      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D003"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.p5_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.submission_api",
+      "target": "quantagent_platform.result_api",
+      "member": "",
+      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D003"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.task_lifecycle_api",
+      "target": "quantagent_platform.result_api",
+      "member": "",
+      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D003"
+    },
+    {
+      "rule": "cycle",
+      "source": "quantagent_platform.task_lifecycle_api",
+      "target": "quantagent_platform.submission_api",
+      "member": "",
+      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D003"
+    },
+    {
+      "rule": "dependency",
+      "source": "agent_engine",
+      "target": "quantagent_platform.daily_workflow",
+      "member": "",
+      "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D006"
+    },
+    {
+      "rule": "dependency",
+      "source": "agent_engine",
+      "target": "signal_audit",
+      "member": "",
+      "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D006"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.bt_plugins",
+      "target": "quantagent_platform.builtin_plugins",
+      "member": "",
+      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D005"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.bt_plugins",
+      "target": "quantagent_platform.isolated_runtime",
+      "member": "",
+      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D005"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.daily_plugins",
+      "target": "quantagent_platform.builtin_plugins",
+      "member": "",
+      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D005"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.outcome_plugins",
+      "target": "quantagent_platform.builtin_plugins",
+      "member": "",
+      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D005"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_coordinator",
+      "target": "quantagent_platform.p5_ledger",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_coordinator",
+      "target": "quantagent_platform.p5_registry",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_handoff",
+      "target": "quantagent_platform.agents",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_handoff",
+      "target": "quantagent_platform.p5_registry",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_handoff",
+      "target": "quantagent_platform.runner",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_plugins",
+      "target": "quantagent_platform.p5_registry",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_review",
+      "target": "quantagent_platform.p5_registry",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_review",
+      "target": "quantagent_platform.sec_client",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_worker",
+      "target": "quantagent_platform.p5_ledger",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.p5_worker",
+      "target": "quantagent_platform.p5_registry",
+      "member": "",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.qlib_plugins",
+      "target": "quantagent_platform.builtin_plugins",
+      "member": "",
+      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D005"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.qlib_plugins",
+      "target": "quantagent_platform.isolated_runtime",
+      "member": "",
+      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D005"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.bt_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.builtin_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.daily_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.outcome_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.p5_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.qlib_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.research_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.runner",
+      "target": "quantagent_platform.sec_plugins",
+      "member": "",
+      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D001"
+    },
+    {
+      "rule": "dependency",
+      "source": "quantagent_platform.sec_contracts",
+      "target": "quantagent_platform.sec_client",
+      "member": "",
+      "reason": "Move SEC response contracts out of the concrete transport client. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D004"
+    },
+    {
+      "rule": "dynamic-import",
+      "source": "agent_engine",
+      "target": "argparse",
+      "member": "",
+      "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D006"
+    },
+    {
+      "rule": "private-import",
+      "source": "quantagent_platform.p5_worker",
+      "target": "quantagent_platform.p5_ledger",
+      "member": "_safe_id",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    },
+    {
+      "rule": "private-import",
+      "source": "quantagent_platform.p5_worker",
+      "target": "quantagent_platform.p5_registry",
+      "member": "_path_signatures",
+      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
+      "task": "D002"
+    }
+  ]
+}

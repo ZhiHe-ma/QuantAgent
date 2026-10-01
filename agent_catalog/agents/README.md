@@ -1,17 +1,19 @@
-# manifests 功能说明
+# agents 功能说明
 
 ## 职责与边界
 
-manifests 功能说明。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
+保存各确定性 Agent 的版本化能力、Skill/Recipe、模型政策、预算和审核声明；由 AgentRunner 预检并执行。此目录不提供业务实现，也不决定任意多 Agent 路由。
 
 ## 文件导航
 
-- [research-agent.example.json](research-agent.example.json)
-- [thesis-tracker.example.json](thesis-tracker.example.json)
+- [data-health-agent](data-health-agent/README.md)：`builtin.data-health-research-agent`。
+- [research-agent](research-agent/README.md)：`builtin.research-agent`。
+- [sec-evidence-producer-agent](sec-evidence-producer-agent/README.md)：`builtin.sec-evidence-producer-agent`。
+- [sec-evidence-review-agent](sec-evidence-review-agent/README.md)：`builtin.sec-evidence-review-agent`。
 
 ## 对外接口
 
-通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
+agent.yaml 按 Agent manifest v1/v2 Schema 验证，并由 catalog.json 锁定 ID/版本与 SHA256。调用方提交研究请求，AgentRunner 核对所有声明后运行对应配方；无效声明、越权能力或预算不匹配时拒绝运行。
 
 ## 依赖规则
 
@@ -28,11 +30,3 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 ## 已知限制
 
 当前部分符合。存量循环和混合职责尚未整改；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。
-
-## 原有使用说明
-
-# Manifest examples
-
-These files are structural P0 examples for Schema validation. They are deliberately marked `example_only` and are not installable Agent/Skill packages: the referenced Recipe, Skill files and recorded model are not present yet, and the Skill hashes are placeholders.
-
-P1 must replace them with executable positive fixtures plus negative fixtures. P2 must generate hashes from the actual adapted `thesis-tracker` package and retain its upstream license and modification record.

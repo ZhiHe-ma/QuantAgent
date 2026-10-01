@@ -1,0 +1,9 @@
+# Governance changes require semantic review; enforcement is a repository setting.
+/AGENTS.md @ZhiHe-ma
+/.github/ @ZhiHe-ma
+/tools/architecture/ @ZhiHe-ma
+/docs/ARCHITECTURE.md @ZhiHe-ma
+/docs/architecture/ @ZhiHe-ma
+/docs/features/ @ZhiHe-ma
+/requirements-architecture.txt @ZhiHe-ma
+/tests/architecture/ @ZhiHe-ma
