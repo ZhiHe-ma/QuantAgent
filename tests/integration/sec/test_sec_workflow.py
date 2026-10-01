@@ -1,3 +1,4 @@
+import sys
 import copy
 import hashlib
 import json
@@ -8,6 +9,18 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
+
+if __name__ == "__main__" and not __package__:
+    # Make the owning package available before importing shared test support.
+    root_hint = next(
+        (parent for parent in Path(__file__).resolve().parents
+         if (parent / "tests" / "support" / "paths.py").is_file()),
+        None,
+    )
+    if root_hint is None:
+        raise FileNotFoundError("Shared QuantAgent test support was not found")
+    sys.path.insert(0, str(root_hint))
+    from tests.support.paths import ROOT
 
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator, FormatChecker

@@ -39,9 +39,9 @@ F3：同环境执行 `python -m unittest discover -s tests -p test_support_paths
 
 首轮被测内容对应提交 `bb63419c38c7af411827dc39f1c222531bbf9ebb`，基于 `3006e57069b7da92caf0f869c307bd4b0e7a1ea4`。环境是 Windows 11 10.0.22631、Python 3.12.8，Import Linter 2.8、grimp 3.13、jsonschema 4.25.1。用例清单、子目录实际标识、worker 哈希和报告在本地忽略产物目录留存。
 
-独立审查发现一项 Important：共享 ROOT 的导入早于原路径引导，导致平铺测试的直接文件入口失败。新增 `test_flat_test_scripts_start_from_another_cwd`，六个 --help 子例先因 ModuleNotFoundError 失败；按包运行或直接文件运行选择同一共享源的导入路径后通过。23 个平铺调用者统一恢复启动兼容，不用固定父目录深度定位资源。没有产品行为变化。
+独立审查发现一项 Important：共享 ROOT 的导入早于原路径引导，导致平铺测试的直接文件入口失败。新增启动回归，六个平铺 --help 子例先因 ModuleNotFoundError 失败；按包或直接文件运行选择同一共享源的导入路径后通过。23 个平铺调用者恢复启动兼容，并补齐六个已分类文件的祖先包引导，最终用例 `test_test_scripts_start_from_another_cwd` 覆盖 12 个子例；六个分类入口也先失败再修复。资源仍由共享四标记规则定位，没有产品行为变化。
 
-修复后原全套命令实测 **283 项、0 失败、6 跳过，55.896 秒**，原 279 项仍全部对应；数量比计划增加 1，是独立审查回归测试，原三项路径测试保持。先前 282 项日志保存在 task5-unittest-before-review.log，最终日志、映射为 283 项。没有 Critical 或 Minor；按单次修复流程验证，不另派第二次审查。
+修复平铺入口后原全套命令实测 **283 项、0 失败、6 跳过，55.896 秒**；随后扩大同一入口用例到六个分类文件，最终全套实测 **283 项、0 失败、6 跳过，58.508 秒**。原 279 项仍全部对应；数量比计划增加 1，是独立审查回归测试，原三项路径测试保持。先前 282 项日志保存在 task5-unittest-before-review.log。没有 Critical 或 Minor；按单次修复流程验证，不另派第二次审查。
 
 当前架构门禁仍为 42 条已登记问题，Import Linter 退出 0；16 个无关工作树的分支、完整提交及未提交状态与基线完全一致；原治理分支引用保留。运行时源码、正式配方、SQL、schema、权限及 legacy-baseline 无差异，登记只增加文档资产和 README 路径。
 

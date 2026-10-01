@@ -27,7 +27,7 @@ def marked_root() -> Iterator[tuple[Path, Path]]:
 
 
 class RepositoryPathTests(unittest.TestCase):
-    def test_flat_test_scripts_start_from_another_cwd(self):
+    def test_test_scripts_start_from_another_cwd(self):
         root = repository_root(Path(__file__))
         with tempfile.TemporaryDirectory() as directory:
             for filename in (
@@ -37,6 +37,12 @@ class RepositoryPathTests(unittest.TestCase):
                 "test_bt_plugins.py",
                 "test_qlib_plugins.py",
                 "test_dry_run.py",
+                "unit/research/test_sec_analysis.py",
+                "contract/sec/test_sec_contracts.py",
+                "contract/platform/test_schema.py",
+                "integration/sec/test_sec_workflow.py",
+                "integration/p5/test_p5_cli_api.py",
+                "integration/audit/test_signal_audit_integration.py",
             ):
                 with self.subTest(filename=filename):
                     result = subprocess.run(

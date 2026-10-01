@@ -14,6 +14,8 @@
 
 平铺用例作为包运行时从 tests.support.paths 导入，直接运行文件时从同一个 support/paths.py 导入，以保留原单文件入口的启动顺序；两种方式使用相同标记定位规则，不恢复固定父目录深度。
 
+分类目录的直接脚本入口先按当前文件祖先找到本仓库 tests/support，再导入共享 ROOT 校验完整仓库标记；包发现时不执行这段引导，资源与配方仍由共享路径定位。
+
 SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, retrieved_at=None)`，保留合成数据、JSON 序列化、哈希和默认 UTC 时间减一分钟的原语义。fakes 在显式测试子进程中读取协议输入并写测试输出。
 
 ## 依赖规则
@@ -26,7 +28,7 @@ SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, ret
 
 ## 测试与验收
 
-运行 `python -m unittest discover -s tests -p test_support_paths.py -v` 验证嵌套路径、缺失根标记、cwd 变化及从其他 cwd 启动六个平铺测试脚本的 --help 入口。入口用例不执行业务测试，只检查原启动方式。bt/Qlib 原测试验证离线协议、拒绝越权、超时和失败行为；真实后端按原环境条件跳过。实际全套数量及用例映射见 [分支说明](../../docs/features/file-classification.md)。
+运行 `python -m unittest discover -s tests -p test_support_paths.py -v` 验证嵌套路径、缺失根标记、cwd 变化及从其他 cwd 启动六个平铺和六个已分类测试脚本的 --help 入口。入口用例不执行业务测试，只检查启动方式。bt/Qlib 原测试验证离线协议、拒绝越权、超时和失败行为；真实后端按原环境条件跳过。实际全套数量及用例映射见 [分支说明](../../docs/features/file-classification.md)。
 
 ## 已知限制
 
