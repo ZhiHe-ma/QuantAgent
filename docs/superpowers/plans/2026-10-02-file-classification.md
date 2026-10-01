@@ -37,6 +37,8 @@
 
 用与基线相同的 `unittest.defaultTestLoader.discover('tests')` 展平唯一 ID；只按六项模块前缀映射，原 279 项必须全部保留且无重复，新三个路径测试单列，预期 282 项。主命令与 unit/contract/integration 子目录各运行非零数量；bt/Qlib 离线协议通过，真实后端按原开关跳过。
 
+实际执行补充：首轮 282 项通过。独立审查复现原单文件入口被新导入顺序破坏，增加一项含六个启动子例的回归测试；RED→GREEN 修复后最终 283 项、0 失败、6 跳过，原 279 项仍完整对应。平铺用例的两种启动方式导入同一共享路径源，资源定位仍使用四标记规则。
+
 运行 `python -m tools.architecture --base-ref 3006e57069b7da92caf0f869c307bd4b0e7a1ea4 --branch feature/file-classification`，预期 PARTIAL_COMPLIANCE、42 条存量问题、Import Linter 退出 0。记录环境、命令、完整提交、结果和未测范围；独立审查全差异，重要发现先失败复现再修复。
 
 ## Review Focus

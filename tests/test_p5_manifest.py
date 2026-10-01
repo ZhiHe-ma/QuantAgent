@@ -11,7 +11,10 @@ import yaml
 from quantagent_platform.manifests import ManifestError, load_agent_manifest
 
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 SAMPLE = ROOT / "agent_catalog" / "agents" / "data-health-agent" / "agent.yaml"
 CHILD = {"id": "builtin.sec-evidence-review-agent", "version": "1.0.0"}
 

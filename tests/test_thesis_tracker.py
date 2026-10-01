@@ -7,7 +7,10 @@ import unittest
 from pathlib import Path
 
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 sys.path.insert(0, str(ROOT))
 
 from quantagent_platform import AgentRuntime, RecipeRunner  # noqa: E402

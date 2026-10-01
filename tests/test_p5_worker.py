@@ -15,7 +15,10 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 from unittest.mock import patch
 
 from quantagent_platform.contracts import DataPacket, canonical_json

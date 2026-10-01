@@ -37,7 +37,11 @@ F3：同环境执行 `python -m unittest discover -s tests -p test_support_paths
 
 子目录命令 `python -m unittest discover -s tests/unit -t . -v` 实测 3 项；contract 同类命令 13 项；integration 同类命令 22 项，均零失败。首次 contract 命令未指定包根，platform 子包遮住标准库，改为明确 `-t .` 后通过；已同步各 README。bt 专项 8 项、跳过 1，Qlib 专项 5 项、跳过 1，均零失败，保留原真实后端启用条件。
 
-被测测试内容对应提交 `bb63419c38c7af411827dc39f1c222531bbf9ebb`，基于 `3006e57069b7da92caf0f869c307bd4b0e7a1ea4`。环境是 Windows 11 10.0.22631、Python 3.12.8，Import Linter 2.8、grimp 3.13、jsonschema 4.25.1。用例清单、子目录实际标识、worker 哈希和报告在本地忽略产物目录留存。
+首轮被测内容对应提交 `bb63419c38c7af411827dc39f1c222531bbf9ebb`，基于 `3006e57069b7da92caf0f869c307bd4b0e7a1ea4`。环境是 Windows 11 10.0.22631、Python 3.12.8，Import Linter 2.8、grimp 3.13、jsonschema 4.25.1。用例清单、子目录实际标识、worker 哈希和报告在本地忽略产物目录留存。
+
+独立审查发现一项 Important：共享 ROOT 的导入早于原路径引导，导致平铺测试的直接文件入口失败。新增 `test_flat_test_scripts_start_from_another_cwd`，六个 --help 子例先因 ModuleNotFoundError 失败；按包运行或直接文件运行选择同一共享源的导入路径后通过。23 个平铺调用者统一恢复启动兼容，不用固定父目录深度定位资源。没有产品行为变化。
+
+修复后原全套命令实测 **283 项、0 失败、6 跳过，55.896 秒**，原 279 项仍全部对应；数量比计划增加 1，是独立审查回归测试，原三项路径测试保持。先前 282 项日志保存在 task5-unittest-before-review.log，最终日志、映射为 283 项。没有 Critical 或 Minor；按单次修复流程验证，不另派第二次审查。
 
 当前架构门禁仍为 42 条已登记问题，Import Linter 退出 0；16 个无关工作树的分支、完整提交及未提交状态与基线完全一致；原治理分支引用保留。运行时源码、正式配方、SQL、schema、权限及 legacy-baseline 无差异，登记只增加文档资产和 README 路径。
 

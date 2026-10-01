@@ -19,7 +19,10 @@ from quantagent_platform.runner import RecipeRunner, default_registry
 from tests.support.sec_samples import make_responses
 
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 PARENT = "builtin.sec-evidence-producer-agent"
 CHILD = "builtin.sec-evidence-review-agent"
 

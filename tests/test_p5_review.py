@@ -26,7 +26,10 @@ from quantagent_platform.sec_contracts import ISSUERS
 from tests.support.sec_samples import make_payloads, make_responses
 
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 RAW_NAMES = (
     "sec-mara-submissions.json",
     "sec-mara-companyfacts.json",

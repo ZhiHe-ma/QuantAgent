@@ -8,7 +8,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 
 from quantagent_platform.contracts import DataPacket, canonical_json
 from quantagent_platform.p5_coordinator import P5Coordinator

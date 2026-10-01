@@ -42,7 +42,7 @@
 | [test_sec_client.py](test_sec_client.py) | 契约：SEC transport 替身与失败处理 |
 | [test_signal_audit.py](test_signal_audit.py) | 规则/存储混合：审计记录、SQL 与完整性 |
 | [test_submission_api.py](test_submission_api.py) | 集成：受控 HTTP 提交 |
-| [test_support_paths.py](test_support_paths.py) | 规则：共享仓库定位（新增三项） |
+| [test_support_paths.py](test_support_paths.py) | 规则：共享仓库定位（三项）与原单文件入口启动回归（一项） |
 | [test_task_lifecycle_api.py](test_task_lifecycle_api.py) | 集成：任务生命周期 HTTP |
 | [test_thesis_tracker.py](test_thesis_tracker.py) | 规则/集成混合：观点跟踪与样本回放 |
 
@@ -60,7 +60,7 @@
 
 ## 测试与验收
 
-从仓库根运行主命令及 `python -m unittest discover -s tests/unit -t . -v`、contract/integration 同类非零发现命令。子目录命令须加 `-t .` 固定仓库为包根，避免 contract/platform 遮住 Python 标准库 platform。使用仓库外 Python，避免 Qlib 负向权限误判。原 279 唯一用例按六项模块前缀逐项对应，加三项路径测试；实测与跳过见 [分支说明](../docs/features/file-classification.md)。
+从仓库根运行主命令及 `python -m unittest discover -s tests/unit -t . -v`、contract/integration 同类非零发现命令。子目录命令须加 `-t .` 固定仓库为包根，避免 contract/platform 遮住 Python 标准库 platform。使用仓库外 Python，避免 Qlib 负向权限误判。原 279 唯一用例按六项模块前缀逐项对应，加三项路径测试及独立审查发现的单文件入口回归测试；实测与跳过见 [分支说明](../docs/features/file-classification.md)。
 
 ## 已知限制
 

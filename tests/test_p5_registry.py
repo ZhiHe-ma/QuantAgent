@@ -22,7 +22,10 @@ from quantagent_platform.runner import RecipeRunner, default_registry
 from tests.support.sec_samples import make_responses
 
 
-from tests.support.paths import ROOT
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 RAW_NAMES = (
     "sec-mara-submissions.json",
     "sec-mara-companyfacts.json",

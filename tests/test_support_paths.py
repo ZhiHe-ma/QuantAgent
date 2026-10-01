@@ -1,11 +1,16 @@
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from tests.support.paths import repository_root
+if __package__:
+    from tests.support.paths import repository_root
+else:
+    from support.paths import repository_root
 
 
 @contextmanager
@@ -22,6 +27,28 @@ def marked_root() -> Iterator[tuple[Path, Path]]:
 
 
 class RepositoryPathTests(unittest.TestCase):
+    def test_flat_test_scripts_start_from_another_cwd(self):
+        root = repository_root(Path(__file__))
+        with tempfile.TemporaryDirectory() as directory:
+            for filename in (
+                "test_signal_audit.py",
+                "test_platform.py",
+                "test_agent_runtime.py",
+                "test_bt_plugins.py",
+                "test_qlib_plugins.py",
+                "test_dry_run.py",
+            ):
+                with self.subTest(filename=filename):
+                    result = subprocess.run(
+                        [sys.executable, "-B", str(root / "tests" / filename), "--help"],
+                        cwd=directory,
+                        capture_output=True,
+                        text=True,
+                        timeout=20,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("usage:", result.stdout.lower())
+
     def test_resolves_nested_test_file(self):
         with marked_root() as (root, nested_file):
             self.assertEqual(repository_root(nested_file), root.resolve())
