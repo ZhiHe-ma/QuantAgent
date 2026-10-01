@@ -1,13 +1,12 @@
-# manifests 功能说明
+# agents 功能说明
 
 ## 职责与边界
 
-manifests 功能说明。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
+agents 功能说明。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
 
 ## 文件导航
 
-- [research-agent.example.json](research-agent.example.json)
-- [thesis-tracker.example.json](thesis-tracker.example.json)
+- 本目录文档与登记文件是阅读入口。
 
 ## 对外接口
 
@@ -28,11 +27,3 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 ## 已知限制
 
 当前部分符合。存量循环和混合职责尚未整改；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。
-
-## 原有使用说明
-
-# Manifest examples
-
-These files are structural P0 examples for Schema validation. They are deliberately marked `example_only` and are not installable Agent/Skill packages: the referenced Recipe, Skill files and recorded model are not present yet, and the Skill hashes are placeholders.
-
-P1 must replace them with executable positive fixtures plus negative fixtures. P2 must generate hashes from the actual adapted `thesis-tracker` package and retain its upstream license and modification record.

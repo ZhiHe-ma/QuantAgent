@@ -1,0 +1,691 @@
+{
+  "version": 1,
+  "status": "partial_compliance",
+  "components": [
+    {
+      "id": "packet-contracts",
+      "modules": [
+        "quantagent_platform.contracts"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.contracts"
+      ],
+      "allows": [],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "research-contracts",
+      "modules": [
+        "quantagent_platform.research_contracts"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.research_contracts"
+      ],
+      "allows": [
+        "packet-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": [
+        "jsonschema"
+      ]
+    },
+    {
+      "id": "sec-contracts",
+      "modules": [
+        "quantagent_platform.sec_contracts"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.sec_contracts"
+      ],
+      "allows": [
+        "packet-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "plugin-ports",
+      "modules": [
+        "quantagent_platform.plugins"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.plugins"
+      ],
+      "allows": [
+        "packet-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "daily-domain",
+      "modules": [
+        "quantagent_platform.daily_workflow"
+      ],
+      "kind": "module",
+      "public_modules": [
+        "quantagent_platform.daily_workflow"
+      ],
+      "allows": [
+        "packet-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "sec-domain",
+      "modules": [
+        "quantagent_platform.sec_analysis"
+      ],
+      "kind": "module",
+      "public_modules": [
+        "quantagent_platform.sec_analysis"
+      ],
+      "allows": [
+        "packet-contracts",
+        "sec-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "quality-adapter",
+      "modules": [
+        "quantagent_platform.builtin_plugins"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.builtin_plugins"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "daily-adapter",
+      "modules": [
+        "quantagent_platform.daily_plugins"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.daily_plugins"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports",
+        "daily-domain"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "outcome-adapter",
+      "modules": [
+        "quantagent_platform.outcome_plugins"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.outcome_plugins"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "thesis-adapter",
+      "modules": [
+        "quantagent_platform.research_plugins"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.research_plugins"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports",
+        "research-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "isolated-runtime",
+      "modules": [
+        "quantagent_platform.isolated_runtime"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.isolated_runtime"
+      ],
+      "allows": [
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "qlib-adapter",
+      "modules": [
+        "quantagent_platform.qlib_plugins",
+        "quantagent_platform.qlib_worker"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.qlib_plugins",
+        "quantagent_platform.qlib_worker"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "bt-adapter",
+      "modules": [
+        "quantagent_platform.bt_plugins",
+        "quantagent_platform.bt_worker"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.bt_plugins",
+        "quantagent_platform.bt_worker"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "sec-adapter",
+      "modules": [
+        "quantagent_platform.sec_plugins",
+        "quantagent_platform.sec_client"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.sec_plugins",
+        "quantagent_platform.sec_client"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports",
+        "sec-contracts",
+        "sec-domain"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "p5-storage",
+      "modules": [
+        "quantagent_platform.p5_registry",
+        "quantagent_platform.p5_ledger"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.p5_registry",
+        "quantagent_platform.p5_ledger"
+      ],
+      "allows": [
+        "packet-contracts",
+        "sec-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "p5-domain",
+      "modules": [
+        "quantagent_platform.p5_handoff",
+        "quantagent_platform.p5_review"
+      ],
+      "kind": "module",
+      "public_modules": [
+        "quantagent_platform.p5_handoff",
+        "quantagent_platform.p5_review"
+      ],
+      "allows": [
+        "packet-contracts",
+        "sec-contracts"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": [
+        "jsonschema"
+      ]
+    },
+    {
+      "id": "p5-adapter",
+      "modules": [
+        "quantagent_platform.p5_plugins"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.p5_plugins"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports",
+        "p5-domain"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "runner",
+      "modules": [
+        "quantagent_platform.runner"
+      ],
+      "kind": "workflow",
+      "public_modules": [
+        "quantagent_platform.runner"
+      ],
+      "allows": [
+        "packet-contracts",
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "agent-runtime",
+      "modules": [
+        "quantagent_platform.agents",
+        "quantagent_platform.manifests"
+      ],
+      "kind": "workflow",
+      "public_modules": [
+        "quantagent_platform.agents",
+        "quantagent_platform.manifests"
+      ],
+      "allows": [
+        "packet-contracts",
+        "runner",
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "p5-workflow",
+      "modules": [
+        "quantagent_platform.p5_coordinator",
+        "quantagent_platform.p5_worker"
+      ],
+      "kind": "workflow",
+      "public_modules": [
+        "quantagent_platform.p5_coordinator",
+        "quantagent_platform.p5_worker"
+      ],
+      "allows": [
+        "packet-contracts",
+        "runner",
+        "agent-runtime",
+        "p5-domain"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "http-api",
+      "modules": [
+        "quantagent_platform.result_api",
+        "quantagent_platform.submission_api",
+        "quantagent_platform.task_lifecycle_api"
+      ],
+      "kind": "entry",
+      "public_modules": [
+        "quantagent_platform.result_api",
+        "quantagent_platform.submission_api",
+        "quantagent_platform.task_lifecycle_api"
+      ],
+      "allows": [
+        "packet-contracts",
+        "research-contracts",
+        "agent-runtime",
+        "runner"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "cli-composition",
+      "modules": [
+        "quantagent_platform.cli"
+      ],
+      "kind": "bootstrap",
+      "public_modules": [
+        "quantagent_platform.cli"
+      ],
+      "allows": [
+        "packet-contracts",
+        "research-contracts",
+        "sec-contracts",
+        "plugin-ports",
+        "daily-domain",
+        "sec-domain",
+        "quality-adapter",
+        "daily-adapter",
+        "outcome-adapter",
+        "thesis-adapter",
+        "isolated-runtime",
+        "qlib-adapter",
+        "bt-adapter",
+        "sec-adapter",
+        "p5-storage",
+        "p5-domain",
+        "p5-adapter",
+        "runner",
+        "agent-runtime",
+        "p5-workflow",
+        "http-api"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "startup",
+      "modules": [
+        "quantagent_platform.__main__"
+      ],
+      "kind": "entry",
+      "public_modules": [
+        "quantagent_platform.__main__"
+      ],
+      "allows": [
+        "cli-composition"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "compatibility-exports",
+      "modules": [
+        "quantagent_platform"
+      ],
+      "kind": "facade",
+      "public_modules": [
+        "quantagent_platform"
+      ],
+      "allows": [
+        "packet-contracts",
+        "agent-runtime",
+        "runner"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "legacy-engine",
+      "modules": [
+        "agent_engine"
+      ],
+      "kind": "entry",
+      "public_modules": [
+        "agent_engine"
+      ],
+      "allows": [],
+      "readme": "docs/architecture/legacy-engine/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "README.md"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "signal-audit",
+      "modules": [
+        "signal_audit"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "signal_audit"
+      ],
+      "allows": [],
+      "readme": "sql/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "sql/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "architecture",
+      "modules": [
+        "tools",
+        "tools.architecture",
+        "tools.architecture.graph",
+        "tools.architecture.policy",
+        "tools.architecture.documentation",
+        "tools.architecture.linter",
+        "tools.architecture.__main__"
+      ],
+      "kind": "governance",
+      "public_modules": [
+        "tools",
+        "tools.architecture",
+        "tools.architecture.graph",
+        "tools.architecture.policy",
+        "tools.architecture.documentation",
+        "tools.architecture.linter",
+        "tools.architecture.__main__"
+      ],
+      "allows": [],
+      "readme": "tools/architecture/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        ".github/",
+        "docs/architecture/",
+        "docs/ARCHITECTURE.md",
+        "docs/features/",
+        "AGENTS.md",
+        "requirements-architecture.txt",
+        "requirements-test.txt",
+        ".gitignore",
+        "tests/architecture/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "recipes",
+      "modules": [],
+      "kind": "workflow",
+      "public_modules": [],
+      "allows": [],
+      "readme": "recipes/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "recipes/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "plugin-catalog",
+      "modules": [],
+      "kind": "contract",
+      "public_modules": [],
+      "allows": [],
+      "readme": "plugin_catalog/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "plugin_catalog/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "agent-catalog",
+      "modules": [],
+      "kind": "contract",
+      "public_modules": [],
+      "allows": [],
+      "readme": "agent_catalog/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "agent_catalog/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "schemas",
+      "modules": [],
+      "kind": "contract",
+      "public_modules": [],
+      "allows": [],
+      "readme": "schemas/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "schemas/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "policies",
+      "modules": [],
+      "kind": "contract",
+      "public_modules": [],
+      "allows": [],
+      "readme": "policies/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "policies/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "acceptance-tests",
+      "modules": [],
+      "kind": "governance",
+      "public_modules": [],
+      "allows": [],
+      "readme": "tests/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "tests/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "skill-sec-evidence-independent-review",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/skills/sec-evidence-independent-review/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "agent_catalog/skills/sec-evidence-independent-review/"
+      ]
+    },
+    {
+      "id": "skill-sec-evidence-preparation",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/skills/sec-evidence-preparation/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "agent_catalog/skills/sec-evidence-preparation/"
+      ]
+    },
+    {
+      "id": "skill-signal-data-health",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/skills/signal-data-health/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "agent_catalog/skills/signal-data-health/"
+      ]
+    },
+    {
+      "id": "skill-thesis-tracker",
+      "modules": [],
+      "public_modules": [],
+      "kind": "contract",
+      "allows": [],
+      "external_dependencies": [],
+      "readme": "agent_catalog/skills/thesis-tracker/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [
+        "agent_catalog/skills/thesis-tracker/"
+      ]
+    }
+  ],
+  "additional_readmes": [
+    "docs/architecture/README.md",
+    "docs/features/README.md",
+    "examples/manifests/README.md",
+    "agent_catalog/agents/README.md"
+  ],
+  "directory_roots": [
+    "agent_catalog/skills/"
+  ]
+}

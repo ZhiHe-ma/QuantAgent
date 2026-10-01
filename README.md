@@ -419,3 +419,8 @@ This is a personal project initiated and maintained by Chen. The maintainer hand
 ## License
 
 Licensed under the [MIT License](LICENSE). Third-party data sources, dependencies, and external services remain subject to their own terms.
+
+
+## 开发架构与变更门禁 / Architecture guardrails
+
+后续开发遵守单向依赖、高内聚、低耦合、功能文档随代码维护；当前部分符合，存量问题分批清理。规则与数据归属见 [架构规范](docs/ARCHITECTURE.md)，每项能力的入口见 [平台功能导航](quantagent_platform/README.md)。Development rules and staged legacy debt are documented alongside the code.
