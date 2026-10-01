@@ -6,7 +6,7 @@
 
 ## 文件导航
 
-- [test_guardrails.py](test_guardrails.py)：门禁回归。
+- [test_guardrails.py](test_guardrails.py)：门禁回归，包括合法启动注入、非法核心反向引用、包根绕过及原登记关系保持。
 
 全局目录见 [测试导航](../README.md)。
 
@@ -24,7 +24,7 @@
 
 ## 测试与验收
 
-执行 `python -m unittest discover -s tests/architecture -v`；实际数量、用例映射、环境与跳过见 [分支说明](../../docs/features/file-classification.md)。离线替身通过不构成真实后端或生产验收。
+执行 `python -m unittest discover -s tests/architecture -v`；分类证据见 [分类批次](../../docs/features/file-classification.md)，启动规则回归见 [D001](../../docs/features/d001-runner-composition.md)。静态检查不构成真实后端或生产验收。
 
 ## 已知限制
 

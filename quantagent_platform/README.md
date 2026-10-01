@@ -2,7 +2,7 @@
 
 ## 职责与边界
 
-插件平台与现有功能导航。本目录只承担登记能力，具体业务接口以原有契约文档为准；不取得其他模块的数据写权限。
+本目录提供插件契约、执行工作流、适配器与启动组装。平铺文件按能力登记分别治理；工作流通过公开接口协作，不取得其他模块的数据写权限。
 
 ## 文件导航
 
@@ -29,6 +29,7 @@
 - `p5-domain`：[quantagent_platform.p5_review](p5_review.py)。
 - `p5-adapter`：[quantagent_platform.p5_plugins](p5_plugins.py)。
 - `runner`：[quantagent_platform.runner](runner.py)。
+- `default-composition`：[quantagent_platform.bootstrap](bootstrap.py)，创建默认插件注册表。
 - `agent-runtime`：[quantagent_platform.agents](agents.py)。
 - `agent-runtime`：[quantagent_platform.manifests](manifests.py)。
 - `p5-workflow`：[quantagent_platform.p5_coordinator](p5_coordinator.py)。
@@ -44,9 +45,11 @@
 
 通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
 
+`RecipeRunner(registry)` 使用显式注册表；原 `RecipeRunner()`、`AgentRuntime()` 和 `default_registry()` 由包入口安装的工厂提供默认值，每次创建独立注册表。`bootstrap.build_default_registry()` 保留原目录校验；`install_default_registry()` 仅注入工厂，导入时不读取目录、不构造插件。自定义启动可通过 `runner.configure_default_registry(factory)` 注入，显式注册表优先。
+
 ## 依赖规则
 
-允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则见 [架构规范](../docs/ARCHITECTURE.md)。42 条存量违规仅按具体引用豁免，新增违规立即失败。
+允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则见 [架构规范](../docs/ARCHITECTURE.md)。运行器只引用 Packet 与插件 ports，具体插件归 bootstrap；兼容包入口初始化工厂，业务不能反向引用包根。剩余豁免以 [精确基线](../docs/architecture/legacy-baseline.json) 为准，新增违规立即失败。
 
 ## 数据与权限
 
@@ -55,6 +58,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 ## 测试与验收
 
 从仓库根目录运行 `python -m unittest discover -s tests -v`；架构门禁运行 `python -m tools.architecture --base-ref <目标提交> --branch <完整源分支>`。验收证据在对应分支说明；真实源、实验后端和生产环境未覆盖部分须单列。
+
+[D001 验收](../docs/features/d001-runner-composition.md) 核对原 Python 导出、目录、配方、预检和审计；新增兼容测试见 [test_runner_composition.py](../tests/integration/test_runner_composition.py)。
 
 ## 已知限制
 

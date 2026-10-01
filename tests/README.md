@@ -10,8 +10,8 @@
 | --- | --- | --- |
 | 模块规则 | [unit](unit/README.md) | SEC 分析 |
 | 公开契约 | [contract](contract/README.md) | SEC 标准化、审计 SQL schema |
-| 跨组件 | [integration](integration/README.md) | SEC 工作流、P5 CLI/HTTP、引擎审计 |
-| 架构门禁 | [architecture](architecture/README.md) | 原正反例保持原位 |
+| 跨组件 | [integration](integration/README.md) | SEC 工作流、P5 CLI/HTTP、引擎审计、运行器组装兼容 |
+| 架构门禁 | [architecture](architecture/README.md) | 依赖、文档及启动规则正反例 |
 | 共享支持 | [support](support/README.md) | ROOT、SEC 合成构造器、[fakes](support/fakes/README.md) |
 | 静态样本 | [fixtures](fixtures/README.md) | JSON/CSV/TXT 字节不变 |
 
@@ -52,7 +52,7 @@
 
 ## 依赖规则
 
-测试使用对应公开产品接口、原替身、标准库和共享支持；产品代码不依赖 tests。生产依赖仍按 [components.json](../docs/architecture/components.json) 管理，本批只增加文档路径，不扩大允许依赖或豁免。
+测试使用对应公开产品接口、原替身、标准库和共享支持；产品代码不依赖 tests。生产依赖仍按 [components.json](../docs/architecture/components.json) 管理，不通过测试目录改变边界或豁免。
 
 ## 数据与权限
 
@@ -60,8 +60,8 @@
 
 ## 测试与验收
 
-从仓库根运行主命令及 `python -m unittest discover -s tests/unit -t . -v`、contract/integration 同类非零发现命令。子目录命令须加 `-t .` 固定仓库为包根，避免 contract/platform 遮住 Python 标准库 platform。使用仓库外 Python，避免 Qlib 负向权限误判。原 279 唯一用例按六项模块前缀逐项对应，加三项路径测试及独立审查发现的单文件入口回归测试；实测与跳过见 [分支说明](../docs/features/file-classification.md)。
+从仓库根运行主命令及 `python -m unittest discover -s tests/unit -t . -v`、contract/integration 同类非零发现命令。子目录命令须加 `-t .` 固定仓库为包根，避免 contract/platform 遮住 Python 标准库 platform。使用仓库外 Python，避免 Qlib 负向权限误判。分类时的用例映射与数量见 [分类批次](../docs/features/file-classification.md)；后续重构新增测试及实际验收见对应分支说明，例如 [D001](../docs/features/d001-runner-composition.md)。
 
 ## 已知限制
 
-当前部分符合，42 条存量问题和循环尚未整改；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。
+当前部分符合，剩余问题见 [精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

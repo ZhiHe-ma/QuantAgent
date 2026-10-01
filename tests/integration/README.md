@@ -9,6 +9,7 @@
 - [sec/README.md](sec/README.md)：SEC 工作流。
 - [p5/README.md](p5/README.md)：P5 入口。
 - [audit/README.md](audit/README.md)：旧引擎审计。
+- [test_runner_composition.py](test_runner_composition.py)：运行器注入、默认目录、公开导出及独立进程启动兼容。
 
 全局目录见 [测试导航](../README.md)。
 
@@ -26,7 +27,7 @@
 
 ## 测试与验收
 
-执行 `python -m unittest discover -s tests/integration -t . -v`；实际数量、用例映射、环境与跳过见 [分支说明](../../docs/features/file-classification.md)。离线替身通过不构成真实后端或生产验收。
+执行 `python -m unittest discover -s tests/integration -t . -v`；目录分类证据见 [分类批次](../../docs/features/file-classification.md)，运行器分离证据见 [D001](../../docs/features/d001-runner-composition.md)。离线替身通过不构成真实后端或生产验收。
 
 ## 已知限制
 

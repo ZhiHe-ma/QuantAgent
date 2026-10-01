@@ -13,7 +13,9 @@ KINDS = {
     "adapter": {"module", "contract"},
     "contract": {"contract"},
     "bootstrap": {"entry", "workflow", "module", "adapter", "contract", "facade"},
-    "facade": {"workflow", "module", "contract"},
+    # Compatibility startup may inject a registered bootstrap; core imports of
+    # this facade remain prohibited by inspect(), including re-export bypasses.
+    "facade": {"workflow", "module", "contract", "bootstrap"},
     "governance": {"governance"},
 }
 IO_PACKAGES = frozenset({"sqlite3", "requests", "httpx", "httpx2", "urllib", "subprocess",

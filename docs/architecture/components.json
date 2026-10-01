@@ -338,6 +338,32 @@
       "external_dependencies": []
     },
     {
+      "id": "default-composition",
+      "modules": [
+        "quantagent_platform.bootstrap"
+      ],
+      "kind": "bootstrap",
+      "public_modules": [
+        "quantagent_platform.bootstrap"
+      ],
+      "allows": [
+        "quality-adapter",
+        "daily-adapter",
+        "outcome-adapter",
+        "p5-adapter",
+        "qlib-adapter",
+        "thesis-adapter",
+        "sec-adapter",
+        "bt-adapter",
+        "plugin-ports",
+        "runner"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
       "id": "agent-runtime",
       "modules": [
         "quantagent_platform.agents",
@@ -470,7 +496,8 @@
       "allows": [
         "packet-contracts",
         "agent-runtime",
-        "runner"
+        "runner",
+        "default-composition"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",

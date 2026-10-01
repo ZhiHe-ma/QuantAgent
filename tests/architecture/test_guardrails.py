@@ -110,6 +110,51 @@ class GuardrailTests(unittest.TestCase):
         self.write("qa/domain.py", "from qa import Evidence\n")
         self.assertIn("facade-import", self.rules())
 
+    def test_registered_startup_facade_can_inject_bootstrap(self):
+        self.registry["components"].append(component("bootstrap", ["qa.bootstrap"], "bootstrap", ["domain"]))
+        self.registry["components"][0]["allows"].append("bootstrap")
+        self.write("qa/bootstrap.py", "from .domain import Evidence\ndef configure(): pass\n")
+        self.write("qa/__init__.py", "from .bootstrap import configure\nconfigure()\n")
+        self.assertEqual([], self.inspect()["violations"])
+
+    def test_core_cannot_import_bootstrap_even_when_allowlisted(self):
+        self.registry["components"].append(component("bootstrap", ["qa.bootstrap"], "bootstrap", ["domain"]))
+        self.registry["components"][2]["allows"].append("bootstrap")
+        self.write("qa/bootstrap.py", "from .domain import Evidence\n")
+        self.write("qa/domain.py", "from .bootstrap import Evidence\n")
+        for kind in ("workflow", "module", "contract"):
+            self.registry["components"][2]["kind"] = kind
+            with self.subTest(kind=kind):
+                self.assertIn("dependency", self.rules())
+                self.assertIn("cycle", self.rules())
+
+    def test_business_cannot_obtain_bootstrap_through_package_facade(self):
+        self.registry["components"].append(component("bootstrap", ["qa.bootstrap"], "bootstrap"))
+        self.registry["components"][0]["allows"].append("bootstrap")
+        self.write("qa/bootstrap.py", "def configure(): pass\n")
+        self.write("qa/__init__.py", "from .bootstrap import configure\n")
+        self.write("qa/domain.py", "from qa import configure\n")
+        self.assertIn("facade-import", self.rules())
+
+    def test_startup_rule_does_not_legalize_original_capability_dependencies(self):
+        registry = json.loads((ROOT / "docs/architecture/components.json").read_text(encoding="utf-8"))
+        original = [c for c in registry["components"] if c["id"] != "default-composition"]
+        before_kinds = {
+            "entry": {"workflow", "contract", "bootstrap"},
+            "workflow": {"workflow", "module", "contract"},
+            "module": {"contract"}, "adapter": {"module", "contract"},
+            "contract": {"contract"},
+            "bootstrap": {"entry", "workflow", "module", "adapter", "contract", "facade"},
+            "facade": {"workflow", "module", "contract"}, "governance": {"governance"},
+        }
+        for source in original:
+            for target in original:
+                expected = source["id"] == target["id"] or (
+                    target["id"] in source["allows"] and target["kind"] in before_kinds[source["kind"]]
+                )
+                with self.subTest(source=source["id"], target=target["id"]):
+                    self.assertEqual(expected, policy.allowed(source, target))
+
     def test_dynamic_import_alias_is_rejected(self):
         self.write("qa/domain.py", "from importlib import import_module as load\nload('qa.adapters')\n")
         self.assertIn("dynamic-import", self.rules())

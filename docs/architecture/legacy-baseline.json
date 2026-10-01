@@ -13,54 +13,6 @@
   "exceptions": [
     {
       "rule": "cycle",
-      "source": "quantagent_platform.agents",
-      "target": "quantagent_platform.manifests",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.agents",
-      "target": "quantagent_platform.runner",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.manifests",
-      "target": "quantagent_platform.runner",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.p5_handoff",
-      "target": "quantagent_platform.agents",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.p5_handoff",
-      "target": "quantagent_platform.runner",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.p5_plugins",
-      "target": "quantagent_platform.p5_handoff",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "cycle",
       "source": "quantagent_platform.result_api",
       "target": "quantagent_platform.submission_api",
       "member": "",
@@ -74,14 +26,6 @@
       "member": "",
       "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
       "task": "D003"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.p5_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
     },
     {
       "rule": "cycle",
@@ -250,70 +194,6 @@
       "member": "",
       "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
       "task": "D005"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.bt_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.builtin_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.daily_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.outcome_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.p5_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.qlib_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.research_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.runner",
-      "target": "quantagent_platform.sec_plugins",
-      "member": "",
-      "reason": "Separate RecipeRunner execution from concrete plugin composition. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D001"
     },
     {
       "rule": "dependency",

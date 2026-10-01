@@ -4,6 +4,10 @@ from .agents import AgentError, AgentRuntime, ResolvedAgentPlan
 from .contracts import ContractError, DataPacket
 from .manifests import AgentCatalog, ManifestError
 from .runner import RecipeError, RecipeRunner, RunCancelled, RunResult, default_registry
+from .bootstrap import install_default_registry as _install_default_registry
+
+_install_default_registry()
+del _install_default_registry
 
 __all__ = [
     "AgentCatalog",
