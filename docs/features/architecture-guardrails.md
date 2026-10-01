@@ -48,7 +48,9 @@
     "agent-sec-evidence-review-agent",
     "agent-definitions"
   ],
-  "readme_unchanged": {}
+  "readme_unchanged": {
+    "architecture": "仅补录最终被测提交号与 CI 运行链接；接口、行为、依赖和权限未变化，模块 README 已在实现提交同步维护。"
+  }
 }
 ```
 
@@ -74,9 +76,11 @@
 
 最终本地命令 `python -m unittest discover -s tests -v`：279 项、0 失败、6 项跳过；其中原有 232 项未修改，新增 47 项门禁用例。跳过项为真实 Qlib/bt 后端 2 项、缺少私有 P4 固定运行样本 1 项、Windows 无符号链接权限 3 项。使用仓库外 Python 3.12，PYTHONUTF8=1，PYTHONPATH 指向本工作树 .venv/Lib/site-packages 的锁定依赖。初始仓库内 .venv 运行触发原有 Qlib 可执行文件目录负向测试的环境假设；换用仓库外解释器后通过，未放宽规则或更改产品/原有测试。
 
-最终本地命令 `python -m tools.architecture --base-ref ccded244593942fc6de7c10983d6b0f795c36a47 --branch feature/architecture-guardrails --report artifacts/architecture/local-gate.json`：退出 0，PARTIAL_COMPLIANCE，42 个模块（35 个产品、7 个治理工具）、42 条精确存量违规、两组环；Import Linter 退出 0。`git diff --check` 无错误。原始日志在忽略的 artifacts/architecture；测试未导入业务来构建依赖图，未联网。首个被测实现提交为 2825bb37dae787338e2d7c9573a964601981ac77；最终复核还修正了同一业务能力内部文件不应被独立性契约拒绝的误报（失败用例先复现），补全 Agent 子目录文档并收录证据。最终完整测试为 279 项；门禁按完整目标与前次提交分别复核。
+最终本地命令 `python -m tools.architecture --base-ref ccded244593942fc6de7c10983d6b0f795c36a47 --branch feature/architecture-guardrails --report artifacts/architecture/local-gate.json`：退出 0，PARTIAL_COMPLIANCE，42 个模块（35 个产品、7 个治理工具）、42 条精确存量违规、两组环；Import Linter 退出 0。`git diff --check` 无错误。原始日志在忽略的 artifacts/architecture；测试未导入业务来构建依赖图，未联网。最终被测实现提交为 f72cbcf2f5a5207f1f4e44f0432195a24057c683；它修正同一业务能力内部文件不应被独立性契约拒绝的误报（失败用例先复现），并补全 Agent 子目录文档。最终完整测试为 279 项；门禁按完整目标与前次提交分别复核。其后只补录本段验收证据，不再修改工具代码或原有契约。
 
 CI：提交 2825bb37dae787338e2d7c9573a964601981ac77 的 [PR 运行 36879145351](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/36879145351) 四项均 success：Python 3.12 / ubuntu-latest、Python 3.12 / windows-latest、Architecture / Python 3.12 / ubuntu-latest、Architecture / Python 3.12 / windows-latest。运行步骤执行锁定依赖安装、上述完整离线测试，以及 `python -m unittest discover -s tests/architecture -v`、`python -m tools.architecture --report artifacts/architecture/ci-report.json`。草稿 [PR #21](https://github.com/ZhiHe-ma/QuantAgent/pull/21) 保持未合并。
+
+最终实现提交 f72cbcf2f5a5207f1f4e44f0432195a24057c683 的 [PR 运行 36881520129](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/36881520129) 也完成上述四项，全部 success；源码门禁、实际 Import Linter、Windows/Linux 全量离线测试均通过。第一轮实现含 46 项门禁测试，最终版本含 47 项；具体跳过范围以各 runner 日志为准，不能用 CI 成功代替 opt-in 后端验收。
 
 远端保护：2026-10-01 使用现有 Git 登录读取管理权限（连接器自身无 admin 权限），确认此前 main 没有保护或 ruleset；只新增上述四项必需检查，绑定 GitHub Actions app_id=15368、strict=true，PUT 后 GET 回读 200，检查名称及提供方完全一致。管理员保持默认豁免（enforce_admins=false），未启用正式审批人数门禁；人工语义审核仍是仓库规范要求。额外启用管理员强制保护曾被自动审批审查拒绝，随后移除此额外设置并完成原定检查配置。回读证据在忽略的 artifacts/architecture/remote-protection-after.json，不保存凭据。
 
