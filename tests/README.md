@@ -6,6 +6,8 @@
 
 ## 文件导航
 
+文件归属与试点规则见 [开发与测试分类](../docs/DEVELOPMENT_TESTING.md)。本批先保留平铺用例；六个 SEC/schema/P5/API/audit 文件将按 [实施计划](../docs/superpowers/plans/2026-10-02-file-classification.md) 分到 unit、contract、integration，迁移后本节同步更新实际链接。其余文件随对应能力整改，不因整理目录扩大验收范围。
+
 - [architecture/test_guardrails.py](architecture/test_guardrails.py)：合法分层、违规、基线收缩、文档同步及同一能力内部协作的正反例。
 
 - [test_agent_runtime.py](test_agent_runtime.py)

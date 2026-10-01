@@ -544,7 +544,8 @@
         "requirements-architecture.txt",
         "requirements-test.txt",
         ".gitignore",
-        "tests/architecture/"
+        "tests/architecture/",
+        "docs/DEVELOPMENT_TESTING.md"
       ],
       "external_dependencies": []
     },
