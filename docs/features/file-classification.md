@@ -37,7 +37,11 @@ F3：同环境执行 `python -m unittest discover -s tests -p test_support_paths
 
 子目录命令 `python -m unittest discover -s tests/unit -t . -v` 实测 3 项；contract 同类命令 13 项；integration 同类命令 22 项，均零失败。首次 contract 命令未指定包根，platform 子包遮住标准库，改为明确 `-t .` 后通过；已同步各 README。bt 专项 8 项、跳过 1，Qlib 专项 5 项、跳过 1，均零失败，保留原真实后端启用条件。
 
-这些是当前整理工作树的 Windows 本地结果，最终完整提交及验收交接记录完成后追加。CI/Linux、生产、真实模型、真实行情和真实外部后端未运行，本批仅验收离线整理。
+被测测试内容对应提交 `bb63419c38c7af411827dc39f1c222531bbf9ebb`，基于 `3006e57069b7da92caf0f869c307bd4b0e7a1ea4`。环境是 Windows 11 10.0.22631、Python 3.12.8，Import Linter 2.8、grimp 3.13、jsonschema 4.25.1。用例清单、子目录实际标识、worker 哈希和报告在本地忽略产物目录留存。
+
+当前架构门禁仍为 42 条已登记问题，Import Linter 退出 0；16 个无关工作树的分支、完整提交及未提交状态与基线完全一致；原治理分支引用保留。运行时源码、正式配方、SQL、schema、权限及 legacy-baseline 无差异，登记只增加文档资产和 README 路径。
+
+CI/Linux、生产、真实模型、真实行情和真实外部后端未运行，本批仅验收 Windows 离线整理。原六项跳过为真实 bt、真实 Qlib、私有 P4 运行缺失，以及三个 Windows symlink 权限条件；没有新增跳过。
 
 ## 回滚方式
 
