@@ -1,12 +1,13 @@
-# P5 CLI 与 HTTP 集成
+# P5 边界与入口集成
 
 ## 职责与边界
 
-验证 P5 命令行、结果接口和任务入口的兼容行为。
+验证 P5 命令行、结果接口、存储注入及默认进程启动的兼容行为。
 
 ## 文件导航
 
 - [test_p5_cli_api.py](test_p5_cli_api.py)：P5 CLI/API 用例。
+- [test_p5_boundaries.py](test_p5_boundaries.py)：显式存储与账本优先、无 IO 启动、安全读取；真实离线 worker 的固定回证、报告哈希、审计和重试幂等比较。
 
 全局目录见 [测试导航](../../README.md)。
 
@@ -24,7 +25,7 @@
 
 ## 测试与验收
 
-执行 `python -m unittest discover -s tests/integration/p5 -v`；实际数量、用例映射、环境与跳过见 [分支说明](../../../docs/features/file-classification.md)。离线替身通过不构成真实后端或生产验收。
+执行 `python -m unittest discover -s tests/integration/p5 -t . -v`；分类映射见 [分类批次](../../../docs/features/file-classification.md)，边界重构验收见 [D002](../../../docs/features/d002-p5-boundaries.md)。离线替身通过不构成真实后端或生产验收。
 
 ## 已知限制
 

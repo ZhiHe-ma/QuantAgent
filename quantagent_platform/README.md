@@ -23,8 +23,12 @@
 - `bt-adapter`：[quantagent_platform.bt_worker](bt_worker.py)。
 - `sec-adapter`：[quantagent_platform.sec_plugins](sec_plugins.py)。
 - `sec-adapter`：[quantagent_platform.sec_client](sec_client.py)。
+- `sec-source-identities`：[quantagent_platform.sec_source_identities](sec_source_identities.py)，固定 SEC URL 与证据文件名。
+- `p5-ports`：[quantagent_platform.p5_ports](p5_ports.py)，证据对象、错误、校验规则与存储接口。
 - `p5-storage`：[quantagent_platform.p5_registry](p5_registry.py)。
 - `p5-storage`：[quantagent_platform.p5_ledger](p5_ledger.py)。
+- `p5-storage`：[quantagent_platform.p5_storage_services](p5_storage_services.py)，安全读取、目录、控制器锁和原子写入。
+- `p5-composition`：[quantagent_platform.p5_bootstrap](p5_bootstrap.py)，启动时注入存储实现。
 - `p5-domain`：[quantagent_platform.p5_handoff](p5_handoff.py)。
 - `p5-domain`：[quantagent_platform.p5_review](p5_review.py)。
 - `p5-adapter`：[quantagent_platform.p5_plugins](p5_plugins.py)。
@@ -47,9 +51,13 @@
 
 `RecipeRunner(registry)` 使用显式注册表；原 `RecipeRunner()`、`AgentRuntime()` 和 `default_registry()` 由包入口安装的工厂提供默认值，每次创建独立注册表。`bootstrap.build_default_registry()` 保留原目录校验；`install_default_registry()` 仅注入工厂，导入时不读取目录、不构造插件。自定义启动可通过 `runner.configure_default_registry(factory)` 注入，显式注册表优先。
 
+`P5Coordinator(..., services=...)` 可注入所属存储接口；默认由包入口安装 `LocalP5Services`，启动只绑定实现，不创建目录或打开数据库。创建协调器仍准备运行根及账本，执行仍写入原研究、交接与审计文件。`RoutePolicy.from_bytes(raw)` 校验有界策略；`load(path)`、`create_handoff(...)`、`verify_handoff(...)` 接受可选存储接口，校验失败继续抛 `HandoffError`。原 `p5_registry.ApprovedRun/SecEvidence/ApprovedSourceError/strict_json`、`p5_ledger.LedgerError` 和 `sec_client.SEC_URLS` 导入路径保留，实际类型归所属契约。自定义全局注入仅在可信启动阶段完成；不用于跨账户切换或运行中热替换，也不承诺旧 Python pickle 的跨版本恢复。
+
 ## 依赖规则
 
 允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则见 [架构规范](../docs/ARCHITECTURE.md)。运行器只引用 Packet 与插件 ports，具体插件归 bootstrap；兼容包入口初始化工厂，业务不能反向引用包根。剩余豁免以 [精确基线](../docs/architecture/legacy-baseline.json) 为准，新增违规立即失败。
+
+P5 校验及工作流引用 ports，具体 IO 实现归 p5-storage；原文件链接、大小、替换与哈希检查保留。P5 ports 只引用 Packet，SEC 身份常量无业务或 SDK 引用。进程启动沿用包入口组装默认实现；显式协调器接口用于本进程，不替换 worker 的子进程实现。
 
 ## 数据与权限
 
@@ -60,6 +68,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 从仓库根目录运行 `python -m unittest discover -s tests -v`；架构门禁运行 `python -m tools.architecture --base-ref <目标提交> --branch <完整源分支>`。验收证据在对应分支说明；真实源、实验后端和生产环境未覆盖部分须单列。
 
 [D001 验收](../docs/features/d001-runner-composition.md) 核对原 Python 导出、目录、配方、预检和审计；新增兼容测试见 [test_runner_composition.py](../tests/integration/test_runner_composition.py)。
+
+[D002 验收](../docs/features/d002-p5-boundaries.md) 核对 P5 边界、固定合成回证与原账本语义；测试入口见 [P5 集成](../tests/integration/p5/README.md)。
 
 ## 已知限制
 

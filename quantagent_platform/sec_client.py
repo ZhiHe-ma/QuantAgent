@@ -11,15 +11,10 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 from .plugins import PluginError
+from .sec_source_identities import SEC_URLS
 
 
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
-SEC_URLS = (
-    ("submissions", "0001507605", "https://data.sec.gov/submissions/CIK0001507605.json"),
-    ("companyfacts", "0001507605", "https://data.sec.gov/api/xbrl/companyfacts/CIK0001507605.json"),
-    ("submissions", "0001167419", "https://data.sec.gov/submissions/CIK0001167419.json"),
-    ("companyfacts", "0001167419", "https://data.sec.gov/api/xbrl/companyfacts/CIK0001167419.json"),
-)
 
 
 @dataclass(frozen=True, repr=False)

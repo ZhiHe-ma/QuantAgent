@@ -8,12 +8,12 @@
 
 | 分类 | 实际入口 | 试点范围 |
 | --- | --- | --- |
-| 模块规则 | [unit](unit/README.md) | SEC 分析 |
+| 模块规则 | [unit](unit/README.md) | SEC 分析、P5 严格解析与策略 |
 | 公开契约 | [contract](contract/README.md) | SEC 标准化、审计 SQL schema |
-| 跨组件 | [integration](integration/README.md) | SEC 工作流、P5 CLI/HTTP、引擎审计、运行器组装兼容 |
+| 跨组件 | [integration](integration/README.md) | SEC 工作流、P5 CLI/HTTP 与存储注入兼容、引擎审计、运行器组装兼容 |
 | 架构门禁 | [architecture](architecture/README.md) | 依赖、文档及启动规则正反例 |
-| 共享支持 | [support](support/README.md) | ROOT、SEC 合成构造器、[fakes](support/fakes/README.md) |
-| 静态样本 | [fixtures](fixtures/README.md) | JSON/CSV/TXT 字节不变 |
+| 共享支持 | [support](support/README.md) | ROOT、SEC/P5 合成构造器、[fakes](support/fakes/README.md) |
+| 静态样本 | [fixtures](fixtures/README.md) | 保留原 JSON/CSV/TXT，新增固定 P5 兼容预期 |
 
 剩余平铺文件及主要类别如下。混合范围保留，后续随对应能力整改，不在本批强拆：
 
@@ -61,6 +61,8 @@
 ## 测试与验收
 
 从仓库根运行主命令及 `python -m unittest discover -s tests/unit -t . -v`、contract/integration 同类非零发现命令。子目录命令须加 `-t .` 固定仓库为包根，避免 contract/platform 遮住 Python 标准库 platform。使用仓库外 Python，避免 Qlib 负向权限误判。分类时的用例映射与数量见 [分类批次](../docs/features/file-classification.md)；后续重构新增测试及实际验收见对应分支说明，例如 [D001](../docs/features/d001-runner-composition.md)。
+
+[D002](../docs/features/d002-p5-boundaries.md) 新增纯规则、静态边界、存储注入和真实离线子进程的固定回证比较；合成样本不能替代私有 P4 或现场服务验收。
 
 ## 已知限制
 

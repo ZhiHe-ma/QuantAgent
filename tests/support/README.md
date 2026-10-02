@@ -8,6 +8,8 @@
 
 [paths.py](paths.py) 定位仓库；[sec_samples.py](sec_samples.py) 保存原 SEC 测试构造器；[fakes](fakes/README.md) 保存 bt/Qlib 的离线 worker。静态 JSON/CSV/TXT 仍在 fixtures，测试入口见 [测试导航](../README.md)。
 
+[p5_samples.py](p5_samples.py) 构造临时合成 P4 与批准登记，固定 SEC 检索时间及研究时钟，供 P5 兼容测试复用。
+
 ## 对外接口
 
 `repository_root(start: Path) -> Path` 从指定文件所在目录向上查找最近同时含 agent_engine.py 文件及 quantagent_platform、recipes、tests 目录的根，找不到抛 FileNotFoundError；`ROOT` 是本文件定位的仓库根，与 cwd 无关。
@@ -17,6 +19,8 @@
 分类目录的直接脚本入口先按当前文件祖先找到本仓库 tests/support，再导入共享 ROOT 校验完整仓库标记；包发现时不执行这段引导，资源与配方仍由共享路径定位。
 
 SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, retrieved_at=None)`，保留合成数据、JSON 序列化、哈希和默认 UTC 时间减一分钟的原语义。fakes 在显式测试子进程中读取协议输入并写测试输出。
+
+`build_approved_source(root)` 返回批准登记路径与 P4 运行根；在测试临时目录执行原离线配方、写入合成文件，SEC 获取由固定响应替身提供。固定研究时钟只在构造期间生效；不导入用例、不联网、不改写产品时间规则。
 
 ## 依赖规则
 

@@ -138,7 +138,21 @@ class GuardrailTests(unittest.TestCase):
 
     def test_startup_rule_does_not_legalize_original_capability_dependencies(self):
         registry = json.loads((ROOT / "docs/architecture/components.json").read_text(encoding="utf-8"))
-        original = [c for c in registry["components"] if c["id"] != "default-composition"]
+        # Freeze the 42 capabilities present before D001 startup composition.
+        # Future registered capabilities must not change this historical matrix.
+        original_ids = frozenset("""
+            packet-contracts research-contracts sec-contracts plugin-ports daily-domain sec-domain
+            quality-adapter daily-adapter outcome-adapter thesis-adapter isolated-runtime qlib-adapter
+            bt-adapter sec-adapter p5-storage p5-domain p5-adapter runner agent-runtime p5-workflow
+            http-api cli-composition startup compatibility-exports legacy-engine signal-audit architecture
+            recipes plugin-catalog agent-catalog schemas policies acceptance-tests
+            skill-sec-evidence-independent-review skill-sec-evidence-preparation skill-signal-data-health
+            skill-thesis-tracker agent-data-health-agent agent-research-agent
+            agent-sec-evidence-producer-agent agent-sec-evidence-review-agent agent-definitions
+        """.split())
+        original = [c for c in registry["components"] if c["id"] in original_ids]
+        self.assertEqual(original_ids, {c["id"] for c in original})
+        self.assertEqual(42, len(original))
         before_kinds = {
             "entry": {"workflow", "contract", "bootstrap"},
             "workflow": {"workflow", "module", "contract"},

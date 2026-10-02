@@ -251,8 +251,42 @@
         "packet-contracts",
         "plugin-ports",
         "sec-contracts",
-        "sec-domain"
+        "sec-domain",
+        "sec-source-identities"
       ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "sec-source-identities",
+      "modules": ["quantagent_platform.sec_source_identities"],
+      "kind": "contract",
+      "public_modules": ["quantagent_platform.sec_source_identities"],
+      "allows": [],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "p5-ports",
+      "modules": ["quantagent_platform.p5_ports"],
+      "kind": "contract",
+      "public_modules": ["quantagent_platform.p5_ports"],
+      "allows": ["packet-contracts"],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "p5-composition",
+      "modules": ["quantagent_platform.p5_bootstrap"],
+      "kind": "bootstrap",
+      "public_modules": ["quantagent_platform.p5_bootstrap"],
+      "allows": ["p5-ports", "p5-storage"],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
@@ -262,16 +296,20 @@
       "id": "p5-storage",
       "modules": [
         "quantagent_platform.p5_registry",
-        "quantagent_platform.p5_ledger"
+        "quantagent_platform.p5_ledger",
+        "quantagent_platform.p5_storage_services"
       ],
       "kind": "adapter",
       "public_modules": [
         "quantagent_platform.p5_registry",
-        "quantagent_platform.p5_ledger"
+        "quantagent_platform.p5_ledger",
+        "quantagent_platform.p5_storage_services"
       ],
       "allows": [
         "packet-contracts",
-        "sec-contracts"
+        "sec-contracts",
+        "p5-ports",
+        "sec-source-identities"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -291,7 +329,9 @@
       ],
       "allows": [
         "packet-contracts",
-        "sec-contracts"
+        "sec-contracts",
+        "p5-ports",
+        "sec-source-identities"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -312,7 +352,8 @@
       "allows": [
         "packet-contracts",
         "plugin-ports",
-        "p5-domain"
+        "p5-domain",
+        "p5-ports"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -399,7 +440,8 @@
         "packet-contracts",
         "runner",
         "agent-runtime",
-        "p5-domain"
+        "p5-domain",
+        "p5-ports"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -497,7 +539,8 @@
         "packet-contracts",
         "agent-runtime",
         "runner",
-        "default-composition"
+        "default-composition",
+        "p5-composition"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",

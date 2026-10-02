@@ -7,6 +7,7 @@
 ## 文件导航
 
 - [research/README.md](research/README.md)：SEC 分析规则。
+- [test_p5_ports.py](test_p5_ports.py)：严格 JSON、标识符、证据对象兼容与无存储访问的策略校验。
 
 全局目录见 [测试导航](../README.md)。
 

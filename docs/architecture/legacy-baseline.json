@@ -101,86 +101,6 @@
     },
     {
       "rule": "dependency",
-      "source": "quantagent_platform.p5_coordinator",
-      "target": "quantagent_platform.p5_ledger",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_coordinator",
-      "target": "quantagent_platform.p5_registry",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_handoff",
-      "target": "quantagent_platform.agents",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_handoff",
-      "target": "quantagent_platform.p5_registry",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_handoff",
-      "target": "quantagent_platform.runner",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_plugins",
-      "target": "quantagent_platform.p5_registry",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_review",
-      "target": "quantagent_platform.p5_registry",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_review",
-      "target": "quantagent_platform.sec_client",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_worker",
-      "target": "quantagent_platform.p5_ledger",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.p5_worker",
-      "target": "quantagent_platform.p5_registry",
-      "member": "",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "dependency",
       "source": "quantagent_platform.qlib_plugins",
       "target": "quantagent_platform.builtin_plugins",
       "member": "",
@@ -210,22 +130,6 @@
       "member": "",
       "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
       "task": "D006"
-    },
-    {
-      "rule": "private-import",
-      "source": "quantagent_platform.p5_worker",
-      "target": "quantagent_platform.p5_ledger",
-      "member": "_safe_id",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
-    },
-    {
-      "rule": "private-import",
-      "source": "quantagent_platform.p5_worker",
-      "target": "quantagent_platform.p5_registry",
-      "member": "_path_signatures",
-      "reason": "Separate P5 protocol validation and storage/model adapters from workflow execution. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D002"
     }
   ]
 }
