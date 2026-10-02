@@ -4,6 +4,7 @@
 {
   "branch": "refactor/d002-p5-boundaries",
   "base_commit": "7e6033bf337f5abbc9baf938e0d7023b650440dc",
+  "tested_commit": "992f5a25efe8571de3c80261b8ea5b4fdc79e97e",
   "components": ["p5-domain", "p5-ports", "p5-storage", "p5-composition", "p5-adapter", "p5-workflow", "sec-source-identities", "sec-adapter", "compatibility-exports", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "仅精确登记新增 ports、身份常量与组装能力，并删除已消除的引用；检查器接口、行为及命令不变。"
@@ -38,6 +39,8 @@ P5 ports 保存最小数据视图、证据对象、错误与存储接口；p5-st
 兼容核对命令：`python artifacts/architecture/d002-p5-boundaries/verify_compatibility.py`。实际保持原 12 项包根导出、29 个默认插件、65 个未改产品/配置/旧样本文件哈希、全部 1,849 组本批前能力关系；账本类与 SQL、安全读取、pin 校验、复核函数、控制器锁、原子写入和进程监督的 AST 与原版一致。固定合成回证及报告哈希来自基线提交，经真实离线 worker 对比；不是私人 P4 或真实 SEC 验收。
 
 最终完整命令 `python -m unittest discover -s tests -v`：305 项，0 失败，6 项原有跳过，66.381 秒。`python -m tools.architecture --base-ref 7e6033bf337f5abbc9baf938e0d7023b650440dc --branch refactor/d002-p5-boundaries --report artifacts/architecture/d002-p5-boundaries/gate.json`：通过，47 个源码模块、15 条精确存量问题、一组原 API 循环，Import Linter 返回 0；仅移除实际消除的 D002 12 条。`git diff --check`：通过。
+
+源码及测试验收版本为首个 JSON 的 `tested_commit`；后续证据说明提交不改变这份已验收代码。原项目方案删除未纳入提交。
 
 Linux/CI、真实服务、私有 P4 与生产尚未运行；真实 bt/Qlib 开关和三项 Windows 链接权限限制仍属原跳过范围。只处理公共研究及本机运行审计，不验证 OpenStock 私有账户写入、学习或交易。
 
