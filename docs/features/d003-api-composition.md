@@ -30,7 +30,7 @@
 
 ## 测试证据
 
-环境：2026-10-02，Windows 11、仓库外 Python 3.12.8、原 `.venv/Lib/site-packages`。基线完整离线命令 `python -m unittest discover -s tests -v`：305 项，0 失败，原 6 项跳过，65.894 秒。源码目标为首个 JSON 的提交；原日志、静态图和兼容核对保留在忽略的 `artifacts/architecture/d003-api-composition/`。
+环境：2026-10-02，Windows 11、仓库外 Python 3.12.8、原 `.venv/Lib/site-packages`。基线完整离线命令 `python -m unittest discover -s tests -v`：305 项，0 失败，原 6 项跳过，65.894 秒。基线与实测源码分别见首个 JSON 的 `base_commit` / `tested_commit`；原日志、静态图和兼容核对保留在忽略的 `artifacts/architecture/d003-api-composition/`。
 
 命令从仓库根运行，设置 `PYTHONUTF8=1`、`PYTHONIOENCODING=utf-8`、`PYTHONPATH=<本仓库>/.venv/Lib/site-packages`；实际解释器为 `C:\Users\yj\AppData\Local\Programs\Python\Python312\python.exe`，门禁使用 `D:\Git\cmd` 加入 PATH。HTTP 捕获及复核使用原 FastAPI 0.141.1、Pydantic 2.13.5、httpx2 2.13.0；Import Linter 2.8 / grimp 3.13，未新增安装。
 
@@ -42,7 +42,9 @@
 | 静态结果 | 52 个源码模块，D003 五条循环边全部消除，剩余 10 条，无循环、新豁免或原能力间依赖放宽 |
 | 架构与文档门禁 | `python -m tools.architecture --base-ref f02a0e2bdf6dacf1b60222386e2b2b5c80e22d5b --branch refactor/d003-api-composition --report artifacts/architecture/d003-api-composition/gate.json`：通过，`PARTIAL_COMPLIANCE`，Import Linter 返回 0 |
 
-原 HTTP 样本在实现前捕获，SHA-256 为 `99868153665fdcfd6658bebac09b2a41529bee5e975240e11b951c36a04af0b0`，验收未覆盖该预期。实测源码及测试对应 `tested_commit`；后续验收补录仅修改文档。独立审查在此版本基础上执行并单列结果。
+原 HTTP 样本在实现前捕获，SHA-256 为 `99868153665fdcfd6658bebac09b2a41529bee5e975240e11b951c36a04af0b0`，该预期保持实现前捕获版本。实测源码及测试对应 `tested_commit`；后续验收补录仅修改文档。独立审查在此版本基础上执行并单列结果。
+
+独立只读审查范围 `f02a0e2..50cb8d4`：无 Critical、Important 或 Minor；独立复跑新增测试 10/10，1.798 秒，并核对原实现 AST、2,116 项旧允许关系及精确基线。结论为代码审查层面可进入后续合并流程，未执行远端 CI 或合并。原记录与逐项范围裁定在本地 `artifacts/architecture/d003-api-composition/final-review.md`，执行记录归档到同目录 `execution/`。
 
 ### Task 1: 分离路由组装与共享 API 接口
 
@@ -65,3 +67,5 @@ Review focus: 兼容 create_app 的默认注入和可选依赖；认证/错误�
 ## 遗留问题
 
 Linux/CI、真实外部服务、私有 P4、真实 bt/Qlib、权限受限的 Windows 链接场景、部署和生产未运行；六项原跳过保持独立记录。D004–D006 与 D002 的非阻塞类型改进留待对应批次；本地通过不能证明多进程队列、跨账户隔离或未来学习业务。
+
+工厂限定可信启动；原单进程 worker 与文件检查保留，运行中/跨租户替换、多进程协调和并发本地文件替换的额外防护不在本批验收内。旧公开导入与 JSON/HTTP 契约已验证，私有名称 monkeypatch、类 `__module__` 元数据及 Python pickle 跨版本格式不作兼容承诺，依赖这些机制的外部工具可能需要适配。
