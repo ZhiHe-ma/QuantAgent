@@ -6,10 +6,12 @@ from .manifests import AgentCatalog, ManifestError
 from .runner import RecipeError, RecipeRunner, RunCancelled, RunResult, default_registry
 from .bootstrap import install_default_registry as _install_default_registry
 from .p5_bootstrap import install_p5_services as _install_p5_services
+from .api_bootstrap import install_api_app_factory as _install_api_app_factory
 
 _install_p5_services()
+_install_api_app_factory()
 _install_default_registry()
-del _install_default_registry, _install_p5_services
+del _install_default_registry, _install_p5_services, _install_api_app_factory
 
 __all__ = [
     "AgentCatalog",

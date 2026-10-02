@@ -18,22 +18,16 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from .agents import AgentRuntime
 from .contracts import ContractError, parse_aware_timestamp, sha256_json, utc_now
 from .research_contracts import validate_review_fixture
-from .result_api import ApiConfig, ArtifactIntegrityError, ReadApiError, ResultStore, _read_bounded
+from .api_contracts import (
+    ApiConfig, ArtifactIntegrityError, ReadApiError, FixtureChanged, IdempotencyConflict,
+    InvalidSubmission, RegisteredFixture, SubmissionPending,
+)
+from .api_storage import ResultStore, read_bounded as _read_bounded
 from .runner import RunCancelled
-from .submission_api import (
-    _BINDINGS,
-    _KEY,
-    _MAX_FIXTURE_BYTES,
-    _PERMISSIONS,
-    _SELECTION,
-    _decode_fixture,
-    _request_value,
-    FixtureChanged,
-    IdempotencyConflict,
-    InvalidSubmission,
-    RegisteredFixture,
-    SubmissionConfig,
-    SubmissionPending,
+from .api_requests import (
+    KEY_PATTERN as _KEY, MAX_FIXTURE_BYTES as _MAX_FIXTURE_BYTES,
+    RESEARCH_SELECTION as _SELECTION, RESEARCH_BINDINGS as _BINDINGS, RESEARCH_PERMISSIONS as _PERMISSIONS,
+    decode_fixture as _decode_fixture, parse_submission_request as _request_value, SubmissionConfig,
 )
 
 
@@ -361,7 +355,7 @@ class LocalTaskWorker:
                 )
             except RunCancelled:
                 try:
-                    _, run_state = self.store._load_state(run_id, self.api_config.owner_subject)
+                    _, run_state = self.store.load_state(run_id, self.api_config.owner_subject)
                 except ReadApiError:
                     run_state = {}
                 if event.is_set() and run_state.get("status") == "cancelled":

@@ -41,6 +41,10 @@
 - `http-api`：[quantagent_platform.result_api](result_api.py)。
 - `http-api`：[quantagent_platform.submission_api](submission_api.py)。
 - `http-api`：[quantagent_platform.task_lifecycle_api](task_lifecycle_api.py)。
+- `http-api`：[api_storage](api_storage.py) / [api_requests](api_requests.py)，结果读取与操作员样本准入。
+- `api-contracts`：[api_contracts](api_contracts.py)，共享 HTTP 模型、错误、配置与样本引用。
+- `api-factory-port`：[api_ports](api_ports.py)，应用工厂的启动注入接口。
+- `api-composition`：[api_bootstrap](api_bootstrap.py)，安装三个 API 的路由与生命周期。
 - `cli-composition`：[quantagent_platform.cli](cli.py)。
 - `startup`：[quantagent_platform.__main__](__main__.py)。
 - `compatibility-exports`：[quantagent_platform](__init__.py)。
@@ -53,11 +57,17 @@
 
 `P5Coordinator(..., services=...)` 可注入所属存储接口；默认由包入口安装 `LocalP5Services`，启动只绑定实现，不创建目录或打开数据库。创建协调器仍准备运行根及账本，执行仍写入原研究、交接与审计文件。`RoutePolicy.from_bytes(raw)` 校验有界策略；`load(path)`、`create_handoff(...)`、`verify_handoff(...)` 接受可选存储接口，校验失败继续抛 `HandoffError`。原 `p5_registry.ApprovedRun/SecEvidence/ApprovedSourceError/strict_json`、`p5_ledger.LedgerError` 和 `sec_client.SEC_URLS` 导入路径保留，实际类型归所属契约。自定义全局注入仅在可信启动阶段完成；不用于跨账户切换或运行中热替换，也不承诺旧 Python pickle 的跨版本恢复。
 
+原 `result_api.create_app(config, submission=None)` 委托已注入的应用工厂；默认 `api_bootstrap.build_api_app()` 按原顺序安装结果、提交和任务路由。包入口只绑定工厂，核心导入不加载可选 HTTP 依赖、创建应用、目录或 worker。共享模型、错误、`ApiConfig` 和 `RegisteredFixture` 的原导入路径保留别名；`SubmissionConfig` 仍执行原样本白名单、大小和哈希校验。自定义工厂通过 `api_ports.configure_api_app_factory()` 在可信启动阶段绑定，不用于运行中切换账户。
+
+`ResultStore.load_state(run_id, requester_subject)` 保留原授权校验；`summary_from_state()` 只格式化可信内部调用者已获授权的状态，不新增原始状态 HTTP 接口。`api_storage.read_bounded()`、`api_requests.decode_fixture()` / `parse_submission_request()` 保留原读取上限与错误语义。
+
 ## 依赖规则
 
 允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则见 [架构规范](../docs/ARCHITECTURE.md)。运行器只引用 Packet 与插件 ports，具体插件归 bootstrap；兼容包入口初始化工厂，业务不能反向引用包根。剩余豁免以 [精确基线](../docs/architecture/legacy-baseline.json) 为准，新增违规立即失败。
 
 P5 校验及工作流引用 ports，具体 IO 实现归 p5-storage；原文件链接、大小、替换与哈希检查保留。P5 ports 只引用 Packet，SEC 身份常量无业务或 SDK 引用。进程启动沿用包入口组装默认实现；显式协调器接口用于本进程，不替换 worker 的子进程实现。
+
+三个 API 不互相导入，组装归 api-composition；请求准入和存储仍归 http-api，跨文件使用其公开接口。共享 API 契约无 IO 或工作流引用；组装器的函数内导入仍计入静态门禁。
 
 ## 数据与权限
 
@@ -71,6 +81,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 [D002 验收](../docs/features/d002-p5-boundaries.md) 核对 P5 边界、固定合成回证与原账本语义；测试入口见 [P5 集成](../tests/integration/p5/README.md)。
 
+[D003 验收](../docs/features/d003-api-composition.md) 比较重构前 HTTP schema、响应、错误与缓存头，覆盖可选依赖、工厂注入、存储授权和关闭行为；入口见 [API 组装测试](../tests/integration/test_api_composition.py)。
+
 ## 已知限制
 
-当前部分符合。存量循环和混合职责尚未整改；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。
+当前部分符合。存量越界引用和混合职责尚未清零；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。

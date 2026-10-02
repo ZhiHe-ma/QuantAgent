@@ -10,6 +10,8 @@
 
 [p5_samples.py](p5_samples.py) 构造临时合成 P4 与批准登记，固定 SEC 检索时间及研究时钟，供 P5 兼容测试复用。
 
+[api_samples.py](api_samples.py) 捕获读取/提交应用的 HTTP schema、错误类型和本机 TestClient 响应。
+
 ## 对外接口
 
 `repository_root(start: Path) -> Path` 从指定文件所在目录向上查找最近同时含 agent_engine.py 文件及 quantagent_platform、recipes、tests 目录的根，找不到抛 FileNotFoundError；`ROOT` 是本文件定位的仓库根，与 cwd 无关。
@@ -22,6 +24,8 @@ SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, ret
 
 `build_approved_source(root)` 返回批准登记路径与 P4 运行根；在测试临时目录执行原离线配方、写入合成文件，SEC 获取由固定响应替身提供。固定研究时钟只在构造期间生效；不导入用例、不联网、不改写产品时间规则。
 
+`api_contract_snapshot()` 在临时目录复制合成样本、创建原公开应用并读取 schema 与健康/鉴权响应；不提交研究任务，不调用真实网络或模型。TestClient 生命周期退出时关闭本机 worker，不导入用例模块。
+
 ## 依赖规则
 
 路径只依赖标准库；SEC 支持使用既有 SEC_URLS/SecResponse 公共类型。支持模块不导入测试用例，不成为产品内部共享库。测试与生产依赖的登记范围不同，生产规则仍见 [架构规范](../../docs/ARCHITECTURE.md)。
@@ -33,6 +37,8 @@ SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, ret
 ## 测试与验收
 
 运行 `python -m unittest discover -s tests -p test_support_paths.py -v` 验证嵌套路径、缺失根标记、cwd 变化及从其他 cwd 启动六个平铺和六个已分类测试脚本的 --help 入口。入口用例不执行业务测试，只检查启动方式。bt/Qlib 原测试验证离线协议、拒绝越权、超时和失败行为；真实后端按原环境条件跳过。实际全套数量及用例映射见 [分支说明](../../docs/features/file-classification.md)。
+
+API 捕获与固定预期比较见 [D003](../../docs/features/d003-api-composition.md)；它依赖测试环境的 FastAPI/Pydantic 版本，不证明真实服务验收。
 
 ## 已知限制
 

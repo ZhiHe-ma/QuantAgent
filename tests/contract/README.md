@@ -8,6 +8,7 @@
 
 - [sec/README.md](sec/README.md)：SEC 数据契约。
 - [platform/README.md](platform/README.md)：审计 SQL schema。
+- [test_api_contracts.py](test_api_contracts.py)：共享 API 类型、原导入路径的对象身份，以及不读取文件的配置和请求契约。
 
 全局目录见 [测试导航](../README.md)。
 
@@ -26,6 +27,8 @@
 ## 测试与验收
 
 执行 `python -m unittest discover -s tests/contract -t . -v`；实际数量、用例映射、环境与跳过见 [分支说明](../../docs/features/file-classification.md)。离线替身通过不构成真实后端或生产验收。
+
+API 契约来源与验证见 [D003](../../docs/features/d003-api-composition.md)。
 
 ## 已知限制
 

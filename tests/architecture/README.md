@@ -8,6 +8,7 @@
 
 - [test_guardrails.py](test_guardrails.py)：门禁回归，包括合法启动注入、非法核心反向引用、包根绕过及原登记关系保持。
 - [test_p5_boundaries.py](test_p5_boundaries.py)：静态检查 P5 校验/工作流不引用具体存储或私有成员，ports 只引用稳定契约。原启动矩阵按 D001 前 42 项能力固定，新增能力不混入历史范围。
+- [test_api_boundaries.py](test_api_boundaries.py)：检查源码无循环、API 不相互导入或调用存储私有成员，共享契约与工厂接口不引用 IO、工作流或运行后端。
 
 全局目录见 [测试导航](../README.md)。
 
@@ -26,6 +27,8 @@
 ## 测试与验收
 
 执行 `python -m unittest discover -s tests/architecture -v`；分类证据见 [分类批次](../../docs/features/file-classification.md)，启动规则回归见 [D001](../../docs/features/d001-runner-composition.md)。静态检查不构成真实后端或生产验收。
+
+API 边界整改与实际门禁结果见 [D003](../../docs/features/d003-api-composition.md)。
 
 ## 已知限制
 

@@ -12,46 +12,6 @@
   },
   "exceptions": [
     {
-      "rule": "cycle",
-      "source": "quantagent_platform.result_api",
-      "target": "quantagent_platform.submission_api",
-      "member": "",
-      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D003"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.result_api",
-      "target": "quantagent_platform.task_lifecycle_api",
-      "member": "",
-      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D003"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.submission_api",
-      "target": "quantagent_platform.result_api",
-      "member": "",
-      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D003"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.task_lifecycle_api",
-      "target": "quantagent_platform.result_api",
-      "member": "",
-      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D003"
-    },
-    {
-      "rule": "cycle",
-      "source": "quantagent_platform.task_lifecycle_api",
-      "target": "quantagent_platform.submission_api",
-      "member": "",
-      "reason": "Remove cyclic API installation and private cross-boundary references. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D003"
-    },
-    {
       "rule": "dependency",
       "source": "agent_engine",
       "target": "quantagent_platform.daily_workflow",

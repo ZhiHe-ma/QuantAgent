@@ -10,6 +10,7 @@
 - [p5/README.md](p5/README.md)：P5 入口。
 - [audit/README.md](audit/README.md)：旧引擎审计。
 - [test_runner_composition.py](test_runner_composition.py)：运行器注入、默认目录、公开导出及独立进程启动兼容。
+- [test_api_composition.py](test_api_composition.py)：原 HTTP 契约、应用工厂、无可选 HTTP 依赖的独立进程导入、存储授权与 worker 生命周期。
 
 全局目录见 [测试导航](../README.md)。
 
@@ -28,6 +29,8 @@
 ## 测试与验收
 
 执行 `python -m unittest discover -s tests/integration -t . -v`；目录分类证据见 [分类批次](../../docs/features/file-classification.md)，运行器分离证据见 [D001](../../docs/features/d001-runner-composition.md)。离线替身通过不构成真实后端或生产验收。
+
+API 路由组装与兼容证据见 [D003](../../docs/features/d003-api-composition.md)。
 
 ## 已知限制
 
