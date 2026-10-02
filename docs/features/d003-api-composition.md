@@ -4,6 +4,7 @@
 {
   "branch": "refactor/d003-api-composition",
   "base_commit": "f02a0e2bdf6dacf1b60222386e2b2b5c80e22d5b",
+  "tested_commit": "2fe0e033a8784000cc1c36b3330a8fea32a3f067",
   "components": ["http-api", "api-contracts", "api-factory-port", "api-composition", "compatibility-exports", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "仅登记新增契约、工厂接口与组装入口，缩减实际消除的循环边；检查器、依赖规则和 CI 命令不变。"
@@ -41,7 +42,7 @@
 | 静态结果 | 52 个源码模块，D003 五条循环边全部消除，剩余 10 条，无循环、新豁免或原能力间依赖放宽 |
 | 架构与文档门禁 | `python -m tools.architecture --base-ref f02a0e2bdf6dacf1b60222386e2b2b5c80e22d5b --branch refactor/d003-api-composition --report artifacts/architecture/d003-api-composition/gate.json`：通过，`PARTIAL_COMPLIANCE`，Import Linter 返回 0 |
 
-原 HTTP 样本在实现前捕获，SHA-256 为 `99868153665fdcfd6658bebac09b2a41529bee5e975240e11b951c36a04af0b0`，验收未覆盖该预期。实际测试提交和独立审查结果在完成本地提交后补录。
+原 HTTP 样本在实现前捕获，SHA-256 为 `99868153665fdcfd6658bebac09b2a41529bee5e975240e11b951c36a04af0b0`，验收未覆盖该预期。实测源码及测试对应 `tested_commit`；后续验收补录仅修改文档。独立审查在此版本基础上执行并单列结果。
 
 ### Task 1: 分离路由组装与共享 API 接口
 
