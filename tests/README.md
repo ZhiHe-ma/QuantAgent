@@ -78,6 +78,8 @@ Monitor 用 `python -m unittest tests.integration.test_monitor_recovery tests.te
 
 R001 入口见 [恢复功能](../quantagent_platform/recovery/README.md)：单元／契约／架构、Daily／Monitor 集成和真实子进程中断／并发测试。使用合成外部服务与真实临时文件、SQLite、OS 锁；结果见 [R001](../docs/features/r001-recovery-resume.md)。
 
+[R002](../docs/features/r002-recovery-read-snapshot.md) 在 [恢复存储契约](contract/test_recovery_store.py) 中验证独立连接交错、列表同一快照、实际损坏拒绝和默认模式错误后锁释放，避免 status 误报正常并发提交。
+
 [文档预算测试](architecture/test_documentation_budget.py)验证当前文档篇幅、去重阅读清单、目标限额收缩和现有门禁自动拒绝超限；不执行产品代码或联网。
 
 ## 已知限制

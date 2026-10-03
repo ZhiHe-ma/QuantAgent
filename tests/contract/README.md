@@ -17,7 +17,7 @@
 
 独立审计用例使用 `python -B -S`，仅将仓库放入 PYTHONPATH，实际初始化临时 SQLite，保证不依赖插件主机或第三方安装环境。
 
-[test_recovery_store.py](test_recovery_store.py) 使用真实临时 SQLite 验证惰性初始化、版本／实例／哈希拒绝、事件幂等及 OS 锁。
+[test_recovery_store.py](test_recovery_store.py) 使用真实临时 SQLite 验证惰性初始化、版本／实例／哈希拒绝、事件幂等及 OS 锁；独立连接的确定性交错覆盖查询／列表的同一快照、真实日志损坏拒绝及默认模式错误后锁释放。仅 WAL 测试允许在读取中提交，产品模式保持，证据见 [R002](../../docs/features/r002-recovery-read-snapshot.md)。
 
 ## 对外接口
 

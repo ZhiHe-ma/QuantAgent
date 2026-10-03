@@ -54,6 +54,9 @@ class SQLiteRecoveryStore:
                         revision INTEGER NOT NULL, event_json TEXT NOT NULL,
                         PRIMARY KEY(run_id,event_id), UNIQUE(run_id,revision))""")
                     connection.execute("PRAGMA user_version=1")
+            else:
+                # Schema, projection and events must share one read snapshot.
+                connection.execute("BEGIN")
             self._check_schema(connection)
             yield connection
             if write:
