@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Callable
 
-from .builtin_plugins import REPORT_CONTRACT
+from .signal_report_contracts import REPORT_CONTRACT
 from .contracts import DataPacket, canonical_json
 from .daily_workflow import DAILY_SYSTEM_PROMPT, build_daily_prompt, render_daily_report
 from .plugins import PluginError, PluginManifest, RunContext

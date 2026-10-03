@@ -122,6 +122,21 @@
       "external_dependencies": []
     },
     {
+      "id": "signal-report-contracts",
+      "modules": [
+        "quantagent_platform.signal_report_contracts"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.signal_report_contracts"
+      ],
+      "allows": [],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
       "id": "quality-adapter",
       "modules": [
         "quantagent_platform.builtin_plugins"
@@ -132,7 +147,8 @@
       ],
       "allows": [
         "packet-contracts",
-        "plugin-ports"
+        "plugin-ports",
+        "signal-report-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -151,7 +167,8 @@
       "allows": [
         "packet-contracts",
         "plugin-ports",
-        "daily-domain"
+        "daily-domain",
+        "signal-report-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -169,7 +186,8 @@
       ],
       "allows": [
         "packet-contracts",
-        "plugin-ports"
+        "plugin-ports",
+        "signal-report-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -225,7 +243,8 @@
       ],
       "allows": [
         "packet-contracts",
-        "plugin-ports"
+        "plugin-ports",
+        "signal-report-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -245,7 +264,8 @@
       ],
       "allows": [
         "packet-contracts",
-        "plugin-ports"
+        "plugin-ports",
+        "signal-report-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",

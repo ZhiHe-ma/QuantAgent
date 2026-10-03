@@ -30,39 +30,7 @@
     {
       "rule": "dependency",
       "source": "quantagent_platform.bt_plugins",
-      "target": "quantagent_platform.builtin_plugins",
-      "member": "",
-      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D005"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.bt_plugins",
       "target": "quantagent_platform.isolated_runtime",
-      "member": "",
-      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D005"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.daily_plugins",
-      "target": "quantagent_platform.builtin_plugins",
-      "member": "",
-      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D005"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.outcome_plugins",
-      "target": "quantagent_platform.builtin_plugins",
-      "member": "",
-      "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D005"
-    },
-    {
-      "rule": "dependency",
-      "source": "quantagent_platform.qlib_plugins",
-      "target": "quantagent_platform.builtin_plugins",
       "member": "",
       "reason": "Replace cross-adapter helper/constant imports with owned public contracts. Preserved as exact legacy debt; does not authorize new references.",
       "task": "D005"

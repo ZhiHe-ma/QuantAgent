@@ -70,6 +70,8 @@
 
 该批还修复全量回归复现的 Windows 原子写入问题；单模块 IO 用例在 [unit](unit/README.md)，并发 HTTP 仍使用原未跳过用例。
 
+[D005](../docs/features/d005-adapter-contracts.md) 增加适配器共享契约的静态边界；原质检、日报、历史评价及 Qlib/bt 离线用例继续验证消费结果、进程权限和审计。
+
 ## 已知限制
 
 当前部分符合，剩余问题见 [精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

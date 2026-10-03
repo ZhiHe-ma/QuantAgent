@@ -11,11 +11,7 @@ from typing import Any
 
 from .contracts import ContractError, DataPacket, parse_aware_timestamp
 from .plugins import PluginError, PluginManifest, RunContext
-
-
-SIGNAL_CONTRACT = "quantagent.signal_history.v1"
-QUALITY_CONTRACT = "quantagent.data_quality.v1"
-REPORT_CONTRACT = "quantagent.report.v1"
+from .signal_report_contracts import QUALITY_CONTRACT, REPORT_CONTRACT, SIGNAL_CONTRACT
 
 
 def _decode_json_columns(row: dict[str, Any]) -> dict[str, Any]:

@@ -7,6 +7,7 @@
 ## 文件导航
 
 - `packet-contracts`：[quantagent_platform.contracts](contracts.py)。
+- `signal-report-contracts`：[signal_report_contracts](signal_report_contracts.py)，原信号、质检和报告 Packet 版本标识的共享定义。
 - `research-contracts`：[quantagent_platform.research_contracts](research_contracts.py)。
 - `sec-contracts`：[quantagent_platform.sec_contracts](sec_contracts.py)。
 - `sec-response-contracts`：[sec_response_contracts](sec_response_contracts.py)，不可变原始响应、读取上限与固定来源 URL。
@@ -75,6 +76,8 @@ P5 校验及工作流引用 ports，具体 IO 实现归 p5-storage；原文件�
 三个 API 不互相导入，组装归 api-composition；请求准入和存储仍归 http-api，跨文件使用其公开接口。共享 API 契约无 IO 或工作流引用；组装器的函数内导入仍计入静态门禁。
 
 SEC 标准化直接引用纯响应契约，不再引用具体客户端；纯响应文件只依赖标准库 dataclass。既有启动组装仍可导入具体插件和客户端，独立契约检查与整个包启动的检查分别记录。
+
+信号、质检和报告版本标识归纯 `signal-report-contracts`；质检、日报、历史评价、Qlib 和 bt 直接引用该契约。原 `builtin_plugins` 常量导入保留别名，不改输出版本或权限。
 
 ## 数据与权限
 
