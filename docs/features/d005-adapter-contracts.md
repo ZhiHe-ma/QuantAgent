@@ -6,7 +6,7 @@
 {
   "branch": "refactor/d005-adapter-contracts",
   "base_commit": "d86787bc396ddbbfa9d0dd77f5269284e3d33d7e",
-  "components": ["quality-adapter", "daily-adapter", "outcome-adapter", "qlib-adapter", "bt-adapter", "signal-report-contracts", "architecture", "acceptance-tests"],
+  "components": ["quality-adapter", "daily-adapter", "outcome-adapter", "qlib-adapter", "bt-adapter", "signal-report-contracts", "worker-ports", "worker-composition", "isolated-runtime", "compatibility-exports", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "只登记实际新增契约及组装能力，并删除已消除引用；检查器、规则和 CI 命令不变。"
   }
@@ -39,7 +39,11 @@ Task 1 修改五个适配器的版本标识引用。Task 2 修改 `qlib_plugins.
 
 环境：2026-10-03，Windows、仓库外 Python 3.12.8、原 `.venv/Lib/site-packages`；命令从仓库根执行，UTF-8 输出。原始证据保存在忽略的 `artifacts/architecture/d005-adapter-contracts/`。实际解释器 `C:\Users\yj\AppData\Local\Programs\Python\Python312\python.exe`，`PYTHONPATH=<仓库>/.venv/Lib/site-packages`，门禁 PATH 包含 `D:\Git\cmd`。
 
-Task 1：原回归 38 项、0 失败、2 项真实后端跳过，0.608 秒；新边界 RED 为 5 次预期断言失败，GREEN 加原回归 40 项、0 失败、2 跳过，0.609 秒。完整离线 `python -m unittest discover -s tests -v`：325 项、0 失败、7 环境跳过，68.570 秒；7 项为真实 bt/Qlib、私有 P4、三项 Windows 链接及临时卷未启用 8.3 文件名。门禁通过，54 模块、5 条存量、无循环，Import Linter 返回 0。兼容审计保留 174 个原资产、28 项原定义、2,500 组原允许关系、原常量及正式导出。Task 2 尚未运行，后续验收版本按实际补录。
+Task 1（源码提交 `e4ccd9af4b4f84c99c27940bb41379364333c0e9`）：原回归 38 项、0 失败、2 项真实后端跳过，0.608 秒；新边界 RED 为 5 次预期断言失败，GREEN 加原回归 40 项、0 失败、2 跳过，0.609 秒。完整离线 `python -m unittest discover -s tests -v`：325 项、0 失败、7 环境跳过，68.570 秒；7 项为真实 bt/Qlib、私有 P4、三项 Windows 链接及临时卷未启用 8.3 文件名。该步门禁通过，54 模块、5 条存量、无循环，Import Linter 返回 0。
+
+Task 2：`python -m unittest tests.architecture.test_adapter_boundaries tests.contract.test_worker_ports tests.test_platform tests.test_daily_plugins tests.test_outcome_replay tests.test_qlib_plugins tests.test_bt_plugins -v`：47 项、0 失败、2 跳过，1.662 秒。新测试初始 RED 有 9 次预期断言失败；恢复原两条运行器引用后，独立进程/静态检查再次失败，恢复新导入后 9/9 通过，1.780 秒。最终完整离线命令：332 项、0 失败、原 7 项环境跳过，69.222 秒。门禁通过，56 模块、3 条仅属 D006 的精确存量、无循环，Import Linter 返回 0；没有新增豁免。
+
+`python artifacts/architecture/d005-adapter-contracts/verify_compatibility.py` 实际核对 174 个原资产、28 项原定义、2,500 组原允许关系、原常量及正式导出；原插件和 worker 方法体保持。两步原始日志均保留，验收版本在提交后补录；独立审查尚未运行。
 
 ### Task 1: 稳定信号与报告版本归属
 
@@ -57,12 +61,12 @@ Interfaces: Produces 原三个字符串版本标识的唯一共享定义；Task 
 
 Files: 新增 `quantagent_platform/worker_ports.py`、`quantagent_platform/worker_bootstrap.py`、`tests/contract/test_worker_ports.py`；修改两个插件、`isolated_runtime.py`、`__init__.py`、边界测试、登记、精确基线和所属 README。
 
-Interfaces: Consumes Task 1 原报告契约；Produces `WorkerExecution`、`WorkerServices`、上述两项公开转发函数及 `configure_worker_services(factory)`。`worker_bootstrap.install_worker_services()` 绑定无参 `LocalWorkerServices` 工厂。
+Interfaces: Consumes Task 1 原报告契约；Produces `WorkerExecution`、`WorkerServices`、上述两项公开转发函数及 `configure_worker_services(factory)`、`get_worker_services_factory() -> Callable[[], WorkerServices]`。`worker_bootstrap.install_worker_services()` 绑定无参 `LocalWorkerServices` 工厂。
 
-- [ ] 新增 `test_worker_adapters_use_ports_and_contracts_have_no_io`；契约测试覆盖注入后有界读取及完整关键字参数转发、错误传播、原 frozen 类型别名和原默认注册表的真实 fake-worker 配方。Expected: 缺失 ports/组装和原直接运行器引用按断言失败；不以缺失测试导入报错代替 RED。
-- [ ] 移动原 DTO，添加纯接口和启动工厂；原运行函数不改，只增加无状态服务实现与启动绑定。两个插件仅改导入，不改方法体或构造形式。Expected: 新契约测试及原 fake-worker 回归通过。
-- [ ] 验证服务未绑定或非法工厂明确失败；既有包启动后单独重载 ports/插件不直接依赖运行器。保持原 10 MiB 输入、2 MiB 响应、64 KiB 日志、超时、哈希、错误和最小环境；全量回归涵盖原权限预检及 CLI/HTTP。
-- [ ] 登记两个新能力并删除仅剩的两条 D005 基线，更新所属 README/整改状态。运行 `python -m unittest discover -s tests -v` 和上述完整门禁。Expected: 全部原离线断言继续通过；跳过逐项记录；剩余 3 条仅属 D006，无循环或新增违规。
+- [x] 新增 `test_worker_adapters_use_ports_and_contracts_have_no_io`；契约测试覆盖注入后有界读取及完整关键字参数转发、错误传播、原 frozen 类型别名和原默认注册表的真实 fake-worker 配方。Expected: 缺失 ports/组装和原直接运行器引用按断言失败；不以缺失测试导入报错代替 RED。
+- [x] 移动原 DTO，添加纯接口和启动工厂；原运行函数不改，只增加无状态服务实现与启动绑定。两个插件仅改导入，不改方法体或构造形式。Expected: 新契约测试及原 fake-worker 回归通过。
+- [x] 验证服务未绑定或非法工厂明确失败；既有包启动后单独重载 ports/插件不直接依赖运行器。保持原 10 MiB 输入、2 MiB 响应、64 KiB 日志、超时、哈希、错误和最小环境；全量回归涵盖原权限预检及 CLI/HTTP。
+- [x] 登记两个新能力并删除仅剩的两条 D005 基线，更新所属 README/整改状态。运行 `python -m unittest discover -s tests -v` 和上述完整门禁。Expected: 全部原离线断言继续通过；跳过逐项记录；剩余 3 条仅属 D006，无循环或新增违规。
 - [ ] 单独提交源码/测试，记录实际验收 SHA；一次独立只读审查整个分支，归档本批执行记录，保留本地分支和工作树。
 
 Review Focus: 旧版本标识和真实消费结果；原 WorkerExecution 类型身份/不可变字段及公开函数参数；启动仅绑定、无参插件与显式自定义工厂并存；输入/日志/响应大小、超时、哈希和环境隔离错误语义；原 Python 导出、CLI/HTTP、目录配方与权限审计；旧登记允许关系不扩张，IO 实现仍归实际适配器。
@@ -73,4 +77,4 @@ Review Focus: 旧版本标识和真实消费结果；原 WorkerExecution 类型�
 
 ## 遗留问题
 
-D006 继续按精确基线整改；本轮结果完成前仍未验证。真实 SEC、私有 P4、真实 Qlib/bt、Linux/远端 CI、部署和生产未运行；离线 worker 替身只验证宿主协议，不验证第三方研究或回测引擎。
+当前仍部分符合，D006 继续按精确基线整改。真实 SEC、私有 P4、真实 Qlib/bt、Linux/远端 CI、部署和生产未运行；离线 worker 替身只验证宿主协议，不验证第三方研究或回测引擎。单独重载检查区分契约依赖和既有启动组装，不声称整个包从不导入具体执行代码。

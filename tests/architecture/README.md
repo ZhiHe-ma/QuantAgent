@@ -10,7 +10,7 @@
 - [test_p5_boundaries.py](test_p5_boundaries.py)：静态检查 P5 校验/工作流不引用具体存储或私有成员；ports 仅允许 Packet，SEC 来源别名仅允许纯响应契约。原启动矩阵按 D001 前 42 项能力固定，新增能力不混入历史范围。
 - [test_api_boundaries.py](test_api_boundaries.py)：检查源码无循环、API 不相互导入或调用存储私有成员，共享契约与工厂接口不引用 IO、工作流或运行后端。
 - [test_sec_boundaries.py](test_sec_boundaries.py)：检查 SEC 响应契约仅用标准库、标准化不引用具体客户端；函数内和类型检查导入均按源码统计。
-- [test_adapter_boundaries.py](test_adapter_boundaries.py)：检查适配器使用所属共享契约，不从具体质检插件读取版本标识。
+- [test_adapter_boundaries.py](test_adapter_boundaries.py)：检查适配器使用所属共享契约，Qlib/bt 使用公开 ports，不引用具体质检或运行适配器；纯契约不引入 IO、SDK 或动态导入。
 
 全局目录见 [测试导航](../README.md)。
 

@@ -5,19 +5,11 @@ import json
 import os
 import re
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from .plugins import PluginError, RunContext
-
-
-@dataclass(frozen=True)
-class WorkerExecution:
-    response: Any
-    returncode: int
-    stdout_sha256: str
-    stderr_sha256: str
+from .worker_ports import WorkerExecution
 
 
 def read_bounded(path: Path, max_bytes: int, label: str) -> bytes:
@@ -121,3 +113,23 @@ def execute_json_worker(
         stdout_sha256=hashlib.sha256(stdout).hexdigest(),
         stderr_sha256=hashlib.sha256(stderr).hexdigest(),
     )
+
+
+class LocalWorkerServices:
+    """Stateless implementation of the public worker port using the original host IO."""
+
+    def read_bounded(self, path: Path, max_bytes: int, label: str) -> bytes:
+        return read_bounded(path, max_bytes, label)
+
+    def execute_json_worker(
+        self, context: RunContext, *, display_name: str, file_prefix: str,
+        python_executable: Path, worker_path: Path, request: dict[str, Any],
+        timeout_seconds: float, max_response_bytes: int = 2 * 1024 * 1024,
+        max_log_bytes: int = 64 * 1024,
+    ) -> WorkerExecution:
+        return execute_json_worker(
+            context, display_name=display_name, file_prefix=file_prefix,
+            python_executable=python_executable, worker_path=worker_path, request=request,
+            timeout_seconds=timeout_seconds, max_response_bytes=max_response_bytes,
+            max_log_bytes=max_log_bytes,
+        )

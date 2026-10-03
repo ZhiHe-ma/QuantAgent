@@ -33,6 +33,25 @@ class AdapterBoundaryTests(unittest.TestCase):
             self.assertIn(root, sys.stdlib_module_names)
             self.assertNotIn(root, IO_PACKAGES)
 
+    def test_worker_adapters_use_ports_and_contracts_have_no_io(self):
+        paths = ["quantagent_platform/bt_plugins.py", "quantagent_platform/qlib_plugins.py"]
+        graph = collect({path: (ROOT / path).read_text(encoding="utf-8") for path in paths})
+        for name, module in graph["modules"].items():
+            with self.subTest(adapter=name):
+                self.assertFalse(any(edge["target"] == "quantagent_platform.isolated_runtime"
+                                     for edge in module["imports"]), name)
+        path = "quantagent_platform/worker_ports.py"
+        self.assertTrue((ROOT / path).is_file(), "missing owned worker ports")
+        graph = collect({path: (ROOT / path).read_text(encoding="utf-8")})
+        for edge in graph["modules"]["quantagent_platform.worker_ports"]["imports"]:
+            self.assertFalse(edge["dynamic"])
+            if edge["target"].startswith("quantagent_platform"):
+                self.assertEqual("quantagent_platform.plugins", edge["target"])
+            else:
+                root = edge["target"].split(".")[0]
+                self.assertIn(root, sys.stdlib_module_names)
+                self.assertNotIn(root, IO_PACKAGES)
+
 
 if __name__ == "__main__":
     unittest.main()

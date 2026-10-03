@@ -70,7 +70,7 @@
 
 该批还修复全量回归复现的 Windows 原子写入问题；单模块 IO 用例在 [unit](unit/README.md)，并发 HTTP 仍使用原未跳过用例。
 
-[D005](../docs/features/d005-adapter-contracts.md) 增加适配器共享契约的静态边界；原质检、日报、历史评价及 Qlib/bt 离线用例继续验证消费结果、进程权限和审计。
+[D005](../docs/features/d005-adapter-contracts.md) 增加适配器共享契约的静态边界，以及 [worker ports 契约](contract/test_worker_ports.py)的注入、错误、旧别名、启动和默认配方消费测试；原质检、日报、历史评价及 Qlib/bt 离线用例继续验证消费结果、进程权限和审计。
 
 ## 已知限制
 

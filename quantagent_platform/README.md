@@ -19,6 +19,8 @@
 - `outcome-adapter`：[quantagent_platform.outcome_plugins](outcome_plugins.py)。
 - `thesis-adapter`：[quantagent_platform.research_plugins](research_plugins.py)。
 - `isolated-runtime`：[quantagent_platform.isolated_runtime](isolated_runtime.py)。
+- `worker-ports`：[worker_ports](worker_ports.py)，原隔离执行结果、服务接口及公开调用入口。
+- `worker-composition`：[worker_bootstrap](worker_bootstrap.py)，启动时绑定隔离执行服务工厂。
 - `qlib-adapter`：[quantagent_platform.qlib_plugins](qlib_plugins.py)。
 - `qlib-adapter`：[quantagent_platform.qlib_worker](qlib_worker.py)。
 - `bt-adapter`：[quantagent_platform.bt_plugins](bt_plugins.py)。
@@ -59,6 +61,8 @@
 
 原子状态写入仍先写完整临时 JSON 再替换；Windows 遇到替换错误 5/32 时最多尝试 5 次，间隔 10/20/30/40 ms。永久拒绝仍抛原异常并保留旧目标字节；其他错误和非 Windows 行为保持。真实读句柄与并发 HTTP 验证见 [D004 Task 2](../docs/features/d004-sec-contracts.md)。
 
+Qlib/bt 的原无参插件通过 worker ports 调用 `read_bounded()`、`execute_json_worker()`；`worker_bootstrap.install_worker_services()` 只绑定无参 `LocalWorkerServices` 工厂，消费时创建无状态服务，原 IO 函数保持。自定义启动用 `configure_worker_services(factory)` 绑定，`get_worker_services_factory()` 可读取公开绑定；非法工厂抛 TypeError 且保留旧绑定，未绑定抛 RuntimeError。配置仅限可信启动阶段，不用于运行中切换账户或热替换。原 `isolated_runtime.WorkerExecution` 保留同一类型别名和 frozen 字段，旧 IO 函数签名仍可用；不承诺跨版本 pickle。
+
 `P5Coordinator(..., services=...)` 可注入所属存储接口；默认由包入口安装 `LocalP5Services`，启动只绑定实现，不创建目录或打开数据库。创建协调器仍准备运行根及账本，执行仍写入原研究、交接与审计文件。`RoutePolicy.from_bytes(raw)` 校验有界策略；`load(path)`、`create_handoff(...)`、`verify_handoff(...)` 接受可选存储接口，校验失败继续抛 `HandoffError`。原 `p5_registry.ApprovedRun/SecEvidence/ApprovedSourceError/strict_json`、`p5_ledger.LedgerError` 和 `sec_client.SEC_URLS` 导入路径保留，实际类型归所属契约。自定义全局注入仅在可信启动阶段完成；不用于跨账户切换或运行中热替换，也不承诺旧 Python pickle 的跨版本恢复。
 
 原 `result_api.create_app(config, submission=None)` 委托已注入的应用工厂；默认 `api_bootstrap.build_api_app()` 按原顺序安装结果、提交和任务路由。包入口只绑定工厂，核心导入不加载可选 HTTP 依赖、创建应用、目录或 worker。共享模型、错误、`ApiConfig` 和 `RegisteredFixture` 的原导入路径保留别名；`SubmissionConfig` 仍执行原样本白名单、大小和哈希校验。自定义工厂通过 `api_ports.configure_api_app_factory()` 在可信启动阶段绑定，不用于运行中切换账户。
@@ -79,6 +83,8 @@ SEC 标准化直接引用纯响应契约，不再引用具体客户端；纯响�
 
 信号、质检和报告版本标识归纯 `signal-report-contracts`；质检、日报、历史评价、Qlib 和 bt 直接引用该契约。原 `builtin_plugins` 常量导入保留别名，不改输出版本或权限。
 
+Qlib/bt 不直接导入隔离运行适配器；worker ports 仅引用标准库及原 plugin-ports，具体 IO 仍归 isolated-runtime，由已登记组装器注入。输入、worker 路径和权限预检、日志/响应上限、超时和最小环境保持原控制。
+
 ## 数据与权限
 
 QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；运行目录与文件权限沿用原有控制。私有档案、规则、决定和回证由 OpenStock 管理，不得跨账户读取或直接写入。
@@ -94,6 +100,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 [D003 验收](../docs/features/d003-api-composition.md) 比较重构前 HTTP schema、响应、错误与缓存头，覆盖可选依赖、工厂注入、存储授权和关闭行为；入口见 [API 组装测试](../tests/integration/test_api_composition.py)。
 
 [D004 验收](../docs/features/d004-sec-contracts.md) 核对旧类型身份、原 Packet、共享上限及无客户端的契约导入；原 SEC、P5 和完整离线回归保持。
+
+[D005 验收](../docs/features/d005-adapter-contracts.md) 核对原版本标识、worker 类型/签名、惰性注入、默认配方与原实现；边界和公开服务接口覆盖在架构与契约测试。
 
 ## 已知限制
 

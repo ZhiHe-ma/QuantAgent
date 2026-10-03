@@ -9,6 +9,7 @@
 - [sec/README.md](sec/README.md)：SEC 数据契约。
 - [platform/README.md](platform/README.md)：审计 SQL schema。
 - [test_api_contracts.py](test_api_contracts.py)：共享 API 类型、原导入路径的对象身份，以及不读取文件的配置和请求契约。
+- [test_worker_ports.py](test_worker_ports.py)：有界读取与错误、完整 worker 参数、原 frozen 类型和函数签名、启动惰性绑定、独立重载，以及原默认配方实际消费自定义服务。
 
 全局目录见 [测试导航](../README.md)。
 
@@ -23,6 +24,8 @@
 ## 数据与权限
 
 合成载荷与临时 SQLite；不使用真实账户。
+
+worker 契约使用临时授权目录和原 fake worker 子进程，验证宿主接口；自定义工厂通过公开 getter 保存并在用例结束恢复，不留下全局配置变更。
 
 ## 测试与验收
 

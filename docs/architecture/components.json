@@ -214,6 +214,41 @@
       "external_dependencies": []
     },
     {
+      "id": "worker-ports",
+      "modules": [
+        "quantagent_platform.worker_ports"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.worker_ports"
+      ],
+      "allows": [
+        "plugin-ports"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "worker-composition",
+      "modules": [
+        "quantagent_platform.worker_bootstrap"
+      ],
+      "kind": "bootstrap",
+      "public_modules": [
+        "quantagent_platform.worker_bootstrap"
+      ],
+      "allows": [
+        "worker-ports",
+        "isolated-runtime"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
       "id": "isolated-runtime",
       "modules": [
         "quantagent_platform.isolated_runtime"
@@ -223,7 +258,8 @@
         "quantagent_platform.isolated_runtime"
       ],
       "allows": [
-        "plugin-ports"
+        "plugin-ports",
+        "worker-ports"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -244,7 +280,8 @@
       "allows": [
         "packet-contracts",
         "plugin-ports",
-        "signal-report-contracts"
+        "signal-report-contracts",
+        "worker-ports"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -265,7 +302,8 @@
       "allows": [
         "packet-contracts",
         "plugin-ports",
-        "signal-report-contracts"
+        "signal-report-contracts",
+        "worker-ports"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -619,7 +657,8 @@
         "runner",
         "default-composition",
         "p5-composition",
-        "api-composition"
+        "api-composition",
+        "worker-composition"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
