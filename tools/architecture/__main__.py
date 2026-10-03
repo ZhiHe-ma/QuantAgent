@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from .budget import POLICY as DOCUMENT_BUDGET, check as check_budget, load_policy, reading_bundle
+from .budget import CORE_DOCUMENTS, POLICY as DOCUMENT_BUDGET, check as check_budget, load_policy, parse_policy, reading_bundle
 from .documentation import check as check_docs
 from .graph import excluded_path
 from .linter import run as run_linter
@@ -28,10 +28,21 @@ def git(root: Path, *args: str, optional=False) -> str | None:
     return result.stdout
 
 
-def base_json(root: Path, revision: str, path: str) -> dict | None:
+def base_json(root: Path, revision: str, path: str, *, decoder=json.loads) -> dict | None:
     if git(root, "cat-file", "-e", f"{revision}:{path}", optional=True) is None:
         return None
-    return json.loads(git(root, "show", f"{revision}:{path}"))
+    return decoder(git(root, "show", f"{revision}:{path}"))
+
+
+def write_report(root: Path, destination: Path, result: dict, registry: dict, registry_path: str) -> None:
+    report = (destination if destination.is_absolute() else root / destination).resolve()
+    protected = [REGISTRY, BASELINE, DOCUMENT_BUDGET, registry_path, "README.md", *CORE_DOCUMENTS,
+                 *(c["readme"] for c in registry["components"]), *registry.get("additional_readmes", [])]
+    if report in {(root / path).resolve() for path in protected} or (
+            report.is_file() and report.suffix.lower() in {".md", ".py"}):
+        raise ValueError(f"report path collides with repository input: {destination}")
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def base_sources(root: Path, revision: str) -> dict[str, str]:
@@ -61,9 +72,7 @@ def main(argv=None) -> int:
         if args.context_for:
             result = reading_bundle(root, registry, args.context_for, load_policy(root))
             if args.report:
-                report = args.report if args.report.is_absolute() else root / args.report
-                report.parent.mkdir(parents=True, exist_ok=True)
-                report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                write_report(root, args.report, result, registry, args.registry)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 1 if result["errors"] else 0
         result = inspect(root, registry)
@@ -80,7 +89,8 @@ def main(argv=None) -> int:
             raise ValueError("invalid legacy baseline")
         prior_registry = base_json(root, revision, args.registry)
         prior_baseline = base_json(root, revision, BASELINE)
-        budget = check_budget(root, registry, load_policy(root, previous=base_json(root, revision, DOCUMENT_BUDGET)))
+        budget = check_budget(root, registry, load_policy(
+            root, previous=base_json(root, revision, DOCUMENT_BUDGET, decoder=parse_policy)))
         errors = []
         errors.extend(budget["errors"])
         if (prior_registry is None) != (prior_baseline is None):
@@ -111,9 +121,7 @@ def main(argv=None) -> int:
                        "legacy_count": len(baseline["exceptions"]), "import_linter": linter,
                        "documentation_budget": budget})
         if args.report:
-            report = args.report if args.report.is_absolute() else root / args.report
-            report.parent.mkdir(parents=True, exist_ok=True)
-            report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            write_report(root, args.report, result, registry, args.registry)
         print(f"{result['status']}: {result['module_count']} modules, {result['legacy_count']} registered legacy violations; Import Linter exit={linter['exit_code']}")
         for error in errors:
             print(error, file=sys.stderr)

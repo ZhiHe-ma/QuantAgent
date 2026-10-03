@@ -27,6 +27,7 @@
 - 默认阅读基础为 AGENTS、ARCHITECTURE、DEVELOPMENT_TESTING，叠加所选能力 README；相同实际文件只计算一次。完整门禁核对每项能力的默认清单，未知能力、缺文档、越界路径或超限失败。
 - `python -m tools.architecture --context-for architecture --context-for acceptance-tests --report artifacts/architecture/doc-context-budget/context.json` 只输出路径、计量和合计，不加载业务、不执行 Git、不联网。完整门禁新增结构化预算结果。
 - 政策格式严格校验；已有目标分支政策的限额只能保持或缩减，删除、缺字段或扩大限额失败。规则真实性和语义矛盾仍由人工审查。
+- 报告写入前拒绝与输入文档、治理配置或既有 Markdown／Python 文件冲突的目标；已有 JSON 报告可重新生成。存在的目标政策与当前政策使用同一严格解析，拒绝 null 和重复键，允许 UTF-8 BOM；首次引入时仍允许目标文件不存在。
 
 ## 新增依赖
 
@@ -41,7 +42,11 @@
 - `python -m tools.architecture --base-ref 3717263081ec079d0a38d2284919f329d312edef --branch feature/doc-context-budgets --report artifacts/architecture/doc-context-budget/gate.json`：PASS，68 个源码模块、0 条存量违规，Import Linter 返回 0；40 份当前文档和 61 项能力的默认阅读清单均未超限。
 - 上述两能力 `--context-for` 命令：PASS，去重后 5 份文档，227 行／11,138 字符；门禁不删除或截断任何原文。
 
-baseline-tests.log／red-tests.log／green-tests.log／architecture-tests.log／full-tests.log、gate.json 与 context.json 保留在忽略的 `artifacts/architecture/doc-context-budget/`。此轮验证针对提交前候选代码；不可变源码提交及最终审查在收尾追加记录，验收日志不提交到版本库。
+首个候选实现为 `fc0cd9ce36067210273952aef9f87f125938821c`。只读审查在真实临时环境复现报告覆盖原文、目标政策 null／重复键被放过两项 Important；新增两个真实 CLI／Git 回归，先观察 13 个子场景失败，再修复。额外观察并修复严格解析造成的目标政策 BOM 兼容失败。
+
+修复后 `python -m unittest discover -s tests/architecture -v`：79 项通过，5.507 秒；`python -m unittest discover -s tests -v`：**392 项、0 失败、7 项原环境跳过，101.350 秒**。完整门禁仍 PASS：68 个模块、0 条存量违规、Import Linter 返回 0。
+
+原始日志和结构化报告保留在忽略的 `artifacts/architecture/doc-context-budget/`，最终结果以 full-tests-final.log／architecture-tests-final.log／gate-final.json 为准；review-red.log／review-bom-red.log 保留修复前证据。验证针对提交前候选代码，不可变修复提交及最终审查在收尾追加记录，验收日志不提交到版本库。
 
 ## 回滚方式
 

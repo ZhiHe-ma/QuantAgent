@@ -34,13 +34,18 @@ def _unique_pairs(pairs):
     return result
 
 
+def parse_policy(text: str) -> dict:
+    policy = json.loads(text.removeprefix("\ufeff"), object_pairs_hook=_unique_pairs)
+    _validate(policy)
+    return policy
+
+
 def load_policy(root: Path, *, previous: dict | None = None) -> dict:
     root = root.resolve()
     path = (root / POLICY).resolve()
     if not path.is_relative_to(root):
         raise ValueError(f"out-of-repository documentation budget: {POLICY}")
-    policy = json.loads(path.read_text(encoding="utf-8-sig"), object_pairs_hook=_unique_pairs)
-    _validate(policy)
+    policy = parse_policy(path.read_text(encoding="utf-8-sig"))
     if previous is not None:
         _validate(previous)
         for section in ("document", "context"):

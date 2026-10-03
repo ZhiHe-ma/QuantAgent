@@ -22,7 +22,7 @@ inventory 只报告原始问题。完整检查以目标提交及实际源分支�
 
 完整检查自动应用[预算政策](../../docs/architecture/documentation-budget.json)：当前入口 AGENTS／项目 README、共同规范和全部登记 README 逐份检查；每项能力的默认清单叠加 AGENTS、ARCHITECTURE、DEVELOPMENT_TESTING 与所属 README，同一实际文件去重。报告含 documentation_budget；相对目标提交禁止扩大限额，缺失或非法政策失败。
 
-`--context-for` 可重复指定能力；只报告文件路径、规范化内容哈希、行数、Unicode 字符数和合计，不读取 Git、不扫描或执行产品代码。超限、未知能力、缺文档或越界路径退出 1；指定 --report 才写 JSON。字符数去除 UTF-8 BOM、统一换行，不是模型 token。历史记录和长篇参考不默认整份加入，原格式／路径检查保留；显式登记为 README 的文件仍受篇幅约束。
+`--context-for` 可重复指定能力；只报告文件路径、规范化内容哈希、行数、Unicode 字符数和合计，不读取 Git、不扫描或执行产品代码。超限、未知能力、缺文档或越界路径退出 1；指定 --report 才写 JSON。报告目标不能覆盖输入文档、治理配置或既有 Markdown／Python 文件，同一 JSON 报告可以重新生成。字符数去除 UTF-8 BOM、统一换行，不是模型 token。历史记录和长篇参考不默认整份加入，原格式／路径检查保留；显式登记为 README 的文件仍受篇幅约束。
 
 ## 依赖规则
 

@@ -188,6 +188,30 @@ class DocumentationBudgetCliTests(DocumentFixture):
         after = {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
         after.pop("context.json")
         self.assertEqual(before, after)
+        repeated = self.cli("--context-for", "alpha", "--report", "context.json", without_git=True)
+        self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
+        self.assertEqual(json.loads((self.root / "context.json").read_text(encoding="utf-8")), data)
+
+    def test_report_cannot_overwrite_input_documents_or_configuration(self):
+        self.prepare_cli()
+        self.write("docs/features/history.md", "Historical evidence must remain complete.\n")
+        self.write("qb/README.md", "Another capability owns this document.\n")
+        self.registry["components"].append(capability("beta", "qb/README.md"))
+        self.write("docs/architecture/components.json", json.dumps(self.registry))
+        paths = ("qa/README.md", "qa/../qa/README.md", "qb/README.md", "README.md", "AGENTS.md",
+                 "docs/features/history.md", "docs/ARCHITECTURE.md", "docs/DEVELOPMENT_TESTING.md",
+                 "docs/architecture/components.json", "docs/architecture/documentation-budget.json",
+                 "qa/domain.py")
+        before = {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        for path in paths:
+            with self.subTest(report=path):
+                for original, content in before.items():
+                    self.root.joinpath(original).write_bytes(content)
+                proc = self.cli("--context-for", "alpha", "--report", path, without_git=True)
+                self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+                self.assertIn("report", proc.stderr)
+                self.assertEqual(before, {p.relative_to(self.root).as_posix(): p.read_bytes()
+                                          for p in self.root.rglob("*") if p.is_file()})
 
     def test_context_cli_rejects_unknown_scope_and_overflow(self):
         self.prepare_cli()
@@ -206,7 +230,7 @@ class DocumentationBudgetCliTests(DocumentFixture):
         self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
         self.assertIn("documentation-budget.json", proc.stderr)
 
-    def test_existing_gate_automatically_rejects_oversized_readme(self):
+    def prepare_gate_fixture(self):
         self.prepare_cli()
         self.registry["components"][0].update(modules=["qa", "qa.domain"], public_modules=["qa", "qa.domain"], assets=["qa/"])
         self.write("qa/__init__.py", "")
@@ -224,6 +248,10 @@ class DocumentationBudgetCliTests(DocumentFixture):
         for args in (("init",), ("add", "."), ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "fixture")):
             result = subprocess.run(git + list(args), capture_output=True, encoding="utf-8", timeout=20)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return git
+
+    def test_existing_gate_automatically_rejects_oversized_readme(self):
+        self.prepare_gate_fixture()
         with self.root.joinpath("qa/README.md").open("a", encoding="utf-8") as file:
             file.write("x\n" * 200)
         proc = self.cli("--base-ref", "HEAD", "--branch", "feature/demo", "--report", "gate.json")
@@ -231,3 +259,20 @@ class DocumentationBudgetCliTests(DocumentFixture):
         report = json.loads((self.root / "gate.json").read_text(encoding="utf-8"))
         self.assertTrue(any("qa/README.md" in e and "lines" in e for e in report["documentation_budget"]["errors"]))
         self.assertIn("document", proc.stderr)
+
+    def test_target_policy_uses_strict_validation_and_accepts_utf8_bom(self):
+        git = self.prepare_gate_fixture()
+        duplicate = json.dumps(self.policy).replace('"version": 1', '"version": 1, "version": 1', 1)
+        for text, expected in (("null", 1), (duplicate, 1), ("\ufeff" + json.dumps(self.policy), 0)):
+            with self.subTest(target_policy=text):
+                self.write("docs/architecture/documentation-budget.json", text)
+                for args in (("add", "docs/architecture/documentation-budget.json"),
+                             ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                              "commit", "-m", "invalid target policy")):
+                    result = subprocess.run(git + list(args), capture_output=True, encoding="utf-8", timeout=20)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.save_policy()
+                proc = self.cli("--base-ref", "HEAD", "--branch", "feature/demo")
+                self.assertEqual(proc.returncode, expected, proc.stdout + proc.stderr)
+                if expected:
+                    self.assertIn("documentation budget", proc.stderr)
