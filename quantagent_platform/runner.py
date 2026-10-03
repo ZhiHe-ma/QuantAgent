@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -52,7 +53,15 @@ def _atomic_json_write(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(temporary, path)
+    for attempt in range(5):
+        try:
+            os.replace(temporary, path)
+            return
+        except PermissionError as exc:
+            if os.name != "nt" or getattr(exc, "winerror", None) not in {5, 32} or attempt == 4:
+                raise
+            # Windows readers may briefly deny replacing the complete state file.
+            time.sleep(0.01 * (attempt + 1))
 
 
 def _slug(value: str) -> str:

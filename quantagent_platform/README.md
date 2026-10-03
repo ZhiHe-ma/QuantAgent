@@ -56,7 +56,7 @@
 
 `RecipeRunner(registry)` 使用显式注册表；原 `RecipeRunner()`、`AgentRuntime()` 和 `default_registry()` 由包入口安装的工厂提供默认值，每次创建独立注册表。`bootstrap.build_default_registry()` 保留原目录校验；`install_default_registry()` 仅注入工厂，导入时不读取目录、不构造插件。自定义启动可通过 `runner.configure_default_registry(factory)` 注入，显式注册表优先。
 
-Windows 原子状态写入的并发读句柄问题已在本批回归中复现，修复与边界证据见 [D004 Task 2](../docs/features/d004-sec-contracts.md)；实现和验收后同步本节实际行为。
+原子状态写入仍先写完整临时 JSON 再替换；Windows 遇到替换错误 5/32 时最多尝试 5 次，间隔 10/20/30/40 ms。永久拒绝仍抛原异常并保留旧目标字节；其他错误和非 Windows 行为保持。真实读句柄与并发 HTTP 验证见 [D004 Task 2](../docs/features/d004-sec-contracts.md)。
 
 `P5Coordinator(..., services=...)` 可注入所属存储接口；默认由包入口安装 `LocalP5Services`，启动只绑定实现，不创建目录或打开数据库。创建协调器仍准备运行根及账本，执行仍写入原研究、交接与审计文件。`RoutePolicy.from_bytes(raw)` 校验有界策略；`load(path)`、`create_handoff(...)`、`verify_handoff(...)` 接受可选存储接口，校验失败继续抛 `HandoffError`。原 `p5_registry.ApprovedRun/SecEvidence/ApprovedSourceError/strict_json`、`p5_ledger.LedgerError` 和 `sec_client.SEC_URLS` 导入路径保留，实际类型归所属契约。自定义全局注入仅在可信启动阶段完成；不用于跨账户切换或运行中热替换，也不承诺旧 Python pickle 的跨版本恢复。
 
