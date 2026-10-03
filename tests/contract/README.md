@@ -17,6 +17,8 @@
 
 独立审计用例使用 `python -B -S`，仅将仓库放入 PYTHONPATH，实际初始化临时 SQLite，保证不依赖插件主机或第三方安装环境。
 
+[test_recovery_store.py](test_recovery_store.py) 使用真实临时 SQLite 验证惰性初始化、版本／实例／哈希拒绝、事件幂等及 OS 锁。
+
 ## 对外接口
 
 保持原 unittest TestCase、测试方法、断言与失败条件；发现命令从仓库根执行。

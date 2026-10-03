@@ -10,7 +10,7 @@
 
 **Spec:** 本文“目标与非目标”至“新增依赖”的书面规范，已批准版本为提交 `2a29b69ef0fd88805f571339603530c69ed4b3ec`。
 
-2026-10-03。书面规范已获用户确认；以下实施计划待审阅，产品实现尚未开始。沿用当前工作树和 Native 执行方式。本文件保存本批规范、计划及验收，共同规则使用链接。
+2026-10-03。书面规范已获用户确认；实施计划已获用户确认，现按五批实施。沿用当前工作树和 Native 执行方式。本文件保存本批规范、计划及验收，共同规则使用链接。
 
 ## Global Constraints
 
@@ -33,12 +33,13 @@
 {
   "branch": "feature/r001-recovery-resume",
   "base_commit": "9c09e12e6bf82c0e1fe3845ee1bf71cd1941a6ea",
-  "phase": "plan_review",
+  "phase": "implementing",
+  "approved_plan_commit": "f38ede46eef828d9eec7ba32798139f09e00fe04",
   "written_spec_commit": "2a29b69ef0fd88805f571339603530c69ed4b3ec",
   "execution_method": "native",
-  "components": ["legacy-engine", "legacy-workflows", "legacy-ports", "legacy-composition", "signal-audit", "architecture", "acceptance-tests"],
+  "components": ["legacy-engine", "legacy-workflows", "legacy-ports", "legacy-composition", "signal-audit", "architecture", "acceptance-tests", "recovery-contracts", "recovery-domain", "recovery-storage", "recovery-package"],
   "readme_unchanged": {
-    "architecture": "当前只维护本批规范和实施计划，未改扫描、登记、依赖规则或 CI；工具 README 保持当前有效状态。"
+    "architecture": "仅登记实际新增能力及已批准的最小依赖边；扫描、文档检查规则和 CI 使用方式未改，工具 README 现有说明仍有效。"
   }
 }
 ```
@@ -115,7 +116,7 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 
 | 文件 | 职责与所属能力 |
 | --- | --- |
-| 新建 `quantagent_platform/recovery/__init__.py`、`contracts.py` | 空包入口及恢复数据／ports；登记 `recovery-contracts`，不统一导出实现 |
+| 新建 `quantagent_platform/recovery/__init__.py`、`contracts.py` | 空包入口登记 `recovery-package`（无公开导出）；恢复数据／ports 登记 `recovery-contracts`，不统一导出实现 |
 | 新建 `quantagent_platform/recovery/rules.py` | 快照校验、状态转换、Memory 目标及审计载荷冻结；登记 `recovery-domain` |
 | 新建 `quantagent_platform/recovery/sqlite_store.py`、`README.md` | 本机执行记录及三类锁；登记 `recovery-storage`，目录资产由它拥有，三个能力共用该 README |
 | 修改 `quantagent_platform/legacy_ports.py`、`legacy_bootstrap.py`、`__init__.py` | 追加可选 ports 与惰性恢复工厂；保持原能力归属 |
@@ -140,11 +141,11 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 - step 名为 `report/message/memory/audit/model/buffer/dedup/fingerprint/quarantine/audit_payload/task`；本地状态按规范，消息状态按 DeliveryResult，audit_payload 只允许首次 frozen。task 事件 completed/abandoned/retry_requested 分别完成、终止、显式请求恢复；完成条件未满足不能 completed，abandoned 不接受后续执行事件。审计冻结结果键为 `run, signal, factors, expected_canonical_signal_id`，首次依据实际 steps 填交付标记，后续不改写。
 - 测试支持公开构造器为 `daily_payload(date: str = "2026-10-03") -> JsonObject`、`news_payload(date: str = "2026-10-03") -> JsonObject`；Task 2 追加 `isolated_engine(root: Path, *, dry_run: bool = False, wecom_url: str | None = "https://example.invalid/webhook") -> ContextManager[Any]`，使用合成配置、阻断外部请求并在退出时恢复环境及绑定。
 
-- [ ] **RED tests:** `test_snapshot_is_frozen` 用 `self.assertRaises(FrozenInstanceError)` 验证字段不可改、改动正文后 `self.assertRaises(RecoveryInvalidState)`；`test_invalid_version_hash_and_instance_are_rejected` 用 version=2、错误哈希及另一实例逐项断言拒绝、`self.assertEqual(saved_snapshot, original_snapshot)`；`test_constructor_and_status_do_not_create_storage` 断言 `self.assertFalse(root.exists())`、`self.assertEqual(store.list_open(), [])`。
-- [ ] **RED tests:** `test_event_append_is_atomic_and_revision_checked` 断言事件与当前状态同时提交、重复同 event_id 同载荷不增加事件、不同载荷或旧 revision 抛 RecoveryConflict；`test_unknown_message_is_not_retryable_without_confirmation` 断言 unknown 不能直接进入发送 running，abandoned 不能恢复；`test_memory_target_and_audit_freeze` 断言滚动日期去重且最多 7 条、unknown/superseded 对应 wecom_sent/memory_saved 均为 False、两次冻结请求不能改载荷。运行 `python -m unittest tests.unit.test_recovery_rules tests.contract.test_recovery_store tests.architecture.test_recovery_boundaries -v`；RED 须证明缺失行为，不能把导入／环境错误算证据，新 API 可先用可导入签名壳，壳不单独提交。
-- [ ] **Implement:** 建立 execution_records/recovery_events 两张表，PRAGMA user_version=1、实例字段、不可变快照、唯一事件键、revision 比较更新；事件和当前状态在一笔短事务中提交，连接显式关闭。查询使用 mode=ro，既有库不自动修复或迁移未知版本；dry-run 禁止写入。锁采用各平台标准库 OS 锁，进程死亡释放，projection 锁不跨模型／网络调用；任务完成校验遵循已批准规范。
-- [ ] **GREEN:** 重跑上列命令，全部通过；规则与 contracts 静态断言不含 IO／SDK，存储只能依赖登记的公开接口。同步登记、七项 README 和本文命令／环境／源码版本／结果。
-- [ ] **Commit:** 仅暂存本 Task Files 中实际改动，`git commit -m "feat: add immutable recovery journal and locks"`；运行本节末的门禁并保留报告。
+- [x] **RED tests:** `test_snapshot_is_frozen` 用 `self.assertRaises(FrozenInstanceError)` 验证字段不可改、改动正文后 `self.assertRaises(RecoveryInvalidState)`；`test_invalid_version_hash_and_instance_are_rejected` 用 version=2、错误哈希及另一实例逐项断言拒绝、`self.assertEqual(saved_snapshot, original_snapshot)`；`test_constructor_and_status_do_not_create_storage` 断言 `self.assertFalse(root.exists())`、`self.assertEqual(store.list_open(), [])`。
+- [x] **RED tests:** `test_event_append_is_atomic_and_revision_checked` 断言事件与当前状态同时提交、重复同 event_id 同载荷不增加事件、不同载荷或旧 revision 抛 RecoveryConflict；`test_unknown_message_is_not_retryable_without_confirmation` 断言 unknown 不能直接进入发送 running，abandoned 不能恢复；`test_memory_target_and_audit_freeze` 断言滚动日期去重且最多 7 条、unknown/superseded 对应 wecom_sent/memory_saved 均为 False、两次冻结请求不能改载荷。运行 `python -m unittest tests.unit.test_recovery_rules tests.contract.test_recovery_store tests.architecture.test_recovery_boundaries -v`；RED 须证明缺失行为，不能把导入／环境错误算证据，新 API 可先用可导入签名壳，壳不单独提交。
+- [x] **Implement:** 建立 execution_records/recovery_events 两张表，PRAGMA user_version=1、实例字段、不可变快照、唯一事件键、revision 比较更新；事件和当前状态在一笔短事务中提交，连接显式关闭。查询使用 mode=ro，既有库不自动修复或迁移未知版本；dry-run 禁止写入。锁采用各平台标准库 OS 锁，进程死亡释放，projection 锁不跨模型／网络调用；任务完成校验遵循已批准规范。
+- [x] **GREEN:** 重跑上列命令，全部通过；规则与 contracts 静态断言不含 IO／SDK，存储只能依赖登记的公开接口。同步登记、七项 README 和本文命令／环境／源码版本／结果。
+- [x] **Commit:** 仅暂存本 Task Files 中实际改动，`git commit -m "feat: add immutable recovery journal and locks"`；运行本节末的门禁并保留报告。
 
 ### Task 2：所属文件、消息及审计的恢复接口
 
@@ -230,10 +231,12 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 
 实施计划记录：书面规范 `2a29b69ef0fd88805f571339603530c69ed4b3ec` 已批准；2026-10-03 在相同 Windows／Python 3.12.8／UTF-8 环境完成计划自查，核对规范覆盖、步骤可执行性、接口一致性、五项 Review Focus 和文档篇幅。修正草案中的文件路径、旧自定义审计接口接入、前像保护与模型预算说明；所有实施复选框仍未勾选。将上列门禁报告路径改为 `artifacts/recovery/r001/plan-gate.json` 后实际通过：60 模块、0 存量、无循环或错误、Import Linter 返回 0。仅更新本文，产品和测试源码均未改、完整产品套件未重跑；提交后复核同一门禁，详细收据保留在同目录的 plan-review.json。
 
+实施基线：2026-10-03，Windows／Python 3.12.8／UTF-8，在计划提交 `f38ede46eef828d9eec7ba32798139f09e00fe04` 上运行 `python -m unittest discover -s tests -v`：341 项、0 失败、7 项原环境跳过，69.663 秒。Task 1 定向命令见恢复 README：实现前 9 项因缺少公开功能而失败，实现后 9 项通过。Task 1 在计划提交 f38ede4 上的工作差异执行完整命令：350 项、0 失败、7 项原环境跳过，70.355 秒；task-1-gate.json 为 64 模块、0 存量、0 循环／错误、Import Linter=0。空包入口单独登记为无公开导出的 recovery-package，解决分层工具的父包重叠，不改变扫描规则或豁免。外部服务和生产仍未验证。
+
 ## 回滚方式
 
 只回退本批代码和文档提交；保留并备份新增恢复库、快照及事件，不删除原日报、Memory 或审计。回退不会撤回已发消息，旧代码也不认识新恢复记录；有未完成任务时先停下自动执行、核对状态，再选择继续新版恢复或人工处理。原用户文件删除不纳入本批提交。
 
 ## 遗留问题
 
-首次协议仅支持单机同一实例。历史资料不足、消息未知及人为改动不能自动判真；恢复记录不能证明真实送达或物理灾难恢复。完成记录本批保留，不自动清理，后续需单独制定保留/归档规则。书面规范已批准，实施计划待审阅；沿用本会话的当前工作树、Native 和逐批验收方式。
+首次协议仅支持单机同一实例。历史资料不足、消息未知及人为改动不能自动判真；恢复记录不能证明真实送达或物理灾难恢复。完成记录本批保留，不自动清理，后续需单独制定保留/归档规则。书面规范和实施计划均已批准；沿用本会话的当前工作树、Native 和逐批验收方式。

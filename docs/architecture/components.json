@@ -1043,6 +1043,71 @@
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
       "external_dependencies": []
+    },
+    {
+      "id": "recovery-contracts",
+      "modules": [
+        "quantagent_platform.recovery.contracts"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.recovery.contracts"
+      ],
+      "allows": [],
+      "readme": "quantagent_platform/recovery/README.md",
+      "data_owner": "QuantAgent: public research and execution journal",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "recovery-domain",
+      "modules": [
+        "quantagent_platform.recovery.rules"
+      ],
+      "kind": "module",
+      "public_modules": [
+        "quantagent_platform.recovery.rules"
+      ],
+      "allows": [
+        "recovery-contracts"
+      ],
+      "readme": "quantagent_platform/recovery/README.md",
+      "data_owner": "QuantAgent: public research and execution journal",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "recovery-storage",
+      "modules": [
+        "quantagent_platform.recovery.sqlite_store"
+      ],
+      "kind": "adapter",
+      "public_modules": [
+        "quantagent_platform.recovery.sqlite_store"
+      ],
+      "allows": [
+        "recovery-contracts",
+        "recovery-domain"
+      ],
+      "readme": "quantagent_platform/recovery/README.md",
+      "data_owner": "QuantAgent: public research and execution journal",
+      "assets": [
+        "quantagent_platform/recovery/"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "id": "recovery-package",
+      "modules": [
+        "quantagent_platform.recovery"
+      ],
+      "kind": "facade",
+      "public_modules": [],
+      "allows": [],
+      "readme": "quantagent_platform/recovery/README.md",
+      "data_owner": "QuantAgent: public research and execution journal",
+      "assets": [],
+      "external_dependencies": []
     }
   ],
   "additional_readmes": [

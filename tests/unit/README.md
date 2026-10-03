@@ -12,6 +12,8 @@
 
 全局目录见 [测试导航](../README.md)。
 
+[test_recovery_rules.py](test_recovery_rules.py) 验证冻结快照、未知消息转换、Memory 目标及审计载荷冻结。
+
 ## 对外接口
 
 保持原 unittest TestCase、测试方法、断言与失败条件；发现命令从仓库根执行。

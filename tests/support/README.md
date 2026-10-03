@@ -12,6 +12,8 @@
 
 [api_samples.py](api_samples.py) 捕获读取/提交应用的 HTTP schema、错误类型和本机 TestClient 响应。
 
+[recovery_fixtures.py](recovery_fixtures.py) 构造无真实凭据的完整 Daily／Monitor 快照输入；不导入用例或联网。
+
 ## 对外接口
 
 `repository_root(start: Path) -> Path` 从指定文件所在目录向上查找最近同时含 agent_engine.py 文件及 quantagent_platform、recipes、tests 目录的根，找不到抛 FileNotFoundError；`ROOT` 是本文件定位的仓库根，与 cwd 无关。

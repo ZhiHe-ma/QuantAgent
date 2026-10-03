@@ -16,6 +16,8 @@
 
 [test_legacy_boundaries.py](test_legacy_boundaries.py)静态拒绝旧入口越界和动态导入，并检查 legacy ports 无 IO、工作流不访问具体适配器或私有字段。
 
+[test_recovery_boundaries.py](test_recovery_boundaries.py) 静态核对恢复契约与纯规则不引用 IO 或存储实现。
+
 ## 对外接口
 
 保持原 unittest TestCase、测试方法、断言与失败条件；发现命令从仓库根执行。

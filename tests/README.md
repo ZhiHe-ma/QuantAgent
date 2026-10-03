@@ -46,6 +46,8 @@
 | [test_task_lifecycle_api.py](test_task_lifecycle_api.py) | 集成：任务生命周期 HTTP |
 | [test_thesis_tracker.py](test_thesis_tracker.py) | 规则/集成混合：观点跟踪与样本回放 |
 
+R001 恢复测试入口见 [恢复功能](../quantagent_platform/recovery/README.md)；实际分批结果见 [R001](../docs/features/r001-recovery-resume.md)。
+
 ## 对外接口
 
 D006 新边界见 [test_legacy_boundaries.py](architecture/test_legacy_boundaries.py)；实际回调、临时 SQLite、新闻重试恢复、入口哈希与离线 CLI 启动见 [test_legacy_ports.py](contract/test_legacy_ports.py)。原引擎和存储用例保留，验收记录在[D006 分支说明](../docs/features/d006-legacy-workflows.md)。
