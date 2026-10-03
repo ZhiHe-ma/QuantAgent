@@ -1156,6 +1156,7 @@ def main(argv=None):
         parser.error("recover requires --action; mutations need --run-id and abandon needs --reason")
     try:
         if args.mode == "recover":
+            load_dotenv(os.path.join(BASE_DIR, ".env"))
             dry = os.getenv("DRY_RUN", "false").strip().lower() == "true"
             store = get_legacy_recovery_factory()(os.path.abspath(os.path.join(BASE_DIR, "10_DailyNotes")), dry_run=dry)
             engine = QuantAgent() if args.action == "retry" and not dry else None
@@ -1168,7 +1169,13 @@ def main(argv=None):
             return result
         engine = QuantAgent()
         if args.mode == "daily":
-            engine.run_daily_pipeline()
+            result = engine.run_daily_pipeline()
+            if isinstance(result, dict) and result.get("status") in {"pending", "needs_review"}:
+                summary = {key: result[key] for key in ("status", "run_id", "date", "reason", "steps") if key in result}
+                summary["blocked_steps"] = [step for step, status in result.get("steps", {}).items()
+                                            if status not in {"succeeded", "superseded", "confirmed", "not_configured"}]
+                print(json.dumps(summary, ensure_ascii=False, indent=2))
+                raise SystemExit(2)
         elif args.mode == "monitor":
             engine.run_monitor_pipeline()
         elif args.mode == "weekly":

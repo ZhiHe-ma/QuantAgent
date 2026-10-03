@@ -313,6 +313,8 @@ python -m unittest tests.test_bt_plugins -v
 
 Daily 自动继续同日未完成的原快照，不重新研究。查看：`python agent_engine.py --mode recover --action status`；指定任务追加 `--run-id <编号>`。`--action retry --run-id <编号>` 只补缺失步骤；已完成可选消息原先未配置时，仅这次显式请求可首次绑定当前渠道。
 
+Daily 未完成时，CLI 打印状态、恢复编号（已有任务时）、步骤或停止原因，并以退出码 2 结束；可先用 status 核对，再处理阻塞步骤。
+
 消息 unknown 先人工核对：`--action confirm-sent` 只登记收到；`--action confirm-not-sent` 只登记未收到，之后仍须明确 retry 才补送。它们不能撤回已发送内容。渠道变动停止发送，恢复原渠道再试。
 
-`--action abandon --run-id <编号> --reason "用户终止原因"` 保留历史且停止恢复；未完成不伪报成功。状态、确认和终止无需研究引擎；DRY_RUN=true 下恢复动作只预览，不创建目录、库、锁或事件。历史半成品无完整快照时需人工处理，不能从新行情补造历史。
+`--action abandon --run-id <编号> --reason "用户终止原因"` 保留历史且停止恢复；未完成不伪报成功。状态、确认和终止无需研究引擎；恢复入口同样读取项目 `.env`，DRY_RUN=true 下恢复动作只预览，不创建目录、库、锁或事件。历史半成品无完整快照时需人工处理，不能从新行情补造历史。

@@ -34,6 +34,8 @@ API 路由组装与兼容证据见 [D003](../../docs/features/d003-api-compositi
 
 [test_daily_recovery.py](test_daily_recovery.py)、[test_monitor_recovery.py](test_monitor_recovery.py) 验证原研究／日期复用、投影、消息和预算；[test_recovery_processes.py](test_recovery_processes.py) 在四个交付边界实际退出子进程，并以屏障检查作用域锁和并行推理。外部服务为替身，存储和 OS 锁为真实临时对象。
 
+R001 审查回归覆盖仅 `.env` 配置的只读预览、落盘提前失败后的首次渠道绑定、CLI 失败可见性、共享投影锁重叠和同批新闻 ID 去重。
+
 ## 已知限制
 
 本批是分类试点；其他平铺用例仍按测试导航保留。当前架构部分符合，存量问题不因目录整理消除。

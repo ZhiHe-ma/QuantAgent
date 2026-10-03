@@ -105,7 +105,7 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 [D005 验收](../docs/features/d005-adapter-contracts.md) 核对原版本标识、worker 类型/签名、惰性注入、默认配方与原实现；边界和公开服务接口覆盖在架构与契约测试。
 
-R001 恢复详见 [恢复目录](recovery/README.md)。legacy_ports／legacy_bootstrap 绑定惰性工厂；Daily、Monitor 与人工动作仅经所属公开操作协作。原显式 ports 与正常公开入口保持，失败规则和逐批历史见 [R001](../docs/features/r001-recovery-resume.md)。
+R001 恢复详见 [恢复目录](recovery/README.md)。legacy_ports／legacy_bootstrap 绑定惰性工厂；Daily、Monitor 与人工动作仅经所属公开操作协作。无渠道任务须显式绑定才能补送；Monitor 读取遇到短投影锁竞争时退让，同批新闻按已确认 ID 去重。原显式 ports 与正常公开入口保持，失败规则和逐批历史见 [R001](../docs/features/r001-recovery-resume.md)。
 
 ## 已知限制
 

@@ -5,7 +5,7 @@ import json
 
 from .legacy_daily_recovery import append_step
 from .legacy_ports import MonitorPorts
-from .recovery.contracts import ExecutionRecord, JsonObject, RecoveryInvalidState, StepResult
+from .recovery.contracts import ExecutionRecord, JsonObject, RecoveryBusy, RecoveryInvalidState, StepResult
 from .recovery.rules import decode_json, freeze_snapshot, task_resolved
 
 MONITOR_SYSTEM_PROMPT = (
@@ -55,6 +55,14 @@ def parse_news_result(ports, body, raw):
     return raw, factor
 
 
+def _capture_state(ports, date):
+    while True:
+        try:
+            return ports.capture_state(date)
+        except RecoveryBusy:
+            ports.sleep(1)
+
+
 def resume_news(ports: MonitorPorts, record: ExecutionRecord) -> JsonObject:
     if ports.dry_run or ports.recovery is None or not callable(ports.capture_state) or not callable(ports.project_news):
         raise RecoveryInvalidState("incomplete or dry Monitor recovery ports")
@@ -65,7 +73,7 @@ def resume_news(ports: MonitorPorts, record: ExecutionRecord) -> JsonObject:
         if record.state == "completed":
             return {"status": "skipped", "run_id": record.snapshot.run_id, "model_calls": 0}
         body = decode_json(record.snapshot.payload_json)
-        ports.capture_state(body["target_date"])
+        _capture_state(ports, body["target_date"])
         frozen = next((e.detail for e in record.events if e.step == "model" and e.status == "succeeded"), None)
         calls = 0
         if frozen is None:
@@ -109,19 +117,19 @@ def run_monitor_recovery(ports: MonitorPorts) -> None:
         raise RecoveryInvalidState("incomplete Monitor recovery ports")
     with ports.recovery.lock("monitor") if not ports.dry_run else nullcontext():
         if not ports.dry_run:
-            ports.capture_state(ports.now().strftime("%Y-%m-%d"))
+            _capture_state(ports, ports.now().strftime("%Y-%m-%d"))
         while True:
             used, seen = 0, set()
             date = ports.now().strftime("%Y-%m-%d")
             if not ports.dry_run:
-                state = ports.capture_state(date)
+                state = _capture_state(ports, date)
                 for record in ports.recovery.list_open("monitor"):
                     body = decode_json(record.snapshot.payload_json)
                     seen.add(body["fingerprint"])
                     if record.steps["model"] != "succeeded" and used >= ports.max_news_per_cycle:
                         continue
                     used += resume_news(ports, record)["model_calls"]
-                state = ports.capture_state(date)
+                state = _capture_state(ports, date)
             for news in ports.fetch_crypto_flash_news():
                 if used >= ports.max_news_per_cycle:
                     break
@@ -151,4 +159,5 @@ def run_monitor_recovery(ports: MonitorPorts) -> None:
                     elif legacy.get("attempts", 0):
                         record = append_step(ports, record, "model", "pending", {"attempts": legacy["attempts"], "source": "legacy"})
                 used += resume_news(ports, record)["model_calls"]
+                state = _capture_state(ports, date)
             ports.sleep(180)

@@ -5,12 +5,14 @@ import importlib
 import json
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import Mock
 
 from tests.support.paths import ROOT
 from tests.support.recovery_fixtures import isolated_engine, news_payload
-from quantagent_platform.recovery.contracts import RecoveryInvalidState, StepResult
+from quantagent_platform.recovery.contracts import RecoveryBusy, RecoveryInvalidState, StepResult
+from quantagent_platform.recovery.sqlite_store import SQLiteRecoveryStore
 
 NOW = datetime(2026, 10, 3, 23, 59, tzinfo=timezone(timedelta(hours=8)))
 
@@ -147,3 +149,75 @@ class MonitorRecoveryTests(unittest.TestCase):
             engine.request_deepseek.return_value = '{"sentiment":"中性","weight":"Medium","reason":"重试"}'
             self.cycle(ports)
             self.assertEqual(engine.request_deepseek.call_count, 4)
+
+    def test_projection_contention_yields_without_stopping_monitor(self):
+        for point in ("startup", "after_model"):
+            with self.subTest(point=point), tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp)) as (_, engine):
+                ports = self.ports(engine)
+                peer = SQLiteRecoveryStore(engine.daily_dir)
+                ready, release = threading.Event(), threading.Event()
+                errors, waits = [], []
+                def hold_daily_projection():
+                    try:
+                        with peer.lock("daily"), peer.lock("projection"):
+                            ready.set()
+                            release.wait(10)
+                    except BaseException as exc:
+                        errors.append(exc)
+                        ready.set()
+                holder = threading.Thread(target=hold_daily_projection, daemon=True)
+                def start_holder():
+                    holder.start()
+                    self.assertTrue(ready.wait(5), "projection holder did not start")
+                    self.assertEqual(errors, [])
+                if point == "startup":
+                    start_holder()
+                else:
+                    def infer(*args, **kwargs):
+                        start_holder()
+                        return '{"sentiment":"中性","weight":"Medium","reason":"合成因子"}'
+                    engine.request_deepseek.side_effect = infer
+                def sleep(seconds):
+                    waits.append(seconds)
+                    if seconds == 1:
+                        release.set()
+                        holder.join(5)
+                        self.assertFalse(holder.is_alive())
+                    elif not engine.recovery_store.list_open("monitor"):
+                        raise StopCycle()
+                ports = replace(ports, sleep=sleep)
+                try:
+                    self.cycle(ports)
+                finally:
+                    release.set()
+                    if holder.ident is not None:
+                        holder.join(5)
+                self.assertEqual(errors, [])
+                self.assertIn(1, waits)
+                self.assertEqual(engine.request_deepseek.call_count, 1)
+                self.assertEqual(engine.capture_monitor_state("2026-10-03")["dedup"], ["news_fixture"])
+                with peer.lock("monitor"):
+                    with self.assertRaises(RecoveryBusy):
+                        self.flow.run_monitor_recovery(ports)
+
+    def test_same_news_id_is_deduplicated_after_confirmed_projection(self):
+        for fail_fingerprint in (False, True):
+            with self.subTest(fail_fingerprint=fail_fingerprint), tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp)) as (_, engine):
+                news = news_payload()["news"]
+                ports = self.ports(engine, news=[news, dict(news, title="同一 ID 的更新标题", body="changed")])
+                owned = ports.project_news
+                def project(record, projection):
+                    if fail_fingerprint and projection == "fingerprint":
+                        return StepResult("failed", {"error_code": "disk"})
+                    return owned(record, projection)
+                self.cycle(replace(ports, project_news=project))
+                self.assertEqual(engine.request_deepseek.call_count, 1)
+                state = engine.capture_monitor_state("2026-10-03")
+                self.assertEqual(state["dedup"], [news["id"]])
+                self.assertEqual(len(state["buffer"]), 1)
+                if fail_fingerprint:
+                    self.assertEqual(len(engine.recovery_store.list_open("monitor")), 1)
+                    engine.fetch_crypto_flash_news.return_value = []
+                    self.cycle(ports)
+                    self.assertEqual(engine.recovery_store.list_open("monitor"), [])
+                    self.assertEqual(engine.request_deepseek.call_count, 1)

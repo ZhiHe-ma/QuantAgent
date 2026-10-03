@@ -10,7 +10,7 @@
 
 ## 对外接口
 
-`QuantAgent()`、原 Python 方法和审计别名保留。CLI daily 生成／恢复日报，monitor 持续观察，weekly 提示尚未实现；recover 提供只读 status、明确 retry、两个消息 confirm 及带理由 abandon。状态／确认／终止不构造研究引擎。
+`QuantAgent()`、原 Python 方法和审计别名保留。CLI daily 生成／恢复日报，未完成时打印状态／编号／阻塞步骤并退出 2；monitor 持续观察，weekly 提示尚未实现；recover 提供只读 status、明确 retry、两个消息 confirm 及带理由 abandon。恢复入口读取同一 `.env`；状态／确认／终止不构造研究引擎。
 
 `daily_ports()`／`monitor_ports()` 绑定当前回调；旧显式无 recovery 的 ports 保留原流程。Daily 先校验并冻结，再 report → message → Memory → audit；正常返回 report/capsule/audit，完成重跑精确 skipped，未完成附状态／编号／步骤。FORCE 不绕过未完成任务。
 

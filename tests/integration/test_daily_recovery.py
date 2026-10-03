@@ -1,8 +1,10 @@
 """Recover original research against real temporary files and two SQLite stores."""
 from contextlib import closing
+from contextlib import redirect_stdout
 from dataclasses import replace
 from datetime import datetime, timezone, timedelta
 import importlib
+import io
 import json
 import os
 from pathlib import Path
@@ -15,7 +17,7 @@ from unittest.mock import Mock, patch
 
 from tests.support.paths import ROOT
 from tests.support.recovery_fixtures import daily_payload, isolated_engine
-from quantagent_platform.recovery.contracts import RecoveryError, RecoveryInvalidState, StepResult
+from quantagent_platform.recovery.contracts import DeliveryResult, RecoveryError, RecoveryInvalidState, StepResult
 
 NOW = datetime(2026, 10, 3, 8, tzinfo=timezone(timedelta(hours=8)))
 
@@ -135,6 +137,77 @@ class DailyRecoveryTests(unittest.TestCase):
             self.action(engine, "retry", daily=ports)
             self.assertEqual(engine.push_to_wecom.call_count, 1)
             self.assertEqual(engine.recovery_store.find_daily("2026-10-03").steps["message"], "needs_review")
+
+    def test_report_failure_cannot_implicitly_bind_first_channel(self):
+        with tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp), wecom_url="") as (_, engine):
+            ports = self.ports(engine)
+            self.flow.run_daily_recovery(replace(ports, project_report=lambda _: StepResult("failed", {"error_code": "disk"})))
+            original = engine.recovery_store.find_daily("2026-10-03")
+            self.assertIsNone(json.loads(original.snapshot.payload_json)["channel_id"])
+            self.assertEqual(original.steps["message"], "pending")
+            engine.wecom_url = "https://example.invalid/first-channel"
+            channel = engine.recovery_channel_id()
+            send = Mock(return_value=DeliveryResult("failed", "provider", channel, "rejected"))
+            ports = replace(ports, send_message=send)
+            self.flow.run_daily_recovery(ports)
+            send.assert_not_called()
+            record = engine.recovery_store.get(original.snapshot.run_id)
+            self.assertEqual(record.steps["message"], "not_configured")
+            self.assertFalse(any(e.status == "retry_requested" for e in record.events))
+            self.action(engine, "retry", daily=ports)
+            self.assertEqual(send.call_count, 1)
+            record = engine.recovery_store.get(original.snapshot.run_id)
+            self.assertEqual(record.snapshot, original.snapshot)
+            self.assertEqual(next(e.detail["channel_id"] for e in record.events if e.status == "retry_requested"), channel)
+            engine.wecom_url = "https://example.invalid/different-channel"
+            self.action(engine, "retry", daily=ports)
+            self.assertEqual(send.call_count, 1)
+            self.assertEqual(engine.recovery_store.get(original.snapshot.run_id).steps["message"], "needs_review")
+
+    def test_recover_cli_honors_dotenv_dry_run_without_engine(self):
+        script = '''import json, os, sys
+from pathlib import Path
+from unittest.mock import patch
+from dotenv import load_dotenv as real_load_dotenv
+from tests.support.recovery_fixtures import isolated_engine
+with isolated_engine(Path(sys.argv[1])) as (module, _):
+    os.environ.pop("DRY_RUN", None)
+    module.load_dotenv = real_load_dotenv
+    with patch.object(module, "QuantAgent", side_effect=AssertionError("preview constructed research engine")):
+        result = module.main(["--mode", "recover", "--action", sys.argv[3], "--run-id", sys.argv[2], "--reason", "fixture"])
+    assert result["status"] == "dry_run", result
+'''
+        child_env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", PYTHONPATH=os.pathsep.join(sys.path))
+        with tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp)) as (_, engine):
+            ports = self.ports(engine)
+            engine.push_to_wecom.return_value = False
+            self.flow.run_daily_recovery(ports)
+            run_id = engine.recovery_store.find_daily("2026-10-03").snapshot.run_id
+            (Path(temp) / ".env").write_text("DRY_RUN=true\n", encoding="utf-8")
+            before = {p.name: p.read_bytes() for p in Path(engine.daily_dir).iterdir()}
+            for action in ("abandon", "confirm-sent", "confirm-not-sent", "retry"):
+                with self.subTest(action=action):
+                    proc = subprocess.run([sys.executable, "-c", script, temp, run_id, action], cwd=ROOT,
+                                          env=child_env,
+                                          capture_output=True, text=True, encoding="utf-8", timeout=20)
+                    self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+                    self.assertEqual(before, {p.name: p.read_bytes() for p in Path(engine.daily_dir).iterdir()})
+
+    def test_daily_cli_reports_pending_failure_and_recovery_id(self):
+        with tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp)) as (module, engine):
+            ports = replace(self.ports(engine), project_report=lambda _: StepResult("failed", {"error_code": "report_io"}))
+            engine.run_daily_pipeline = lambda: self.flow.run_daily_recovery(ports)
+            output = io.StringIO()
+            with patch.object(module, "QuantAgent", return_value=engine), redirect_stdout(output):
+                with self.assertRaises(SystemExit) as failure:
+                    module.main(["--mode", "daily"])
+            self.assertEqual(failure.exception.code, 2)
+            result = json.loads(output.getvalue())
+            record = engine.recovery_store.find_daily("2026-10-03")
+            self.assertEqual(result["status"], "pending")
+            self.assertEqual(result["run_id"], record.snapshot.run_id)
+            self.assertEqual(result["steps"]["report"], "failed")
+            self.assertIn("report", result["blocked_steps"])
 
     def test_status_without_configuration_and_dry_actions_are_read_only(self):
         with tempfile.TemporaryDirectory() as temp:

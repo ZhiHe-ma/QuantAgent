@@ -113,10 +113,10 @@ def resume_daily(ports: DailyPorts, record: ExecutionRecord, *, explicit_retry: 
             bound = body["channel_id"] or next((e.detail.get("channel_id") for e in record.events
                 if e.step == "task" and e.status == "retry_requested" and e.detail.get("channel_id")), None)
             channel = ports.channel_id()
-            if bound is not None and channel != bound:
-                record = append_step(ports, record, "message", "needs_review", {"error_code": "channel_changed"})
-            elif channel is None:
+            if bound is None:
                 record = append_step(ports, record, "message", "not_configured", {"source": "configuration"})
+            elif channel != bound:
+                record = append_step(ports, record, "message", "needs_review", {"error_code": "channel_changed"})
             else:
                 record = append_step(ports, record, "message", "running", {"channel_id": channel})
                 try:
