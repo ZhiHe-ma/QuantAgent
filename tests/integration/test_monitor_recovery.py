@@ -155,23 +155,29 @@ class MonitorRecoveryTests(unittest.TestCase):
             self.assertFalse(Path(engine.daily_dir).exists())
 
     def test_monitor_preview_reuses_processed_news_across_cycles(self):
-        for existing in ("fresh", "id", "fingerprint"):
+        for existing in ("fresh", "batch-fingerprint", "batch-id", "id", "fingerprint"):
             with self.subTest(existing=existing), tempfile.TemporaryDirectory() as temp:
                 with isolated_engine(Path(temp), dry_run=True) as (_, engine):
                     news = news_payload()["news"]
                     ports = self.ports(engine)
-                    if existing != "fresh":
+                    if existing in {"id", "fingerprint"}:
                         Path(engine.daily_dir).mkdir()
                         path = Path(engine.dedup_file if existing == "id" else engine.fingerprint_file)
                         value = news["id"] if existing == "id" else engine._news_fingerprint(news)
                         path.write_text(json.dumps([value]), encoding="utf-8")
+                    elif existing == "batch-fingerprint":
+                        engine.fetch_crypto_flash_news.side_effect = [
+                            [news, dict(news, id="same-content-2"), dict(news, id="same-content-3")], [news]]
+                    elif existing == "batch-id":
+                        engine.fetch_crypto_flash_news.side_effect = [
+                            [news, dict(news, title="不同标题", body="不同正文")], [news]]
                     else:
                         engine.fetch_crypto_flash_news.side_effect = [[news], [dict(news, id="new-id-same-content")]]
                     before = {p.relative_to(temp).as_posix(): p.read_bytes()
                               for p in Path(temp).rglob("*") if p.is_file()}
                     output = self.preview(ports)
-                    self.assertEqual(1 if existing == "fresh" else 0, engine.request_deepseek.call_count)
-                    if existing == "fresh":
+                    self.assertEqual(0 if existing in {"id", "fingerprint"} else 1, engine.request_deepseek.call_count)
+                    if existing not in {"id", "fingerprint"}:
                         self.assertIn("中性", output)
                         self.assertIn("Medium", output)
                     after = {p.relative_to(temp).as_posix(): p.read_bytes()
@@ -180,12 +186,14 @@ class MonitorRecoveryTests(unittest.TestCase):
                     self.assertFalse(Path(engine.daily_dir, "quantagent_recovery.sqlite3").exists())
 
     def test_monitor_preview_bounds_parse_failures_across_cycles(self):
-        for previous_attempts, expected_calls in ((0, 3), (2, 1), (3, 0)):
-            with self.subTest(previous_attempts=previous_attempts), tempfile.TemporaryDirectory() as temp:
+        for previous_attempts, expected_calls, duplicate_batch in ((0, 3, False), (2, 1, False), (3, 0, False), (2, 1, True)):
+            with self.subTest(previous_attempts=previous_attempts, duplicate_batch=duplicate_batch), tempfile.TemporaryDirectory() as temp:
                 with isolated_engine(Path(temp), dry_run=True) as (_, engine):
                     news = news_payload()["news"]
                     ports = replace(self.ports(engine), max_news_ai_retries=3)
                     engine.request_deepseek.return_value = "not-json"
+                    if duplicate_batch:
+                        engine.fetch_crypto_flash_news.return_value = [dict(news, id=f"duplicate-{index}") for index in range(3)]
                     if previous_attempts:
                         Path(engine.daily_dir).mkdir()
                         fingerprint = engine._news_fingerprint(news)

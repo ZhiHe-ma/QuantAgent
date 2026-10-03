@@ -31,10 +31,13 @@ def run_monitor_pipeline(ports: MonitorPorts):
             failure_state_changed = False
 
             candidates = []
+            candidate_ids, candidate_fingerprints = set(), set()
             for news in flash_news_list:
                 news_id = str(news.get("id", "")).strip()
                 fingerprint = ports.news_fingerprint(news)
                 if not news_id or news_id in processed_ids or fingerprint in processed_fingerprints:
+                    continue
+                if ports.dry_run and (news_id in candidate_ids or fingerprint in candidate_fingerprints):
                     continue
                 failure = failed_news_records.get(fingerprint, {})
                 if ports.dry_run and isinstance(failure, dict):
@@ -45,6 +48,8 @@ def run_monitor_pipeline(ports: MonitorPorts):
                         print(f"🧯 [试跑] 保留已有隔离状态，不重复解析: {news_id}")
                         continue
                 candidates.append((news, news_id, fingerprint))
+                candidate_ids.add(news_id)
+                candidate_fingerprints.add(fingerprint)
 
             if len(candidates) > ports.max_news_per_cycle:
                 print(f" -> [控熵闸门] 本轮发现 {len(candidates)} 条增量，仅分析前 {ports.max_news_per_cycle} 条，防止成本与噪声失控。")
