@@ -26,4 +26,4 @@ components version=1：能力包含 id、kind、modules、public_modules、allow
 
 ## 已知限制
 
-当前部分符合，存量以基线为准；静态登记不能证明运行时隔离或业务正确。
+存量和当前验收状态统一见[架构规范](../ARCHITECTURE.md)；静态登记不能证明运行时隔离或业务正确。

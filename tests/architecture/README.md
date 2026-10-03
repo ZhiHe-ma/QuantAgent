@@ -14,6 +14,8 @@
 
 全局目录见 [测试导航](../README.md)。
 
+[test_legacy_boundaries.py](test_legacy_boundaries.py)静态拒绝旧入口越界和动态导入，并检查 legacy ports 无 IO、工作流不访问具体适配器或私有字段。
+
 ## 对外接口
 
 保持原 unittest TestCase、测试方法、断言与失败条件；发现命令从仓库根执行。
@@ -34,4 +36,4 @@ API 边界整改与实际门禁结果见 [D003](../../docs/features/d003-api-com
 
 ## 已知限制
 
-本批是分类试点；其他平铺用例仍按测试导航保留。当前架构部分符合，存量问题不因目录整理消除。
+其他平铺用例仍按测试导航保留。当前治理状态见[架构规范](../../docs/ARCHITECTURE.md)，存量问题不因目录整理消除。

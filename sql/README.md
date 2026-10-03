@@ -15,7 +15,7 @@ SignalAuditStore.initialize 创建/迁移指定数据库；record_completed_sign
 
 ## 依赖规则
 
-允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则见 [架构规范](../docs/ARCHITECTURE.md)。42 条存量违规仅按具体引用豁免，新增违规立即失败。
+允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则和当前状态见 [架构规范](../docs/ARCHITECTURE.md)。原基础错误由 `legacy_ports`拥有，本模块保留同一类型别名；实际 SQLite、验证及质检规则仍归本模块，工作流通过启动绑定消费。
 
 ## 数据与权限
 
@@ -27,4 +27,4 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 ## 已知限制
 
-当前部分符合。存量循环和混合职责尚未整改；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。
+门禁不是业务语义正确、跨账户隔离或生产可用性的证明。默认路径、迁移及写入规则未改变；错误类型归属迁移，不承诺跨版本 pickle。不得将离线样本结果称为真实收益或自动交易能力。

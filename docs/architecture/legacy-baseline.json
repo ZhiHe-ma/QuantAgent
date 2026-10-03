@@ -1,7 +1,7 @@
 {
   "version": 1,
   "origin_commit": "ccded244593942fc6de7c10983d6b0f795c36a47",
-  "status": "partial_compliance",
+  "status": "compliant",
   "tasks": {
     "D001": "Separate RecipeRunner execution from concrete plugin composition.",
     "D002": "Separate P5 protocol validation and storage/model adapters from workflow execution.",
@@ -10,30 +10,5 @@
     "D005": "Replace cross-adapter helper/constant imports with owned public contracts.",
     "D006": "Migrate legacy engine entry and audit persistence through workflows and ports."
   },
-  "exceptions": [
-    {
-      "rule": "dependency",
-      "source": "agent_engine",
-      "target": "quantagent_platform.daily_workflow",
-      "member": "",
-      "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D006"
-    },
-    {
-      "rule": "dependency",
-      "source": "agent_engine",
-      "target": "signal_audit",
-      "member": "",
-      "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D006"
-    },
-    {
-      "rule": "dynamic-import",
-      "source": "agent_engine",
-      "target": "argparse",
-      "member": "",
-      "reason": "Migrate legacy engine entry and audit persistence through workflows and ports. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D006"
-    }
-  ]
+  "exceptions": []
 }

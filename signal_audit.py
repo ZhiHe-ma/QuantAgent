@@ -13,10 +13,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
-
-
-class SignalAuditError(RuntimeError):
-    """Base error for audit persistence failures."""
+from quantagent_platform.legacy_ports import SignalAuditError
 
 
 class SignalAuditValidationError(SignalAuditError):

@@ -48,6 +48,8 @@
 
 ## 对外接口
 
+D006 新边界见 [test_legacy_boundaries.py](architecture/test_legacy_boundaries.py)；实际回调、临时 SQLite、新闻重试恢复、入口哈希与离线 CLI 启动见 [test_legacy_ports.py](contract/test_legacy_ports.py)。原引擎和存储用例保留，验收记录在[D006 分支说明](../docs/features/d006-legacy-workflows.md)。
+
 主命令 `python -m unittest discover -s tests -v` 保持。共享数据由 tests.support 导入，用例文件不作为共享库；原 TestCase 和方法名保持，六项模块前缀映射见 [实施计划](../docs/superpowers/plans/2026-10-02-file-classification.md)。
 
 ## 依赖规则

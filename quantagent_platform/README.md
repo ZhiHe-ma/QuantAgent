@@ -55,6 +55,8 @@
 
 ## 对外接口
 
+旧 Monitor/Daily 通过 [legacy_workflows.py](legacy_workflows.py)执行顺序，[legacy_ports.py](legacy_ports.py)只定义显式回调及审计绑定；[legacy_bootstrap.py](legacy_bootstrap.py)绑定惰性审计工厂，消费时返回原类/质检函数，不构造存储或连接 SQLite。入口兼容及数据权限见[旧引擎说明](../docs/architecture/legacy-engine/README.md)。
+
 通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
 
 `RecipeRunner(registry)` 使用显式注册表；原 `RecipeRunner()`、`AgentRuntime()` 和 `default_registry()` 由包入口安装的工厂提供默认值，每次创建独立注册表。`bootstrap.build_default_registry()` 保留原目录校验；`install_default_registry()` 仅注入工厂，导入时不读取目录、不构造插件。自定义启动可通过 `runner.configure_default_registry(factory)` 注入，显式注册表优先。
@@ -105,4 +107,4 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 ## 已知限制
 
-当前部分符合。存量越界引用和混合职责尚未清零；门禁不是业务语义正确、跨账户隔离或生产可用性的证明。不得将离线样本结果称为真实收益或自动交易能力。
+存量及治理状态统一见[架构规范](../docs/ARCHITECTURE.md)。门禁不是业务语义正确、跨账户隔离或生产可用性的证明；原 IO 职责未整体迁移。不得将离线样本结果称为真实收益或自动交易能力。

@@ -336,9 +336,13 @@
     },
     {
       "id": "sec-source-identities",
-      "modules": ["quantagent_platform.sec_source_identities"],
+      "modules": [
+        "quantagent_platform.sec_source_identities"
+      ],
       "kind": "contract",
-      "public_modules": ["quantagent_platform.sec_source_identities"],
+      "public_modules": [
+        "quantagent_platform.sec_source_identities"
+      ],
       "allows": [
         "sec-response-contracts"
       ],
@@ -349,10 +353,16 @@
     },
     {
       "id": "p5-ports",
-      "modules": ["quantagent_platform.p5_ports"],
+      "modules": [
+        "quantagent_platform.p5_ports"
+      ],
       "kind": "contract",
-      "public_modules": ["quantagent_platform.p5_ports"],
-      "allows": ["packet-contracts"],
+      "public_modules": [
+        "quantagent_platform.p5_ports"
+      ],
+      "allows": [
+        "packet-contracts"
+      ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
@@ -360,10 +370,17 @@
     },
     {
       "id": "p5-composition",
-      "modules": ["quantagent_platform.p5_bootstrap"],
+      "modules": [
+        "quantagent_platform.p5_bootstrap"
+      ],
       "kind": "bootstrap",
-      "public_modules": ["quantagent_platform.p5_bootstrap"],
-      "allows": ["p5-ports", "p5-storage"],
+      "public_modules": [
+        "quantagent_platform.p5_bootstrap"
+      ],
+      "allows": [
+        "p5-ports",
+        "p5-storage"
+      ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
@@ -527,20 +544,30 @@
     },
     {
       "id": "api-contracts",
-      "modules": ["quantagent_platform.api_contracts"],
+      "modules": [
+        "quantagent_platform.api_contracts"
+      ],
       "kind": "contract",
-      "public_modules": ["quantagent_platform.api_contracts"],
+      "public_modules": [
+        "quantagent_platform.api_contracts"
+      ],
       "allows": [],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
-      "external_dependencies": ["pydantic"]
+      "external_dependencies": [
+        "pydantic"
+      ]
     },
     {
       "id": "api-factory-port",
-      "modules": ["quantagent_platform.api_ports"],
+      "modules": [
+        "quantagent_platform.api_ports"
+      ],
       "kind": "contract",
-      "public_modules": ["quantagent_platform.api_ports"],
+      "public_modules": [
+        "quantagent_platform.api_ports"
+      ],
       "allows": [],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -549,10 +576,18 @@
     },
     {
       "id": "api-composition",
-      "modules": ["quantagent_platform.api_bootstrap"],
+      "modules": [
+        "quantagent_platform.api_bootstrap"
+      ],
       "kind": "bootstrap",
-      "public_modules": ["quantagent_platform.api_bootstrap"],
-      "allows": ["http-api", "api-contracts", "api-factory-port"],
+      "public_modules": [
+        "quantagent_platform.api_bootstrap"
+      ],
+      "allows": [
+        "http-api",
+        "api-contracts",
+        "api-factory-port"
+      ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
@@ -658,7 +693,8 @@
         "default-composition",
         "p5-composition",
         "api-composition",
-        "worker-composition"
+        "worker-composition",
+        "legacy-composition"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -674,7 +710,10 @@
       "public_modules": [
         "agent_engine"
       ],
-      "allows": [],
+      "allows": [
+        "legacy-ports",
+        "legacy-workflows"
+      ],
       "readme": "docs/architecture/legacy-engine/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [
@@ -693,7 +732,9 @@
       "public_modules": [
         "signal_audit"
       ],
-      "allows": [],
+      "allows": [
+        "legacy-ports"
+      ],
       "readme": "sql/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [
@@ -934,6 +975,57 @@
         "agent_catalog/agents/"
       ],
       "data_owner": "QuantAgent: public research and audit"
+    },
+    {
+      "id": "legacy-ports",
+      "modules": [
+        "quantagent_platform.legacy_ports"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.legacy_ports"
+      ],
+      "allows": [],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "legacy-workflows",
+      "modules": [
+        "quantagent_platform.legacy_workflows"
+      ],
+      "kind": "workflow",
+      "public_modules": [
+        "quantagent_platform.legacy_workflows"
+      ],
+      "allows": [
+        "legacy-ports",
+        "daily-domain"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "legacy-composition",
+      "modules": [
+        "quantagent_platform.legacy_bootstrap"
+      ],
+      "kind": "bootstrap",
+      "public_modules": [
+        "quantagent_platform.legacy_bootstrap"
+      ],
+      "allows": [
+        "legacy-ports",
+        "signal-audit"
+      ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
     }
   ],
   "additional_readmes": [
