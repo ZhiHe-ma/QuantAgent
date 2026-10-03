@@ -6,7 +6,7 @@
 
 ## 文件导航
 
-已有记录：[架构门禁](architecture-guardrails.md)、[文件分类](file-classification.md)。新说明放在本目录，文件名对应功能。
+当前整合入口：[I003](i003-integration-acceptance.md)，汇总实际目标、能力覆盖和固定版本验收；各批历史通过其链接查阅。已有记录：[架构门禁](architecture-guardrails.md)、[文件分类](file-classification.md)。新说明放在本目录，文件名对应功能。
 
 ## 对外接口
 

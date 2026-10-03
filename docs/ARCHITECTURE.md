@@ -1,6 +1,6 @@
 # QuantAgent 架构规范
 
-这是共同架构规则的维护入口。原 42 项[精确存量](architecture/legacy-baseline.json)已按[整改清单](architecture/remediation.md)清零，源码静态边界检查无循环或违规；完整本地门禁与人工审查证据见 [D006](features/d006-legacy-workflows.md)。旧兼容入口仍提供原网络、模型和文件回调；零豁免不表示全部历史 IO 职责或目录已迁移，当前整体仍按增量治理验收。
+这是共同架构规则的维护入口。原 42 项[精确存量](architecture/legacy-baseline.json)已按[整改清单](architecture/remediation.md)清零，源码静态边界检查无循环或违规；整改验收见 [D006](features/d006-legacy-workflows.md)，实际整合目标与整体验收入口见 [I003](features/i003-integration-acceptance.md)。旧兼容入口仍提供原网络、模型和文件回调；零豁免不表示全部历史 IO 职责或目录已迁移，当前整体仍按增量治理验收。
 
 ## 依赖与公开接口
 
