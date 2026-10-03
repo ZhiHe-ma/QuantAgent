@@ -6,6 +6,8 @@
 {
   "branch": "refactor/d005-adapter-contracts",
   "base_commit": "d86787bc396ddbbfa9d0dd77f5269284e3d33d7e",
+  "signal_contract_commit": "e4ccd9af4b4f84c99c27940bb41379364333c0e9",
+  "tested_commit": "6d7c0b7291e7807f01cd7f3512ffa0e486a64b89",
   "components": ["quality-adapter", "daily-adapter", "outcome-adapter", "qlib-adapter", "bt-adapter", "signal-report-contracts", "worker-ports", "worker-composition", "isolated-runtime", "compatibility-exports", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "只登记实际新增契约及组装能力，并删除已消除引用；检查器、规则和 CI 命令不变。"
@@ -43,7 +45,7 @@ Task 1（源码提交 `e4ccd9af4b4f84c99c27940bb41379364333c0e9`）：原回归 
 
 Task 2：`python -m unittest tests.architecture.test_adapter_boundaries tests.contract.test_worker_ports tests.test_platform tests.test_daily_plugins tests.test_outcome_replay tests.test_qlib_plugins tests.test_bt_plugins -v`：47 项、0 失败、2 跳过，1.662 秒。新测试初始 RED 有 9 次预期断言失败；恢复原两条运行器引用后，独立进程/静态检查再次失败，恢复新导入后 9/9 通过，1.780 秒。最终完整离线命令：332 项、0 失败、原 7 项环境跳过，69.222 秒。门禁通过，56 模块、3 条仅属 D006 的精确存量、无循环，Import Linter 返回 0；没有新增豁免。
 
-`python artifacts/architecture/d005-adapter-contracts/verify_compatibility.py` 实际核对 174 个原资产、28 项原定义、2,500 组原允许关系、原常量及正式导出；原插件和 worker 方法体保持。两步原始日志均保留，验收版本在提交后补录；独立审查尚未运行。
+`python artifacts/architecture/d005-adapter-contracts/verify_compatibility.py` 实际核对 174 个原资产、28 项原定义、2,500 组原允许关系、原常量及正式导出；原插件和 worker 方法体保持。两步原始日志均保留，最终完整回归源码/测试对应首个 JSON 的 `tested_commit`，后续仅补录文档；独立审查尚未运行。
 
 ### Task 1: 稳定信号与报告版本归属
 
