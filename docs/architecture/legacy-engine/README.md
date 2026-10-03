@@ -10,6 +10,8 @@
 
 [legacy_workflows.py](../../../quantagent_platform/legacy_workflows.py)保存两个流程；[legacy_ports.py](../../../quantagent_platform/legacy_ports.py)定义公开回调及审计绑定；[legacy_bootstrap.py](../../../quantagent_platform/legacy_bootstrap.py)惰性提供原审计类与质检函数。
 
+基础异常归包外[signal_audit_contracts.py](../../../signal_audit_contracts.py)，单独导入存储不触发插件初始化。
+
 ## 对外接口
 
 `python agent_engine.py --mode monitor`持续采集，`--mode daily`生成日报；`--mode weekly`仅提示未实现。外部服务失败、幂等和写入行为须保留原语义。

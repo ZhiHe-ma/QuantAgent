@@ -24,9 +24,18 @@ class LegacyBoundaryTests(unittest.TestCase):
         graph = collect({path: (ROOT / path).read_text(encoding="utf-8")})
         for edge in graph["modules"]["quantagent_platform.legacy_ports"]["imports"]:
             self.assertFalse(edge["dynamic"])
+            if edge["target"] == "signal_audit_contracts":
+                continue
             root = edge["target"].split(".")[0]
             self.assertIn(root, sys.stdlib_module_names)
             self.assertNotIn(root, IO_PACKAGES)
+        path = "signal_audit_contracts.py"
+        self.assertTrue((ROOT / path).is_file(), "missing standalone audit contract")
+        graph = collect({path: (ROOT / path).read_text(encoding="utf-8")})
+        for edge in graph["modules"]["signal_audit_contracts"]["imports"]:
+            self.assertFalse(edge["dynamic"])
+            self.assertIn(edge["target"].split(".")[0], sys.stdlib_module_names)
+            self.assertNotIn(edge["target"].split(".")[0], IO_PACKAGES)
 
     def test_workflows_use_public_ports_without_file_or_adapter_access(self):
         path = "quantagent_platform/legacy_workflows.py"

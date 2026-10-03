@@ -7,7 +7,8 @@
   "branch": "refactor/d006-legacy-workflows",
   "base_commit": "ae9024208a002d26fd533a1148a37736a52d9306",
   "tested_commit": "9f9ccd8d10e97f30a87bc9c531b22410a3063d27",
-  "components": ["legacy-engine", "signal-audit", "daily-domain", "compatibility-exports", "legacy-ports", "legacy-workflows", "legacy-composition", "architecture", "acceptance-tests"],
+  "initial_tested_commit": "9f9ccd8d10e97f30a87bc9c531b22410a3063d27",
+  "components": ["legacy-engine", "signal-audit", "signal-audit-contracts", "daily-domain", "compatibility-exports", "legacy-ports", "legacy-workflows", "legacy-composition", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "检查器、扫描范围、依赖规则与 CI 命令不变；只登记真实新增能力和移除已消除的精确基线。"
   }
@@ -24,7 +25,7 @@ Global Constraints: 不改旧模块层级、归属、原能力两两允许关系
 
 ## 涉及模块
 
-新增 `quantagent_platform/legacy_ports.py`、`legacy_workflows.py`、`legacy_bootstrap.py`；修改 `agent_engine.py` 的两项流程入口和导入、`signal_audit.py` 的基础异常归属、兼容包启动、能力登记及精确基线。所属 README 共用现有功能导航，不创建空目录。
+新增 `quantagent_platform/legacy_ports.py`、`legacy_workflows.py`、`legacy_bootstrap.py`；最终审查修复另加包外纯契约 `signal_audit_contracts.py`。修改 `agent_engine.py` 的两项流程入口和导入、`signal_audit.py` 的基础异常归属、兼容包启动、能力登记及精确基线。所属 README 共用现有功能导航，不创建空目录。
 
 ## 接口或数据变化
 
@@ -32,7 +33,7 @@ Global Constraints: 不改旧模块层级、归属、原能力两两允许关系
 
 ## 新增依赖
 
-新工作流仅引用所属 ports、原日报业务及标准库；新启动组装引用 ports 和原审计适配器。包启动只绑定工厂，消费时取得原类/函数，不构造存储、不连接数据库。旧能力只增加指向新能力的允许项，原能力之间的允许关系保持。
+新工作流仅引用所属 ports、原日报业务及标准库；新启动组装引用 ports 和原审计适配器。包启动只绑定工厂，消费时取得原类/函数，不构造存储、不连接数据库。审计基础异常最终归新增包外 `signal_audit_contracts.py`，ports 和具体存储各自引用它，避免独立审计触发插件初始化。旧能力只增加指向新能力的允许项，原能力之间的允许关系保持。
 
 ## 测试证据
 
@@ -42,11 +43,15 @@ Global Constraints: 不改旧模块层级、归属、原能力两两允许关系
 
 新 8 项测试先 RED：三类旧违规和缺失能力触发 14 次预期断言失败，无测试导入错误。实现后的首轮新样本字段/表名不符原数据契约，修正新样本；临时数据库连接必须显式关闭，修正新测试清理。原测试与产品规则不变。最终定向命令 `python -m unittest tests.architecture.test_legacy_boundaries tests.contract.test_legacy_ports tests.test_dry_run tests.test_idempotency_error_isolation tests.test_signal_audit tests.integration.audit.test_signal_audit_integration -v`：46 项、0 失败、无跳过，1.442 秒。兼容核对通过；仅两项原流程迁移，其他原方法/资产/允许矩阵保持。
 
-完整离线 `python -m unittest discover -s tests -v` 实际运行 **340 项、0 失败、7 项原环境跳过，70.446 秒**。跳过：真实 Qlib、真实 bt、私有 P4、三项 Windows 链接权限及临时卷未启用 8.3 文件名。完整架构/文档门禁通过：59 模块、0 存量、无循环或错误、Import Linter 返回 0。原所有测试、SQL、固定配方/样本、其他产品文件、原 2,809 组允许关系及正式导出保持。完整结果对应首个 JSON 的 `tested_commit`；后续仅补录文档，独立审查尚未运行。
+初始完整离线 `python -m unittest discover -s tests -v` 实际运行 **340 项、0 失败、7 项原环境跳过，70.446 秒**；门禁 59 模块、0 存量、无循环或错误、Import Linter 返回 0。这轮结果对应 `initial_tested_commit`，完整日志为 `full-tests.log`。
+
+独立审查固定范围 `ae90242..7fbe8fc`：Critical 0、Important 1、Minor 0。审查者实际重跑原定向 46 项通过，五组 BASE/HEAD 失败路径结果一致；发现标准库环境独立导入审计失败，原因是包初始化引入 PyYAML。审查报告对当时版本结论为需修复；未再次派审查者。修复回归先运行 RED：`python -S` 子进程实际缺少 `yaml`，1 项失败；基础异常移入已登记的包外纯契约后，实际 SQLite 初始化、类型身份和独立加载回归通过，最终定向 **47 项、0 失败、无跳过，2.206 秒**。
+
+同一修复工作树的最终完整命令仍为 `python -m unittest discover -s tests -v`：**341 项、0 失败、7 项原环境跳过，69.939 秒**；日志 `final-full-tests.log`。最终门禁 **60 模块、0 存量、无循环或错误、Import Linter 返回 0**；原 162 项资产、34 项定义、2,809 组允许关系及正式导出复核通过。跳过：真实 Qlib、真实 bt、私有 P4、三项 Windows 链接权限及临时卷未启用 8.3 文件名。修复提交固定后更新 `tested_commit`；审查修复日志和裁决归档保留在上述忽略目录。
 
 ### Task 1: 迁移执行顺序，注入原审计实现
 
-Files: 上述三项新源码及 `tests/architecture/test_legacy_boundaries.py`、`tests/contract/test_legacy_ports.py`；原入口、存储、登记、基线和所属 README。
+Files: 上述四项新源码及 `tests/architecture/test_legacy_boundaries.py`、`tests/contract/test_legacy_ports.py`；原入口、存储、登记、基线和所属 README。
 
 Interfaces: Produces `MonitorPorts`、`DailyPorts`、`LegacyAuditBindings`、`configure_legacy_audit_factory(factory)`、`get_legacy_audit_factory()`、`get_legacy_audit_bindings()`；公开工作流 `run_monitor_pipeline(ports)`、`run_daily_pipeline(ports)`；`install_legacy_audit_factory()` 仅绑定组装。Consumes 原日报函数、审计类及质检规则。
 
@@ -64,4 +69,6 @@ Review Focus: 消息未确认、Memory/日报/审计失败时的真实副作用�
 
 ## 遗留问题
 
-真实模型、新闻、行情、消息、真实 Qlib/bt、SEC、私有 P4、Linux/远端 CI、部署及生产未运行；dry-run 仍可能访问网络和模型。存量清零的机器检查与人工职责审查分别记录，不以本地门禁推断生产验收。
+原入口仍提供网络、模型及文件能力；静态违规清零不等于全部旧 IO 已迁移。审查实测的旧恢复缺口本批保留：消息未确认或审计失败后，同日闸门可能阻止补发/补账；Monitor 缓冲落盘失败后，本进程内可能漏重试；Memory 写入失败前已产生日报及消息副作用，跨资源更新并不原子。失败路径与基准相同，后续需单独制定恢复协议。
+
+`source_sha256` 仍只覆盖入口文件，不能代表完整工作流版本；单次流程启动时捕获配置与回调，不承诺运行中热切换或跨版本异常 pickle。真实模型、新闻、行情、消息、Qlib/bt、SEC、私有 P4、Linux/远端 CI、部署及生产未运行；dry-run 仍可能访问网络和模型。机器检查与人工职责审查分别记录，不以本地门禁推断生产验收。

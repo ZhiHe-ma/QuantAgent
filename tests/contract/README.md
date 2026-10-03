@@ -15,6 +15,8 @@
 
 [test_legacy_ports.py](test_legacy_ports.py)验证实际注入的审计/质检被旧日报消费、临时 SQLite、新闻状态恢复、原源码哈希及审计优先导入/CLI help。仅外部服务使用替身；连接显式关闭，工厂通过公开接口恢复。
 
+独立审计用例使用 `python -B -S`，仅将仓库放入 PYTHONPATH，实际初始化临时 SQLite，保证不依赖插件主机或第三方安装环境。
+
 ## 对外接口
 
 保持原 unittest TestCase、测试方法、断言与失败条件；发现命令从仓库根执行。

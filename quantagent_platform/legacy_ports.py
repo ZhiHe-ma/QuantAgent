@@ -3,10 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
-
-
-class SignalAuditError(RuntimeError):
-    """Base error for audit persistence failures."""
+from signal_audit_contracts import SignalAuditError
 
 
 class AuditStore(Protocol):

@@ -7,6 +7,7 @@
 ## 文件导航
 
 - `signal-audit`：[signal_audit](../signal_audit.py)。
+- `signal-audit-contracts`：[signal_audit_contracts.py](../signal_audit_contracts.py)：不触发插件包初始化的独立基础异常。
 - [001_signal_audit.sql](001_signal_audit.sql)：事务、外键、唯一键和值域约束。
 
 ## 对外接口
@@ -15,7 +16,7 @@ SignalAuditStore.initialize 创建/迁移指定数据库；record_completed_sign
 
 ## 依赖规则
 
-允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则和当前状态见 [架构规范](../docs/ARCHITECTURE.md)。原基础错误由 `legacy_ports`拥有，本模块保留同一类型别名；实际 SQLite、验证及质检规则仍归本模块，工作流通过启动绑定消费。
+允许依赖由 [components.json](../docs/architecture/components.json) 精确登记；规则和当前状态见 [架构规范](../docs/ARCHITECTURE.md)。基础错误由包外纯 `signal-audit-contracts`拥有，本模块及 legacy ports 保留同一类型别名；独立存储导入仅需标准库，不初始化插件主机。实际 SQLite、验证及质检规则仍归本模块，工作流通过启动绑定消费。
 
 ## 数据与权限
 

@@ -186,6 +186,30 @@ print("audit-first startup and CLI help: passed")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("audit-first startup and CLI help: passed", result.stdout)
 
+    def test_standalone_audit_initializes_sqlite_with_standard_library_only(self):
+        script = '''import sqlite3, sys
+from contextlib import closing
+from pathlib import Path
+import signal_audit
+import signal_audit_contracts
+assert "quantagent_platform" not in sys.modules
+assert signal_audit.SignalAuditError is signal_audit_contracts.SignalAuditError
+assert signal_audit.SignalAuditValidationError.__bases__[0] is signal_audit_contracts.SignalAuditError
+store=signal_audit.SignalAuditStore(sys.argv[1])
+assert store.migration_dir == Path(signal_audit.__file__).resolve().parent / "sql"
+assert not Path(sys.argv[1]).exists()
+assert store.initialize()["status"] == "ready"
+with closing(sqlite3.connect(sys.argv[1])) as connection:
+    tables={row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+assert {"audit_runs", "daily_signals", "signal_factors", "signal_outcomes"} <= tables
+print("standalone audit database: passed")
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            result = subprocess.run([sys.executable, "-B", "-S", "-c", script, str(Path(temp) / "audit.sqlite3")],
+                cwd=ROOT, env=dict(os.environ, PYTHONPATH=str(ROOT)), capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("standalone audit database: passed", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

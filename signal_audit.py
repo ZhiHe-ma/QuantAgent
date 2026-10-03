@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
-from quantagent_platform.legacy_ports import SignalAuditError
+from signal_audit_contracts import SignalAuditError
 
 
 class SignalAuditValidationError(SignalAuditError):
