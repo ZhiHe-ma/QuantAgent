@@ -1,5 +1,4 @@
 """Observe before inference; acknowledge only owned durable projections."""
-from contextlib import nullcontext
 import hashlib
 import json
 
@@ -113,37 +112,30 @@ def resume_news(ports: MonitorPorts, record: ExecutionRecord) -> JsonObject:
 
 
 def run_monitor_recovery(ports: MonitorPorts) -> None:
-    if ports.recovery is None or not callable(ports.capture_state) or not callable(ports.project_news):
-        raise RecoveryInvalidState("incomplete Monitor recovery ports")
-    with ports.recovery.lock("monitor") if not ports.dry_run else nullcontext():
-        if not ports.dry_run:
-            _capture_state(ports, ports.now().strftime("%Y-%m-%d"))
+    if ports.dry_run or ports.recovery is None or not callable(ports.capture_state) or not callable(ports.project_news):
+        raise RecoveryInvalidState("incomplete or dry Monitor recovery ports")
+    with ports.recovery.lock("monitor"):
+        _capture_state(ports, ports.now().strftime("%Y-%m-%d"))
         while True:
             used, seen = 0, set()
             date = ports.now().strftime("%Y-%m-%d")
-            if not ports.dry_run:
-                state = _capture_state(ports, date)
-                for record in ports.recovery.list_open("monitor"):
-                    body = decode_json(record.snapshot.payload_json)
-                    seen.add(body["fingerprint"])
-                    if record.steps["model"] != "succeeded" and used >= ports.max_news_per_cycle:
-                        continue
-                    used += resume_news(ports, record)["model_calls"]
-                state = _capture_state(ports, date)
+            state = _capture_state(ports, date)
+            for record in ports.recovery.list_open("monitor"):
+                body = decode_json(record.snapshot.payload_json)
+                seen.add(body["fingerprint"])
+                if record.steps["model"] != "succeeded" and used >= ports.max_news_per_cycle:
+                    continue
+                used += resume_news(ports, record)["model_calls"]
+            state = _capture_state(ports, date)
             for news in ports.fetch_crypto_flash_news():
                 if used >= ports.max_news_per_cycle:
                     break
                 news_id, fingerprint = str(news.get("id", "")).strip(), ports.news_fingerprint(news)
-                if not news_id or fingerprint in seen or (not ports.dry_run and (news_id in state["dedup"] or fingerprint in state["fingerprint"])):
+                if not news_id or fingerprint in seen or news_id in state["dedup"] or fingerprint in state["fingerprint"]:
                     continue
                 seen.add(fingerprint)
                 body = {"news": news, "news_id": news_id, "fingerprint": fingerprint, "target_date": date,
                         "observed_at": ports.now().astimezone().isoformat()}
-                if ports.dry_run:
-                    used += 1
-                    try: infer_news(ports, body)
-                    except Exception: pass
-                    continue
                 run_id = "news_" + date.replace("-", "") + "_" + hashlib.sha256((news_id+":"+fingerprint).encode("utf-8")).hexdigest()[:32]
                 record = ports.recovery.get(run_id)
                 if record is not None and record.state in {"completed", "abandoned"}:

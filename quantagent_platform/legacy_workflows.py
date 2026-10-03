@@ -7,7 +7,7 @@ from .legacy_monitor_recovery import MONITOR_SYSTEM_PROMPT, run_monitor_recovery
 
 def run_monitor_pipeline(ports: MonitorPorts):
     """24小时常驻静默监控核心状态机"""
-    if ports.recovery is not None:
+    if ports.recovery is not None and not ports.dry_run:
         return run_monitor_recovery(ports)
     print("🚀 [Monitor] 实时高精度快讯监听常驻进程已成功挂载底座。进入事件循环...")
 
@@ -36,6 +36,14 @@ def run_monitor_pipeline(ports: MonitorPorts):
                 fingerprint = ports.news_fingerprint(news)
                 if not news_id or news_id in processed_ids or fingerprint in processed_fingerprints:
                     continue
+                failure = failed_news_records.get(fingerprint, {})
+                if ports.dry_run and isinstance(failure, dict):
+                    attempts = failure.get("attempts", 0)
+                    if failure.get("status") == "quarantined" or (type(attempts) is int and attempts >= ports.max_news_ai_retries):
+                        processed_ids.add(news_id)
+                        processed_fingerprints.add(fingerprint)
+                        print(f"🧯 [试跑] 保留已有隔离状态，不重复解析: {news_id}")
+                        continue
                 candidates.append((news, news_id, fingerprint))
 
             if len(candidates) > ports.max_news_per_cycle:

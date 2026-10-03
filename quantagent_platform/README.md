@@ -57,6 +57,8 @@
 
 旧 Monitor/Daily 通过 [legacy_workflows.py](legacy_workflows.py)执行顺序，[legacy_ports.py](legacy_ports.py)只定义显式回调及审计绑定；[legacy_bootstrap.py](legacy_bootstrap.py)绑定惰性审计工厂，消费时返回原类/质检函数，不构造存储或连接 SQLite。入口兼容及数据权限见[旧引擎说明](../docs/architecture/legacy-engine/README.md)。
 
+Monitor dry-run 由公开工作流进入原预览循环：读取已有去重和失败资料，跨轮在内存保留进度、显示分析结果，并遵守重试／隔离限制。正式恢复函数拒绝 dry-run；试跑不创建恢复日志、锁或业务文件，验收见 [I002](../docs/features/i002-monitor-dry-run.md)。
+
 通过已登记的公开模块或版本化配置使用；输入、输出、错误和副作用见项目既有契约。调用者不能访问其他能力的私有成员。
 
 `RecipeRunner(registry)` 使用显式注册表；原 `RecipeRunner()`、`AgentRuntime()` 和 `default_registry()` 由包入口安装的工厂提供默认值，每次创建独立注册表。`bootstrap.build_default_registry()` 保留原目录校验；`install_default_registry()` 仅注入工厂，导入时不读取目录、不构造插件。自定义启动可通过 `runner.configure_default_registry(factory)` 注入，显式注册表优先。

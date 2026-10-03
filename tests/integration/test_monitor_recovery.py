@@ -1,7 +1,9 @@
 """Durable original-news retries using real temporary projections and journal."""
 from dataclasses import replace
+from contextlib import redirect_stdout
 from datetime import datetime, timezone, timedelta
 import importlib
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -33,6 +35,19 @@ class MonitorRecoveryTests(unittest.TestCase):
 
     def cycle(self, ports):
         with self.assertRaises(StopCycle): self.flow.run_monitor_recovery(ports)
+
+    def preview(self, ports, *, cycles=2):
+        completed = 0
+        def sleep(seconds):
+            nonlocal completed
+            completed += 1
+            if completed == cycles:
+                raise StopCycle
+        output = io.StringIO()
+        workflow = importlib.import_module("quantagent_platform.legacy_workflows")
+        with redirect_stdout(output), self.assertRaises(StopCycle):
+            workflow.run_monitor_pipeline(replace(ports, sleep=sleep))
+        return output.getvalue()
 
     def test_pending_news_survives_midnight_and_source_removal(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -136,7 +151,66 @@ class MonitorRecoveryTests(unittest.TestCase):
 
     def test_monitor_dry_run_has_no_recovery_or_projection_writes(self):
         with tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp), dry_run=True) as (_, engine):
-            self.cycle(self.ports(engine))
+            self.preview(self.ports(engine))
+            self.assertFalse(Path(engine.daily_dir).exists())
+
+    def test_monitor_preview_reuses_processed_news_across_cycles(self):
+        for existing in ("fresh", "id", "fingerprint"):
+            with self.subTest(existing=existing), tempfile.TemporaryDirectory() as temp:
+                with isolated_engine(Path(temp), dry_run=True) as (_, engine):
+                    news = news_payload()["news"]
+                    ports = self.ports(engine)
+                    if existing != "fresh":
+                        Path(engine.daily_dir).mkdir()
+                        path = Path(engine.dedup_file if existing == "id" else engine.fingerprint_file)
+                        value = news["id"] if existing == "id" else engine._news_fingerprint(news)
+                        path.write_text(json.dumps([value]), encoding="utf-8")
+                    else:
+                        engine.fetch_crypto_flash_news.side_effect = [[news], [dict(news, id="new-id-same-content")]]
+                    before = {p.relative_to(temp).as_posix(): p.read_bytes()
+                              for p in Path(temp).rglob("*") if p.is_file()}
+                    output = self.preview(ports)
+                    self.assertEqual(1 if existing == "fresh" else 0, engine.request_deepseek.call_count)
+                    if existing == "fresh":
+                        self.assertIn("中性", output)
+                        self.assertIn("Medium", output)
+                    after = {p.relative_to(temp).as_posix(): p.read_bytes()
+                             for p in Path(temp).rglob("*") if p.is_file()}
+                    self.assertEqual(before, after)
+                    self.assertFalse(Path(engine.daily_dir, "quantagent_recovery.sqlite3").exists())
+
+    def test_monitor_preview_bounds_parse_failures_across_cycles(self):
+        for previous_attempts, expected_calls in ((0, 3), (2, 1), (3, 0)):
+            with self.subTest(previous_attempts=previous_attempts), tempfile.TemporaryDirectory() as temp:
+                with isolated_engine(Path(temp), dry_run=True) as (_, engine):
+                    news = news_payload()["news"]
+                    ports = replace(self.ports(engine), max_news_ai_retries=3)
+                    engine.request_deepseek.return_value = "not-json"
+                    if previous_attempts:
+                        Path(engine.daily_dir).mkdir()
+                        fingerprint = engine._news_fingerprint(news)
+                        failure = {"id": news["id"], "fingerprint": fingerprint,
+                                   "source": news["source"], "title": news["title"], "url": news["url"],
+                                   "attempts": previous_attempts, "last_failed_at": "2026-10-03T23:58:00+08:00",
+                                   "error": "fixture parse failure", "raw_preview": "not-json",
+                                   "status": "quarantined" if previous_attempts == 3 else "retry_pending"}
+                        Path(engine.failed_news_file).write_text(json.dumps({fingerprint: failure}), encoding="utf-8")
+                    before = {p.relative_to(temp).as_posix(): p.read_bytes()
+                              for p in Path(temp).rglob("*") if p.is_file()}
+                    output = self.preview(ports, cycles=4)
+                    self.assertEqual(expected_calls, engine.request_deepseek.call_count)
+                    self.assertIn("隔离", output)
+                    after = {p.relative_to(temp).as_posix(): p.read_bytes()
+                             for p in Path(temp).rglob("*") if p.is_file()}
+                    self.assertEqual(before, after)
+                    self.assertFalse(Path(engine.daily_dir, "quantagent_recovery.sqlite3").exists())
+
+    def test_formal_monitor_recovery_rejects_dry_run_before_external_calls(self):
+        with tempfile.TemporaryDirectory() as temp, isolated_engine(Path(temp), dry_run=True) as (_, engine):
+            ports = replace(self.ports(engine), sleep=lambda _: self.fail("formal recovery entered dry-run loop"))
+            with self.assertRaisesRegex(RecoveryInvalidState, "dry"):
+                self.flow.run_monitor_recovery(ports)
+            engine.request_deepseek.assert_not_called()
             self.assertFalse(Path(engine.daily_dir).exists())
 
     def test_recovery_respects_original_cycle_budget(self):

@@ -15,6 +15,8 @@
 
 [test_legacy_ports.py](test_legacy_ports.py)验证实际注入的审计/质检被旧日报消费、临时 SQLite、新闻状态恢复、原源码哈希及审计优先导入/CLI help。仅外部服务使用替身；连接显式关闭，工厂通过公开接口恢复。
 
+日报消费和直接审计在同一固定时钟下运行，分别覆盖 02:00／09:00，保留真实 SQLite 时间约束及质量／交付断言，证据见 [I002](../../docs/features/i002-monitor-dry-run.md)。
+
 独立审计用例使用 `python -B -S`，仅将仓库放入 PYTHONPATH，实际初始化临时 SQLite，保证不依赖插件主机或第三方安装环境。
 
 [test_recovery_store.py](test_recovery_store.py) 使用真实临时 SQLite 验证惰性初始化、版本／实例／哈希拒绝、事件幂等及 OS 锁；独立连接的确定性交错覆盖查询／列表的同一快照、真实日志损坏拒绝及默认模式错误后锁释放。仅 WAL 测试允许在读取中提交，产品模式保持，证据见 [R002](../../docs/features/r002-recovery-read-snapshot.md)。

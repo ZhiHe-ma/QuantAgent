@@ -80,6 +80,8 @@ R001 入口见 [恢复功能](../quantagent_platform/recovery/README.md)：单�
 
 [R002](../docs/features/r002-recovery-read-snapshot.md) 在 [恢复存储契约](contract/test_recovery_store.py) 中验证独立连接交错、列表同一快照、实际损坏拒绝和默认模式错误后锁释放，避免 status 误报正常并发提交。
 
+[I002](../docs/features/i002-monitor-dry-run.md) 覆盖 Monitor 多轮预览、已有去重／隔离、有限重试和零写入；旧审计消费用例使用统一固定时钟，覆盖凌晨与白天。
+
 [文档预算测试](architecture/test_documentation_budget.py)验证当前文档篇幅、去重阅读清单、目标限额收缩和现有门禁自动拒绝超限；不执行产品代码或联网。
 
 ## 已知限制

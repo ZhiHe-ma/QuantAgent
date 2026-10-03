@@ -24,6 +24,8 @@ get、find_daily、list_open 在同一短只读事务中校验 schema、选择�
 
 实例标识是规范化绝对 daily_dir 的哈希。该目录拥有 quantagent_recovery.sqlite3 和锁文件，记录公共研究与运行事实，不保存密钥或私人决定。Daily／Monitor 执行锁独立；短 projection 锁协调文件，SQLite 事务不跨网络、模型、文件或其他数据库。dry-run 禁止写入和锁操作。
 
+正式 Daily／Monitor 恢复函数拒绝 dry-run；公开工作流仍支持只读预览。Monitor 预览按已有文件和本轮内存状态去重／限次，不修改存储，回归见 [I002](../../docs/features/i002-monitor-dry-run.md)。
+
 ## 测试与验收
 
 运行 `python -m unittest tests.unit.test_recovery_rules tests.contract.test_recovery_store tests.contract.test_recovery_ports tests.integration.test_daily_recovery tests.integration.test_monitor_recovery tests.integration.test_recovery_processes tests.architecture.test_recovery_boundaries -v`。测试使用合成外部服务、真实临时文件／SQLite／OS 锁，并以 os._exit 中断真实子进程；实际命令、环境、提交与结果见 R001。[R002](../../docs/features/r002-recovery-read-snapshot.md)补充真实独立连接的确定性交错、列表快照、损坏拒绝与默认模式错误后锁释放验收。命令用法见 [使用说明](../../docs/USAGE.md#本地恢复)。

@@ -83,26 +83,30 @@ class LegacyPortsTests(unittest.TestCase):
             return 37.0, ["injected_quality"]
         self.ports.configure_legacy_audit_factory(lambda: self.ports.LegacyAuditBindings(TaggedStore, quality))
         module = load_engine()
-        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,
-                {"DRY_RUN": "false", "DEEPSEEK_API_KEY": "offline"}, clear=True):
-            module.BASE_DIR = temp
-            engine = module.QuantAgent()
-            self.assertIsInstance(engine.signal_audit_store, TaggedStore)
-            engine.fetch_market_signals = lambda: METRICS
-            today = module.datetime.now().strftime("%Y-%m-%d")
-            engine.request_deepseek = lambda *args, **kwargs: "offline analysis" if kwargs.get("use_r1") else json.dumps(capsule(today))
-            result = engine.run_daily_pipeline()
-            self.assertEqual(result["audit"]["provider"], "injected_recovery")
-            run, signal = engine.build_signal_audit_payload(today, today+"T08:00:00+08:00",
-                capsule(today), METRICS, [], {}, "direct audit")
-            self.assertEqual(engine.signal_audit_store.record_completed_signal(run, signal)["provider"], "injected")
-            self.assertIn("offline analysis", (Path(engine.daily_dir) / (today + ".md")).read_text(encoding="utf-8"))
-            self.assertEqual(json.loads(Path(engine.memory_file).read_text(encoding="utf-8"))["last_daily_capsule"]["date"], today)
-            with closing(sqlite3.connect(engine.signal_audit_file)) as connection:
-                quality_row = connection.execute("SELECT data_quality_score, quality_flags_json FROM daily_signals").fetchone()
-                delivery_row = connection.execute("SELECT report_written, wecom_sent, memory_saved FROM audit_runs").fetchone()
-            self.assertEqual(quality_row, (37.0, '["injected_quality"]'))
-            self.assertEqual(delivery_row, (1, 0, 1))
+        for hour in (2, 9):
+            with self.subTest(hour=hour), tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,
+                    {"DRY_RUN": "false", "DEEPSEEK_API_KEY": "offline"}, clear=True), \
+                    patch.object(module, "datetime", wraps=datetime) as clock:
+                clock.now.return_value = datetime(2026, 10, 4, hour)
+                module.BASE_DIR = temp
+                engine = module.QuantAgent()
+                self.assertIsInstance(engine.signal_audit_store, TaggedStore)
+                engine.fetch_market_signals = lambda: METRICS
+                today = module.datetime.now().strftime("%Y-%m-%d")
+                engine.request_deepseek = lambda *args, **kwargs: "offline analysis" if kwargs.get("use_r1") else json.dumps(capsule(today))
+                result = engine.run_daily_pipeline()
+                self.assertEqual(result["audit"]["provider"], "injected_recovery")
+                started_at = clock.now.return_value.astimezone().isoformat(timespec="seconds")
+                run, signal = engine.build_signal_audit_payload(today, started_at,
+                    capsule(today), METRICS, [], {}, "direct audit")
+                self.assertEqual(engine.signal_audit_store.record_completed_signal(run, signal)["provider"], "injected")
+                self.assertIn("offline analysis", (Path(engine.daily_dir) / (today + ".md")).read_text(encoding="utf-8"))
+                self.assertEqual(json.loads(Path(engine.memory_file).read_text(encoding="utf-8"))["last_daily_capsule"]["date"], today)
+                with closing(sqlite3.connect(engine.signal_audit_file)) as connection:
+                    quality_row = connection.execute("SELECT data_quality_score, quality_flags_json FROM daily_signals").fetchone()
+                    delivery_row = connection.execute("SELECT report_written, wecom_sent, memory_saved FROM audit_runs").fetchone()
+                self.assertEqual(quality_row, (37.0, '["injected_quality"]'))
+                self.assertEqual(delivery_row, (1, 0, 1))
 
     def test_lazy_factory_binding_and_errors_do_not_create_storage(self):
         bootstrap = importlib.import_module("quantagent_platform.legacy_bootstrap")
