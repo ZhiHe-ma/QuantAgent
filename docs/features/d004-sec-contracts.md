@@ -33,7 +33,7 @@
 
 ## 测试证据
 
-环境：2026-10-03，Windows、仓库外 Python 3.12.8、原 `.venv/Lib/site-packages`；UTF-8 输出。基线 SEC 命令 `python -m unittest tests.test_sec_client tests.contract.sec.test_sec_contracts tests.unit.research.test_sec_analysis tests.integration.sec.test_sec_workflow -v`：22 项通过，0.165 秒。原始记录在本地忽略的 `artifacts/architecture/d004-sec-contracts/`；后续结果按实际执行补录。
+环境：2026-10-03，Windows、仓库外 Python 3.12.8、原 `.venv/Lib/site-packages`；UTF-8 输出。基线 SEC 命令 `python -m unittest tests.test_sec_client tests.contract.sec.test_sec_contracts tests.unit.research.test_sec_analysis tests.integration.sec.test_sec_workflow -v`：22 项通过，0.165 秒。原始记录在本地忽略的 `artifacts/architecture/d004-sec-contracts/`。
 
 实际解释器 `C:\Users\yj\AppData\Local\Programs\Python\Python312\python.exe`，从仓库根设置 `PYTHONUTF8=1`、`PYTHONIOENCODING=utf-8`、`PYTHONPATH=<仓库>/.venv/Lib/site-packages`；门禁 PATH 包含 `D:\Git\cmd`。
 
@@ -44,8 +44,11 @@
 | 并发诊断 | 原行为第 16 轮复现 WinError 5；修复后原四路同键提交连续 20 轮全部得到 `[200,200,200,201]`，未跳过并发用例 |
 | 完整离线 | `python -m unittest discover -s tests -v`：323 项、0 失败、7 跳过，63.950 秒 |
 | 兼容与门禁 | `python artifacts/architecture/d004-sec-contracts/verify_compatibility.py`：81 个原资产、24 项原 SEC 定义及除已说明写入 helper 外的原 runner AST 保持，共 25 项核对；2,401 个原允许关系、原 Packet 和别名保持。完整门禁通过，53 个模块、9 条精确存量、无循环，Import Linter 返回 0 |
+| 独立只读审查 | `722550f..762dfc5`：Critical/Important/Minor 均无；审查者实际执行下述 11 项，全部通过、无跳过，1.347 秒 |
 
 保留前两次完整日志：319 项分别因旧边界白名单及已复现 Windows 替换失败而失败，修复后完整回归通过。7 项跳过为原真实 bt/Qlib、私有 P4、三项 Windows 链接，以及当前临时目录卷未启用 8.3 文件名的短路径用例；最终完整回归源码和测试对应 `tested_commit`，后续仅补录文档。
+
+审查者在同一解释器和依赖环境使用 `PYTHONDONTWRITEBYTECODE=1` 执行 `python -B -m unittest tests.architecture.test_sec_boundaries tests.architecture.test_p5_boundaries tests.contract.sec.test_sec_response_contracts tests.unit.test_runner_atomic_write tests.test_submission_api.SubmissionApiTests.test_concurrent_same_key_executes_at_most_once -v`，退出码 0。原始审查工具输出 `chunk_id=3e0dba`，报告在上述本地证据目录的 `final-review.md`；7 个执行工作文件已复制到 `execution/` 并逐个验证 SHA256。
 
 ### Task 1: 提取最小 SEC 响应契约
 
@@ -63,7 +66,7 @@
 - [x] 仅调整 `runner._atomic_json_write()` 的 replace：Windows 5/32 最多 5 次，失败间隔 10/20/30/40 ms；其他错误立即沿用原异常。Expected: 新测试通过，永久拒绝仍抛异常且旧目标字节不变。
 - [x] 复跑原四路同键提交及全套 `python -m unittest discover -s tests -v`，记录每次失败与跳过。Expected: 完整离线通过；不跳过并发用例、不声称永久权限错误被修复。
 - [x] 更新 README 和验收，单独提交；最后运行上面的完整门禁作为 task-done 验证。
-- [ ] 一次独立只读审查整个分支，归档执行记录，保留本地分支和工作树。
+- [x] 一次独立只读审查整个分支，归档执行记录，保留本地分支和工作树。
 
 Review focus: 旧 SecResponse 导入及 isinstance 身份；既有启动组装后的独立契约重载不依赖客户端/可选 SDK；客户端和标准化共用原 8 MiB 上限与四个固定 URL；frozen/repr 与原 SHA/时间/严格 JSON 语义；Windows 原子替换只有限处理 5/32、失败保持旧字节、非 Windows及其他错误行为；P5、CLI/HTTP 和固定配方间接兼容，原允许关系保持。
 
@@ -73,4 +76,4 @@ Review focus: 旧 SecResponse 导入及 isinstance 身份；既有启动组装�
 
 ## 遗留问题
 
-当前仍部分符合，剩余问题以精确基线为准。Linux/远端 CI、真实 SEC、私有 P4、真实 bt/Qlib、部署和生产未运行，Windows 链接用例按实际环境记录。旧公开导入与 JSON/Packet 格式须验证；私有 monkeypatch、类模块元数据及跨版本 pickle 不作额外兼容承诺。
+当前仍部分符合，剩余问题以精确基线为准。Linux/远端 CI、真实 SEC、私有 P4、真实 bt/Qlib、部署和生产未运行，Windows 链接用例按实际环境记录。旧公开导入与 JSON/Packet 已按上述证据核对；私有 monkeypatch、类模块元数据及跨版本 pickle 不作额外兼容承诺。原子写入 helper 仍需调用方协调写者，永久失败可保留原有 `.tmp`；本批不扩展为任意多写者协调器。
