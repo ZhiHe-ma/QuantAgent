@@ -4,7 +4,7 @@
 {
   "branch": "feature/r002-recovery-read-snapshot",
   "base_commit": "f61191cb3398e516f9beb01545f61ce5a06c4af9",
-  "phase": "verifying",
+  "phase": "verified",
   "components": ["recovery-storage", "acceptance-tests", "architecture"],
   "readme_unchanged": {
     "architecture": "本批仅新增遵循既有格式的分支验收记录，门禁命令、文档格式及预算规则未改变，tools/architecture/README.md 无需更新。"
@@ -40,7 +40,13 @@
 
 `python -m unittest tests.contract.test_recovery_store.RecoveryStoreTests.test_status_reads_use_one_snapshot_during_valid_event_commit tests.contract.test_recovery_store.RecoveryStoreTests.test_list_open_does_not_mix_snapshots_between_records -v`：修复前 2 项、6 个子场景失败，1.025 秒。get、find_daily、list_open、筛选列表和 dry-run 查询均复现 journal projection mismatch；列表复现同一结果中的 revision 0／1 混读。所有 SQL 和提交实际执行，连接工厂只安排交错位置，未伪造查询结果。
 
-最小修复是在只读分支开启 BEGIN，覆盖 schema／任务选择／事件重建；既有 finally 负责 rollback／关闭。原定向命令修复后 **17 项通过，0.463 秒**；同时核对新提交可见、实际损坏拒绝与默认模式错误后写入成功。日志为 red.log／green.log。已完成复现和修复，下一步为全仓回归与只读审查；不可变源码、结果和未测范围在收尾追加。
+最小修复是在只读分支开启 BEGIN，覆盖 schema／任务选择／事件重建；既有 finally 负责 rollback／关闭。原定向命令修复后 **17 项通过，0.463 秒**；同时核对新提交可见、实际损坏拒绝与默认模式错误后写入成功。日志为 red.log／green.log。
+
+受验收源码 `36b4ac471edccc668f325ce764e835b9efbc1c51`：`python -m unittest discover -s tests -v` **395 项、0 失败、7 项原环境跳过，148.121 秒**，退出 0；日志为 full-tests.log。跳过为真实 bt／Qlib 解释器未指定、私人固定 P4 样本缺失、三项 Windows 链接权限用例和 8.3 短路径不可用，不记作通过。
+
+`python -m tools.architecture --base-ref f61191cb3398e516f9beb01545f61ce5a06c4af9 --branch feature/r002-recovery-read-snapshot --report artifacts/architecture/r002-read-snapshot/gate.json`：PASS，68 个模块、0 条登记存量违规、Import Linter 返回 0。完整涉及范围的阅读清单（另加 `--context-for architecture`）：6 份、262 行／13,420 字符，PASS，见 context-final.json。
+
+新上下文只读审查核对 `f61191c..36b4ac4` 的源码、测试、说明及原始日志，无 Critical／Important／Minor；认为本批修复可交付。审查接受的范围排除：跨主机和物理灾难沿用既有拓扑，本批未验证；真实服务、远端 CI、部署和生产不能由本地日志证明；原用户文件删除保持且未暂存。没有重复运行全仓测试来充当独立审查证据。后续提交仅补本记录，验收源码不变；完整版本与日志摘要保存在本地 receipt.json。
 
 ## 回滚方式
 
