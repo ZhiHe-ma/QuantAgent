@@ -117,7 +117,9 @@ main 保护已通过 `gh api repos/ZhiHe-ma/QuantAgent/branches/main/protection`
 
 首轮 PR CI（[37145502567](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/37145502567)，bedc9cca）两套架构检查通过；Linux／Windows 全量均因同一 dotenv 导入缺失出现 4 个 subTest 失败，分别 9／3 跳过。原有恢复 CLI 用例需要真实 `.env` 读取，本机系统包 python-dotenv 1.2.2 掩盖了 requirements-test.txt 漏列。使用 `python -m venv --without-pip artifacts/integration/i003-pr/clean-env`，该隔离解释器运行 `-m unittest tests.integration.test_daily_recovery.DailyRecoveryTests.test_recover_cli_honors_dotenv_dry_run_without_engine -v` 复现退出 1、相同 4 个失败（dotenv-red.log）。修复范围为补锁 python-dotenv==1.2.2 及依赖说明，业务及原失败用例保持；修复后须复核该用例、完整门禁与实际最新提交 CI。
 
-补齐后使用 `python -m pip --python artifacts/integration/i003-pr/clean-env/Scripts/python.exe install --disable-pip-version-check --no-cache-dir --no-deps python-dotenv==1.2.2`，仅写隔离环境。相同用例 1 项／4 个动作均通过，3.983 秒、退出 0（dotenv-green.log）；完整目标门禁退出 0（dotenv-fix-gate.json），两份所属 README 同步说明依赖入口。本地完整套件沿用未变业务代码的 1932e2e 证据；最新修复提交的全套测试由实际 CI 复核，不能将这 1 项用例称为全量复测。
+补齐后使用 `python -m pip --python artifacts/integration/i003-pr/clean-env/Scripts/python.exe install --disable-pip-version-check --no-cache-dir --no-deps python-dotenv==1.2.2`，仅写隔离环境。相同用例 1 项／4 个动作均通过，3.983 秒、退出 0（dotenv-green.log）；完整及增量门禁均退出 0（dotenv-fix-gate.json、dotenv-fix-incremental-gate.json），两份所属 README 同步说明依赖入口。本地完整套件沿用未变业务代码的 1932e2e 证据，不将这 1 项用例称为全量复测。
+
+固定修复版本 05badfe393667894d0c94020ee8e23813df0596d 的 [PR CI](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/37146240137) 与 [push CI](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/37146236966) 均 success，四项必需检查全部通过。CI 运行 `python -m unittest discover -s tests -v`、架构回归及 `python -m tools.architecture --report artifacts/architecture/ci-report.json`；Linux ubuntu-24.04／Python 3.12.14：398 项、389 通过／9 跳过、77.944 秒；Windows windows-2025-vs2026／Python 3.12.10：398 项、395 通过／3 跳过、177.765 秒，均零失败。Windows 跳过真实 bt／Qlib 及私有 P4；Linux另跳过六项 Windows 专属场景，未把跳过算通过。后续收尾只补本文证据，最新文档提交的状态沿 PR 检查核对；未合并或部署。
 
 以下为 5242b11 独立审查时的作者裁定；远端与格式事项的后续补验见上文，其他范围沿用：
 
@@ -137,6 +139,6 @@ main 保护已通过 `gh api repos/ZhiHe-ma/QuantAgent/branches/main/protection`
 
 ## 遗留问题
 
-I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。草稿 PR #22 已建立；首轮 CI 失败及隔离复现已记录，补齐漏列依赖后的最新提交 CI 待复核，未合入或部署。真实集成及恢复／产品未测范围见上表。
+I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。草稿 PR #22 已建立；首轮 CI 失败、隔离复现及 05badfe 修复后全量 CI 均已记录。当前仅待后续人工审查，未合入或部署；真实集成及恢复／产品未测范围见上表。
 
 历史 Minor：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 存在末尾空行（whole-diff-check.log）。1932e2e 已处理这两处，完整差异检查退出 0；历史日志保留。
