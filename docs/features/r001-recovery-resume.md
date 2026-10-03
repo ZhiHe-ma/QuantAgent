@@ -33,7 +33,7 @@
 {
   "branch": "feature/r001-recovery-resume",
   "base_commit": "9c09e12e6bf82c0e1fe3845ee1bf71cd1941a6ea",
-  "phase": "implementing",
+  "phase": "final_review",
   "approved_plan_commit": "f38ede46eef828d9eec7ba32798139f09e00fe04",
   "written_spec_commit": "2a29b69ef0fd88805f571339603530c69ed4b3ec",
   "execution_method": "native",
@@ -194,10 +194,10 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 
 **Interfaces:** 仅使用 Task 1–4 公开接口；不增加生产故障注入参数。测试在子进程用端口包装器 `os._exit(23)` 中断指定边界，网络／模型均为合成替身，SQLite 和原子替换使用真实临时存储。
 
-- [ ] **RED tests:** `test_process_death_releases_locks_and_reconciles_effects` 覆盖 report、message、memory、audit 提交后／事件确认前退出，`self.assertEqual(crashed_process.returncode, 23)`、新进程可取得锁、原编号保持、消息 unknown 不重发、`self.assertEqual(after_audit_counts, before_audit_counts)`；`test_concurrent_daily_and_monitor_respect_scoped_locks` 用 `self.assertRaises(RecoveryBusy)` 验证两个 Daily 或两个 Monitor 拒绝并发，同一 Daily 与 Monitor 可同时推理、短 projection 锁串行，旧 Memory 不覆盖新日期；同步屏障不用猜测性长 sleep。
-- [ ] **Implement/fix:** 先重现并保留 RED 原因，再在所属模块修正；不放宽门禁或替换真实存储为 mock。全离线基线原 341 项、7 项环境跳过只作历史参照；记录本次实际发现、通过、失败和跳过理由，不能预填结果。
-- [ ] **GREEN targeted:** `python -m unittest tests.integration.test_recovery_processes tests.integration.test_daily_recovery tests.integration.test_monitor_recovery tests.contract.test_recovery_store tests.contract.test_recovery_ports tests.architecture.test_recovery_boundaries -v` 全通过；再运行 `python -m unittest discover -s tests -v` 和架构门禁。全套必须非零发现、0 失败；真实可选依赖按原跳过条件解释。
-- [ ] **GREEN compatibility:** 单独核对原导出／类型身份、CLI help 与三种原 mode、HTTP 状态／字段／权限、固定配方及正式资产哈希；原 162 项正式资产字节保持，旧能力之间的允许关系不变。原 34 项定义重新按本批范围核对：仅已列明的日报预检／恢复、Monitor 投影确认及消息分类允许行为变化，原公开签名及非目标行为保持，不能继续沿用 D006 的实现 AST 全部不变要求。Windows 本地与未来 Linux CI 结果分别记录；真实服务、远端 CI、部署与生产未跑就写未跑。
+- [x] **Process tests:** `test_process_death_releases_locks_and_reconciles_effects` 覆盖 report、message、memory、audit 提交后／事件确认前退出，`self.assertEqual(crashed_process.returncode, 23)`、新进程可取得锁、原编号保持、消息 unknown 不重发、`self.assertEqual(after_audit_counts, before_audit_counts)`；`test_concurrent_daily_and_monitor_respect_scoped_locks` 用 `self.assertRaises(RecoveryBusy)` 验证两个 Daily 或两个 Monitor 拒绝并发，同一 Daily 与 Monitor 可同时推理、短 projection 锁串行，旧 Memory 不覆盖新日期；同步屏障不用猜测性长 sleep。
+- [x] **Implement/fix:** 先重现并保留 RED 原因，再在所属模块修正；不放宽门禁或替换真实存储为 mock。全离线基线原 341 项、7 项环境跳过只作历史参照；记录本次实际发现、通过、失败和跳过理由，不能预填结果。
+- [x] **GREEN targeted:** `python -m unittest tests.integration.test_recovery_processes tests.integration.test_daily_recovery tests.integration.test_monitor_recovery tests.contract.test_recovery_store tests.contract.test_recovery_ports tests.architecture.test_recovery_boundaries -v` 全通过；再运行 `python -m unittest discover -s tests -v` 和架构门禁。全套必须非零发现、0 失败；真实可选依赖按原跳过条件解释。
+- [x] **GREEN compatibility:** 单独核对原导出／类型身份、CLI help 与三种原 mode、HTTP 状态／字段／权限、固定配方及正式资产哈希；核对原 162 项资产：159 项字节保持，仅三项已批准的旧验收测试因胶囊预检／恢复和真实写入包装更新，旧能力之间的允许关系不变。原 34 项定义重新按本批范围核对：仅已列明的日报预检／恢复、Monitor 投影确认及消息分类允许行为变化，原公开签名及非目标行为保持，不能继续沿用 D006 的实现 AST 全部不变要求。Windows 本地与未来 Linux CI 结果分别记录；真实服务、远端 CI、部署与生产未跑就写未跑。
 - [ ] **Review/commit:** 沿用 Native，由本会话完成各批后请求一次新的整分支独立审查，记录结论并修复阻断项；补齐实际源码／文档提交及回滚证据后 `git commit -m "test: verify R001 process recovery and compatibility"`，仅暂存本 Task 实际修改，再复核门禁和工作树。保留用户原有删除，不推送、合并或部署。
 
 ### 每批命令与记录
@@ -227,9 +227,9 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 | 完整任务重跑、正常路径、旧历史和 dry-run | 原入口、正常结果、幂等与零业务写入约束保持 |
 | 全离线套件、Python/CLI/HTTP/固定配方及架构门禁 | 必需回归通过；原资产和数据权限保持，无新增违规或放宽规则 |
 
-本阶段为文档变更：产品完整套件未重跑，因为运行源码未修改。设计自查已核对占位、矛盾、范围及歧义，补齐交付标记的二阶段冻结、可选消息、Memory superseded、渠道变更和人工终止规则。提交前命令 `python -m tools.architecture --base-ref 9c09e12e6bf82c0e1fe3845ee1bf71cd1941a6ea --branch feature/r001-recovery-resume --report artifacts/recovery/r001/design-gate.json` 实际通过：60 模块、0 存量、无循环或错误，Import Linter 返回 0。报告和日志保留在该忽略目录；提交后用同一命令核对。真实新闻、模型、消息、Linux、远端 CI、部署和生产均未执行本批验收。
+历史设计阶段为文档变更：产品完整套件未重跑，因为运行源码未修改。设计自查已核对占位、矛盾、范围及歧义，补齐交付标记的二阶段冻结、可选消息、Memory superseded、渠道变更和人工终止规则。提交前命令 `python -m tools.architecture --base-ref 9c09e12e6bf82c0e1fe3845ee1bf71cd1941a6ea --branch feature/r001-recovery-resume --report artifacts/recovery/r001/design-gate.json` 实际通过：60 模块、0 存量、无循环或错误，Import Linter 返回 0。报告和日志保留在该忽略目录；提交后用同一命令核对。真实新闻、模型、消息、Linux、远端 CI、部署和生产均未执行本批验收。
 
-实施计划记录：书面规范 `2a29b69ef0fd88805f571339603530c69ed4b3ec` 已批准；2026-10-03 在相同 Windows／Python 3.12.8／UTF-8 环境完成计划自查，核对规范覆盖、步骤可执行性、接口一致性、五项 Review Focus 和文档篇幅。修正草案中的文件路径、旧自定义审计接口接入、前像保护与模型预算说明；所有实施复选框仍未勾选。将上列门禁报告路径改为 `artifacts/recovery/r001/plan-gate.json` 后实际通过：60 模块、0 存量、无循环或错误、Import Linter 返回 0。仅更新本文，产品和测试源码均未改、完整产品套件未重跑；提交后复核同一门禁，详细收据保留在同目录的 plan-review.json。
+实施计划记录：书面规范 `2a29b69ef0fd88805f571339603530c69ed4b3ec` 已批准；2026-10-03 在相同 Windows／Python 3.12.8／UTF-8 环境完成计划自查，核对规范覆盖、步骤可执行性、接口一致性、五项 Review Focus 和文档篇幅。修正草案中的文件路径、旧自定义审计接口接入、前像保护与模型预算说明；该历史计划审阅时所有实施复选框未勾选。将上列门禁报告路径改为 `artifacts/recovery/r001/plan-gate.json` 后实际通过：60 模块、0 存量、无循环或错误、Import Linter 返回 0。仅更新本文，产品和测试源码均未改、完整产品套件未重跑；提交后复核同一门禁，详细收据保留在同目录的 plan-review.json。
 
 实施基线：2026-10-03，Windows／Python 3.12.8／UTF-8，在计划提交 `f38ede46eef828d9eec7ba32798139f09e00fe04` 上运行 `python -m unittest discover -s tests -v`：341 项、0 失败、7 项原环境跳过，69.663 秒。Task 1 定向命令见恢复 README：实现前 9 项因缺少公开功能而失败，实现后 9 项通过。Task 1 在计划提交 f38ede4 上的工作差异执行完整命令：350 项、0 失败、7 项原环境跳过，70.355 秒；task-1-gate.json 为 64 模块、0 存量、0 循环／错误、Import Linter=0。空包入口单独登记为无公开导出的 recovery-package，解决分层工具的父包重叠，不改变扫描规则或豁免。外部服务和生产仍未验证。
 
@@ -238,6 +238,8 @@ Task 2：在源码 f64a30e 的工作差异运行定向命令及静态边界，28
 Task 3：在提交 `0bb853758aaa0372fde630bca13cc9ae52750eb5` 的工作差异验证新 Daily／原幂等／审计／契约／边界 34 项通过；补核 dry-run 与 Daily 13 项通过。完整套件最终 362 项、0 失败、7 项原环境跳过，74.725 秒；门禁 66 模块、0 存量／循环／错误，Import Linter=0。完整回归发现另一处旧胶囊顺序断言，已按批准的预检行为更新并保留零提前交付断言；首轮失败日志保存为 task-3-full-red.log。人工未收到后普通重跑的失败用例已先复现、再修正为明确 retry 才可发。环境／未测范围同前。
 
 Task 4：在提交 `402f661066c9b792e21f2940f34be8c3066ddc22` 的工作差异运行 Monitor／原幂等／注入／静态边界 25 项通过。完整套件 369 项、0 失败、7 项原环境跳过，76.264 秒；门禁 67 模块、0 存量／循环／错误，Import Linter=0。失败测试暴露隔离投影旧确认复用和旧已耗尽预算仍重推，均修正并验证；单任务 retry 不抓取新新闻、不进入 sleep。调整纯 reducer 使每次模型失败／首个冻结决议的隔离投影重新待确认，次数仅由推理错误事件增加。环境／未测范围同前。
+
+Task 5 初验：运行计划定向命令，28 项通过，20.961 秒；真实子进程四边界退出及三类锁／两种流程同时推理，2 项首次通过，15.606 秒，未为验收伪造 RED。完整命令 372 项、0 失败、7 项原环境跳过，93.280 秒；门禁 67 模块、0 存量／循环／错误，Import Linter=0。源码 `11f561aaf8c30cd7834098587befc8943afcd046`，本批工作差异只新增测试与当前说明。旧 57 能力的 3,249 组允许关系和公开导出保持；34 原定义中 28 项 AST 保持，6 项按 R001 改变，原函数／审计 10 项方法签名保持。159／162 资产原字节保持，三项变动均为已批准的旧验收用例；CLI 原三 mode 分发及不构造引擎的 status 另验通过。证据见 task-5-full.log、task-5-targeted.log、task-5-gate.json、compatibility.json、cli-compatibility.json；整分支审查结论待记录。
 
 ## 回滚方式
 

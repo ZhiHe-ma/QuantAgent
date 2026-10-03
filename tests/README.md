@@ -46,8 +46,6 @@
 | [test_task_lifecycle_api.py](test_task_lifecycle_api.py) | 集成：任务生命周期 HTTP |
 | [test_thesis_tracker.py](test_thesis_tracker.py) | 规则/集成混合：观点跟踪与样本回放 |
 
-R001 恢复测试入口见 [恢复功能](../quantagent_platform/recovery/README.md)；实际分批结果见 [R001](../docs/features/r001-recovery-resume.md)。
-
 ## 对外接口
 
 D006 新边界见 [test_legacy_boundaries.py](architecture/test_legacy_boundaries.py)；实际回调、临时 SQLite、新闻重试恢复、入口哈希与离线 CLI 启动见 [test_legacy_ports.py](contract/test_legacy_ports.py)。原引擎和存储用例保留，验收记录在[D006 分支说明](../docs/features/d006-legacy-workflows.md)。
@@ -76,11 +74,9 @@ D006 新边界见 [test_legacy_boundaries.py](architecture/test_legacy_boundarie
 
 [D005](../docs/features/d005-adapter-contracts.md) 增加适配器共享契约的静态边界，以及 [worker ports 契约](contract/test_worker_ports.py)的注入、错误、旧别名、启动和默认配方消费测试；原质检、日报、历史评价及 Qlib/bt 离线用例继续验证消费结果、进程权限和审计。
 
-R001 文件、消息和审计所属接口用 `python -m unittest tests.contract.test_recovery_ports tests.test_signal_audit tests.contract.test_legacy_ports -v` 验证，网络只有替身；真实 SQLite 和文件写入参与断言。
-
-R001 Daily 通过 [test_daily_recovery.py](integration/test_daily_recovery.py) 覆盖两类边界失败、编号复用、未知消息、渠道绑定／冲突、旧历史／FORCE／终止及只读命令；底层文件和 SQLite 为真实临时存储。
-
 Monitor 用 `python -m unittest tests.integration.test_monitor_recovery tests.test_idempotency_error_isolation tests.contract.test_legacy_ports -v` 验证真实投影、跨日、预算、隔离、旧文件拒绝和单任务 retry；旧写入 mock 改为包装真实临时文件写入。
+
+R001 入口见 [恢复功能](../quantagent_platform/recovery/README.md)：单元／契约／架构、Daily／Monitor 集成和真实子进程中断／并发测试。使用合成外部服务与真实临时文件、SQLite、OS 锁；结果见 [R001](../docs/features/r001-recovery-resume.md)。
 
 ## 已知限制
 

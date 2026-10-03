@@ -61,3 +61,56 @@ def news_payload(date: str = "2026-10-03") -> dict[str, Any]:
             "source": "fixture", "url": "https://example.invalid/news"}
     return {"news": news, "news_id": news["id"], "fingerprint": "c" * 64,
             "target_date": date, "observed_at": date + "T23:59:00+08:00"}
+
+
+def recovery_child(root: Path, operation: str, point: str = "") -> None:
+    """Child-process driver: real owned writes, fake services, no product hooks."""
+    from dataclasses import replace
+    from datetime import datetime, timezone, timedelta
+    import json
+    from quantagent_platform.legacy_daily_recovery import run_daily_recovery
+    from quantagent_platform.legacy_monitor_recovery import run_monitor_recovery
+    now = datetime(2026, 10, 3, 8, tzinfo=timezone(timedelta(hours=8)))
+    with isolated_engine(root) as (_, engine):
+        if operation == "hold":
+            with engine.recovery_store.lock(point):
+                print("READY", flush=True)
+                sys.stdin.readline()
+            return
+        engine.fetch_market_signals = lambda: {"timestamp": "fixture", "crypto": {"BTC_Price": 60000, "BTC_24h_Chg%": 1, "Fear_Greed": 50}, "macro": {"S&P500_Chg%": 0, "VIX_Volatility": 16}}
+        def model(*args, **kwargs):
+            if operation == "resume":
+                raise AssertionError("research was repeated")
+            with (root/"model-effects.log").open("a", encoding="utf-8") as handle: handle.write("call\n")
+            if operation in {"infer-daily", "infer-monitor"} and (kwargs.get("use_r1") or operation == "infer-monitor"):
+                print("READY", flush=True)
+                sys.stdin.readline()
+            if operation == "infer-monitor": return '{"sentiment":"中性","weight":"Medium","reason":"合成因子"}'
+            return "合成研究" if kwargs.get("use_r1") else json.dumps(daily_payload()["capsule"])
+        engine.request_deepseek = model
+        def send(text):
+            with (root/"send-effects.log").open("a", encoding="utf-8") as handle: handle.write("accepted\n")
+            return True
+        engine.push_to_wecom = send
+        if operation == "infer-monitor":
+            class Stop(BaseException): pass
+            def stop(seconds): raise Stop()
+            engine.fetch_crypto_flash_news = lambda: [news_payload()["news"]]
+            try: run_monitor_recovery(replace(engine.monitor_ports(), now=lambda: now, sleep=stop))
+            except Stop: pass
+            return
+        buffer = Path(engine._get_buffer_path("2026-10-03"))
+        if operation != "resume" and not buffer.exists():
+            buffer.write_text(json.dumps([{"id": "fixture", "fingerprint": "fixture", "title": "合成高权重因子",
+                "weight": "High", "sentiment": "中性", "reason": "fixture", "source": "fixture"}]), encoding="utf-8")
+        ports = replace(engine.daily_ports(), now=lambda: now, get_buffer_path=lambda: str(buffer))
+        if operation == "crash":
+            field = {"report": "project_report", "message": "send_message", "memory": "project_memory", "audit": "commit_audit"}[point]
+            owned = getattr(ports, field)
+            def crash_after_effect(*args):
+                result = owned(*args)
+                if getattr(result, "status", "succeeded") not in {"succeeded", "confirmed"}:
+                    raise AssertionError("effect did not succeed")
+                os._exit(23)
+            ports = replace(ports, **{field: crash_after_effect})
+        print(json.dumps(run_daily_recovery(ports), ensure_ascii=False), flush=True)

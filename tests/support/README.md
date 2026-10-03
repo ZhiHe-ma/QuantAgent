@@ -12,8 +12,6 @@
 
 [api_samples.py](api_samples.py) 捕获读取/提交应用的 HTTP schema、错误类型和本机 TestClient 响应。
 
-[recovery_fixtures.py](recovery_fixtures.py) 构造无真实凭据的完整 Daily／Monitor 快照输入；不导入用例或联网。
-
 ## 对外接口
 
 `repository_root(start: Path) -> Path` 从指定文件所在目录向上查找最近同时含 agent_engine.py 文件及 quantagent_platform、recipes、tests 目录的根，找不到抛 FileNotFoundError；`ROOT` 是本文件定位的仓库根，与 cwd 无关。
@@ -42,9 +40,7 @@ SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, ret
 
 API 捕获与固定预期比较见 [D003](../../docs/features/d003-api-composition.md)；它依赖测试环境的 FastAPI/Pydantic 版本，不证明真实服务验收。
 
-recovery_fixtures.isolated_engine 使用独立加载的引擎、临时授权目录、合成配置及外部服务替身；退出时恢复环境和公开工厂配置，供恢复集成测试复用。
-
-recovery_fixtures 同时供 Daily 和 Monitor 使用，各实例和工厂在测试结束恢复；推理／网络为合成替身，文件和恢复库为真实临时存储。
+[recovery_fixtures.py](recovery_fixtures.py) 提供合成快照、isolated_engine 和 recovery_child。隔离配置／SDK／公开工厂，支持真实临时存储和子进程退出测试；外部服务不联网，不导入 TestCase。
 
 ## 已知限制
 
