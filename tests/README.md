@@ -66,6 +66,8 @@
 
 [D003](../docs/features/d003-api-composition.md) 验证 API 静态边界、共享类型身份、原 HTTP 契约、可选依赖启动、存储授权与 worker 关闭；既有提交和任务用例继续覆盖幂等、取消、失败与重启。
 
+[D004](../docs/features/d004-sec-contracts.md) 增加 SEC 响应契约的静态边界、旧别名及不可变字段、独立模块导入和原字节上限检查；实际启动组装仍允许加载具体插件。
+
 ## 已知限制
 
 当前部分符合，剩余问题见 [精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

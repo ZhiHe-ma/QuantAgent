@@ -23,11 +23,15 @@ class P5ArchitectureTests(unittest.TestCase):
         for path in paths:
             self.assertTrue((ROOT / path).is_file(), f"missing pure contract: {path}")
         graph = collect({path: (ROOT / path).read_text(encoding="utf-8") for path in paths})
-        for module in graph["modules"].values():
+        allowed = {
+            "quantagent_platform.p5_ports": {"quantagent_platform.contracts"},
+            "quantagent_platform.sec_source_identities": {"quantagent_platform.sec_response_contracts"},
+        }
+        for name, module in graph["modules"].items():
             self.assertFalse(any(edge["dynamic"] for edge in module["imports"]))
             self.assertLessEqual({edge["target"] for edge in module["imports"]
                                   if edge["target"].startswith("quantagent_platform")},
-                                 {"quantagent_platform.contracts"})
+                                 allowed[name])
 
 
 if __name__ == "__main__":

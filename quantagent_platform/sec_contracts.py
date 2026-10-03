@@ -10,7 +10,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .contracts import ContractError, DataPacket, parse_aware_timestamp
-from .sec_client import MAX_RESPONSE_BYTES, SEC_URLS, SecResponse
+from .sec_response_contracts import MAX_RESPONSE_BYTES, SEC_URLS, SecResponse
 
 
 SEC_FACTS_CONTRACT = "quantagent.sec_company_facts.v1"

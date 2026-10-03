@@ -46,8 +46,24 @@
         "quantagent_platform.sec_contracts"
       ],
       "allows": [
-        "packet-contracts"
+        "packet-contracts",
+        "sec-response-contracts"
       ],
+      "readme": "quantagent_platform/README.md",
+      "data_owner": "QuantAgent: public research and audit",
+      "assets": [],
+      "external_dependencies": []
+    },
+    {
+      "id": "sec-response-contracts",
+      "modules": [
+        "quantagent_platform.sec_response_contracts"
+      ],
+      "kind": "contract",
+      "public_modules": [
+        "quantagent_platform.sec_response_contracts"
+      ],
+      "allows": [],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],
@@ -252,7 +268,8 @@
         "plugin-ports",
         "sec-contracts",
         "sec-domain",
-        "sec-source-identities"
+        "sec-source-identities",
+        "sec-response-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -264,7 +281,9 @@
       "modules": ["quantagent_platform.sec_source_identities"],
       "kind": "contract",
       "public_modules": ["quantagent_platform.sec_source_identities"],
-      "allows": [],
+      "allows": [
+        "sec-response-contracts"
+      ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
       "assets": [],

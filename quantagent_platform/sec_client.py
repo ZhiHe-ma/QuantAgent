@@ -6,25 +6,12 @@ import hashlib
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable
 
 from .plugins import PluginError
+from .sec_response_contracts import MAX_RESPONSE_BYTES, SecResponse
 from .sec_source_identities import SEC_URLS
-
-
-MAX_RESPONSE_BYTES = 8 * 1024 * 1024
-
-
-@dataclass(frozen=True, repr=False)
-class SecResponse:
-    kind: str
-    cik: str
-    url: str
-    raw: bytes
-    sha256: str
-    retrieved_at: str
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):

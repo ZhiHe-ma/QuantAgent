@@ -76,14 +76,6 @@
       "task": "D005"
     },
     {
-      "rule": "dependency",
-      "source": "quantagent_platform.sec_contracts",
-      "target": "quantagent_platform.sec_client",
-      "member": "",
-      "reason": "Move SEC response contracts out of the concrete transport client. Preserved as exact legacy debt; does not authorize new references.",
-      "task": "D004"
-    },
-    {
       "rule": "dynamic-import",
       "source": "agent_engine",
       "target": "argparse",

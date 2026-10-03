@@ -9,6 +9,7 @@
 - `packet-contracts`：[quantagent_platform.contracts](contracts.py)。
 - `research-contracts`：[quantagent_platform.research_contracts](research_contracts.py)。
 - `sec-contracts`：[quantagent_platform.sec_contracts](sec_contracts.py)。
+- `sec-response-contracts`：[sec_response_contracts](sec_response_contracts.py)，不可变原始响应、读取上限与固定来源 URL。
 - `plugin-ports`：[quantagent_platform.plugins](plugins.py)。
 - `daily-domain`：[quantagent_platform.daily_workflow](daily_workflow.py)。
 - `sec-domain`：[quantagent_platform.sec_analysis](sec_analysis.py)。
@@ -55,11 +56,15 @@
 
 `RecipeRunner(registry)` 使用显式注册表；原 `RecipeRunner()`、`AgentRuntime()` 和 `default_registry()` 由包入口安装的工厂提供默认值，每次创建独立注册表。`bootstrap.build_default_registry()` 保留原目录校验；`install_default_registry()` 仅注入工厂，导入时不读取目录、不构造插件。自定义启动可通过 `runner.configure_default_registry(factory)` 注入，显式注册表优先。
 
+Windows 原子状态写入的并发读句柄问题已在本批回归中复现，修复与边界证据见 [D004 Task 2](../docs/features/d004-sec-contracts.md)；实现和验收后同步本节实际行为。
+
 `P5Coordinator(..., services=...)` 可注入所属存储接口；默认由包入口安装 `LocalP5Services`，启动只绑定实现，不创建目录或打开数据库。创建协调器仍准备运行根及账本，执行仍写入原研究、交接与审计文件。`RoutePolicy.from_bytes(raw)` 校验有界策略；`load(path)`、`create_handoff(...)`、`verify_handoff(...)` 接受可选存储接口，校验失败继续抛 `HandoffError`。原 `p5_registry.ApprovedRun/SecEvidence/ApprovedSourceError/strict_json`、`p5_ledger.LedgerError` 和 `sec_client.SEC_URLS` 导入路径保留，实际类型归所属契约。自定义全局注入仅在可信启动阶段完成；不用于跨账户切换或运行中热替换，也不承诺旧 Python pickle 的跨版本恢复。
 
 原 `result_api.create_app(config, submission=None)` 委托已注入的应用工厂；默认 `api_bootstrap.build_api_app()` 按原顺序安装结果、提交和任务路由。包入口只绑定工厂，核心导入不加载可选 HTTP 依赖、创建应用、目录或 worker。共享模型、错误、`ApiConfig` 和 `RegisteredFixture` 的原导入路径保留别名；`SubmissionConfig` 仍执行原样本白名单、大小和哈希校验。自定义工厂通过 `api_ports.configure_api_app_factory()` 在可信启动阶段绑定，不用于运行中切换账户。
 
 `ResultStore.load_state(run_id, requester_subject)` 保留原授权校验；`summary_from_state()` 只格式化可信内部调用者已获授权的状态，不新增原始状态 HTTP 接口。`api_storage.read_bounded()`、`api_requests.decode_fixture()` / `parse_submission_request()` 保留原读取上限与错误语义。
+
+`SecResponse` 保留六项位置参数及不可变、不展开响应正文的原语义，实际类型归 `sec_response_contracts`；原 `sec_client` / `sec_contracts` 类型与常量、`sec_source_identities.SEC_URLS` 继续导出同一对象。`normalize_sample()` 保留严格 JSON、来源、时间、哈希和大小校验；DTO 本身不执行准入或网络读取。
 
 ## 依赖规则
 
@@ -68,6 +73,8 @@
 P5 校验及工作流引用 ports，具体 IO 实现归 p5-storage；原文件链接、大小、替换与哈希检查保留。P5 ports 只引用 Packet，SEC 身份常量无业务或 SDK 引用。进程启动沿用包入口组装默认实现；显式协调器接口用于本进程，不替换 worker 的子进程实现。
 
 三个 API 不互相导入，组装归 api-composition；请求准入和存储仍归 http-api，跨文件使用其公开接口。共享 API 契约无 IO 或工作流引用；组装器的函数内导入仍计入静态门禁。
+
+SEC 标准化直接引用纯响应契约，不再引用具体客户端；纯响应文件只依赖标准库 dataclass。既有启动组装仍可导入具体插件和客户端，独立契约检查与整个包启动的检查分别记录。
 
 ## 数据与权限
 
@@ -82,6 +89,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 [D002 验收](../docs/features/d002-p5-boundaries.md) 核对 P5 边界、固定合成回证与原账本语义；测试入口见 [P5 集成](../tests/integration/p5/README.md)。
 
 [D003 验收](../docs/features/d003-api-composition.md) 比较重构前 HTTP schema、响应、错误与缓存头，覆盖可选依赖、工厂注入、存储授权和关闭行为；入口见 [API 组装测试](../tests/integration/test_api_composition.py)。
+
+[D004 验收](../docs/features/d004-sec-contracts.md) 核对旧类型身份、原 Packet、共享上限及无客户端的契约导入；原 SEC、P5 和完整离线回归保持。
 
 ## 已知限制
 
