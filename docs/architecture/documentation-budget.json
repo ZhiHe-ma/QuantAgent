@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "document": {
+    "max_lines": 160,
+    "max_characters": 9000
+  },
+  "context": {
+    "max_lines": 300,
+    "max_characters": 15000
+  }
+}

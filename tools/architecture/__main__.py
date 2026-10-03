@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+from .budget import POLICY as DOCUMENT_BUDGET, check as check_budget, load_policy, reading_bundle
 from .documentation import check as check_docs
 from .graph import excluded_path
 from .linter import run as run_linter
@@ -49,11 +50,22 @@ def main(argv=None) -> int:
     parser.add_argument("--branch", default=os.environ.get("ARCHITECTURE_BRANCH"))
     parser.add_argument("--mode", choices=("branch", "merged"))
     parser.add_argument("--inventory", action="store_true", help="report raw violations; does not approve exceptions")
+    parser.add_argument("--context-for", action="append", metavar="CAPABILITY", help="report a deduplicated document reading plan; repeat for multiple capabilities")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args(argv)
+    if args.inventory and args.context_for:
+        parser.error("--inventory and --context-for cannot be combined")
     root = args.root.resolve()
     try:
         registry = json.loads((root / args.registry).read_text(encoding="utf-8-sig"))
+        if args.context_for:
+            result = reading_bundle(root, registry, args.context_for, load_policy(root))
+            if args.report:
+                report = args.report if args.report.is_absolute() else root / args.report
+                report.parent.mkdir(parents=True, exist_ok=True)
+                report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 1 if result["errors"] else 0
         result = inspect(root, registry)
         if args.inventory:
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -68,7 +80,9 @@ def main(argv=None) -> int:
             raise ValueError("invalid legacy baseline")
         prior_registry = base_json(root, revision, args.registry)
         prior_baseline = base_json(root, revision, BASELINE)
+        budget = check_budget(root, registry, load_policy(root, previous=base_json(root, revision, DOCUMENT_BUDGET)))
         errors = []
+        errors.extend(budget["errors"])
         if (prior_registry is None) != (prior_baseline is None):
             raise ValueError("target revision contains an incomplete governance baseline")
         approved = prior_baseline["exceptions"] if prior_baseline is not None else None
@@ -94,7 +108,8 @@ def main(argv=None) -> int:
             errors.append("Import Linter failed; see report output")
         result.update({"status": "FAIL" if errors else ("PARTIAL_COMPLIANCE" if baseline["exceptions"] else "PASS"),
                        "base_commit": revision, "branch": branch, "errors": errors,
-                       "legacy_count": len(baseline["exceptions"]), "import_linter": linter})
+                       "legacy_count": len(baseline["exceptions"]), "import_linter": linter,
+                       "documentation_budget": budget})
         if args.report:
             report = args.report if args.report.is_absolute() else root / args.report
             report.parent.mkdir(parents=True, exist_ok=True)

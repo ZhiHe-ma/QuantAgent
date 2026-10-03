@@ -751,6 +751,7 @@
         "tools.architecture.graph",
         "tools.architecture.policy",
         "tools.architecture.documentation",
+        "tools.architecture.budget",
         "tools.architecture.linter",
         "tools.architecture.__main__"
       ],
@@ -761,6 +762,7 @@
         "tools.architecture.graph",
         "tools.architecture.policy",
         "tools.architecture.documentation",
+        "tools.architecture.budget",
         "tools.architecture.linter",
         "tools.architecture.__main__"
       ],

@@ -78,6 +78,8 @@ Monitor 用 `python -m unittest tests.integration.test_monitor_recovery tests.te
 
 R001 入口见 [恢复功能](../quantagent_platform/recovery/README.md)：单元／契约／架构、Daily／Monitor 集成和真实子进程中断／并发测试。使用合成外部服务与真实临时文件、SQLite、OS 锁；结果见 [R001](../docs/features/r001-recovery-resume.md)。
 
+[文档预算测试](architecture/test_documentation_budget.py)验证当前文档篇幅、去重阅读清单、目标限额收缩和现有门禁自动拒绝超限；不执行产品代码或联网。
+
 ## 已知限制
 
-当前部分符合，剩余问题见 [精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。
+当前架构状态与存量见[共同规范](../docs/ARCHITECTURE.md)和[精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

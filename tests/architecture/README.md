@@ -7,6 +7,7 @@
 ## 文件导航
 
 - [test_guardrails.py](test_guardrails.py)：门禁回归，包括合法启动注入、非法核心反向引用、包根绕过及原登记关系保持。
+- [test_documentation_budget.py](test_documentation_budget.py)：真实文档和临时 Git 仓库验证字符／换行计量、去重、篇幅／合计超限、历史保留、政策收缩和只读 CLI。
 - [test_p5_boundaries.py](test_p5_boundaries.py)：静态检查 P5 校验/工作流不引用具体存储或私有成员；ports 仅允许 Packet，SEC 来源别名仅允许纯响应契约。原启动矩阵按 D001 前 42 项能力固定，新增能力不混入历史范围。
 - [test_api_boundaries.py](test_api_boundaries.py)：检查源码无循环、API 不相互导入或调用存储私有成员，共享契约与工厂接口不引用 IO、工作流或运行后端。
 - [test_sec_boundaries.py](test_sec_boundaries.py)：检查 SEC 响应契约仅用标准库、标准化不引用具体客户端；函数内和类型检查导入均按源码统计。

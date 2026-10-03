@@ -6,11 +6,13 @@
 
 ## 文件导航
 
-[components.json](components.json)登记能力；[legacy-baseline.json](legacy-baseline.json)保留存量；[remediation.md](remediation.md)安排整改。
+[components.json](components.json)登记能力；[legacy-baseline.json](legacy-baseline.json)保留存量；[remediation.md](remediation.md)安排整改；[documentation-budget.json](documentation-budget.json)保存当前文档及阅读清单限额。
 
 ## 对外接口
 
 components version=1：能力包含 id、kind、modules、public_modules、allows、external_dependencies、readme、data_owner、assets。目录资产以 `/` 结尾，directory_roots 发现需要独立登记及 README 的子目录。基线包含起点提交、规则、引用边/成员、理由和整改任务。
+
+documentation-budget version=1：document／context 各含正整数 max_lines、max_characters。现有目标政策的限额只保持或缩减；计量与范围见工具说明。
 
 ## 依赖规则
 
