@@ -6,7 +6,7 @@
 {
   "branch": "refactor/d006-legacy-workflows",
   "base_commit": "ae9024208a002d26fd533a1148a37736a52d9306",
-  "tested_commit": "9f9ccd8d10e97f30a87bc9c531b22410a3063d27",
+  "tested_commit": "843c3bbc7324a536b465ee5cc96614b3287ac459",
   "initial_tested_commit": "9f9ccd8d10e97f30a87bc9c531b22410a3063d27",
   "components": ["legacy-engine", "signal-audit", "signal-audit-contracts", "daily-domain", "compatibility-exports", "legacy-ports", "legacy-workflows", "legacy-composition", "architecture", "acceptance-tests"],
   "readme_unchanged": {
@@ -41,13 +41,13 @@ Global Constraints: 不改旧模块层级、归属、原能力两两允许关系
 
 原定向回归 38 项、0 失败，20.235 秒；初次命令误指不存在的 `tests.test_rss`，记录为 24 项通过及 1 项加载错误，已更正实际测试路径并重跑。不可变基线：162 原资产、34 原产品定义、53 原能力/2,809 组允许关系及正式导出。
 
-新 8 项测试先 RED：三类旧违规和缺失能力触发 14 次预期断言失败，无测试导入错误。实现后的首轮新样本字段/表名不符原数据契约，修正新样本；临时数据库连接必须显式关闭，修正新测试清理。原测试与产品规则不变。最终定向命令 `python -m unittest tests.architecture.test_legacy_boundaries tests.contract.test_legacy_ports tests.test_dry_run tests.test_idempotency_error_isolation tests.test_signal_audit tests.integration.audit.test_signal_audit_integration -v`：46 项、0 失败、无跳过，1.442 秒。兼容核对通过；仅两项原流程迁移，其他原方法/资产/允许矩阵保持。
+新 8 项测试先 RED：三类旧违规和缺失能力触发 14 次预期断言失败，无测试导入错误。实现后的首轮新样本字段/表名不符原数据契约，修正新样本；临时数据库连接必须显式关闭，修正新测试清理。原测试与产品规则不变。初始实现的定向命令 `python -m unittest tests.architecture.test_legacy_boundaries tests.contract.test_legacy_ports tests.test_dry_run tests.test_idempotency_error_isolation tests.test_signal_audit tests.integration.audit.test_signal_audit_integration -v`：46 项、0 失败、无跳过，1.442 秒。兼容核对通过；仅两项原流程迁移，其他原方法/资产/允许矩阵保持。
 
 初始完整离线 `python -m unittest discover -s tests -v` 实际运行 **340 项、0 失败、7 项原环境跳过，70.446 秒**；门禁 59 模块、0 存量、无循环或错误、Import Linter 返回 0。这轮结果对应 `initial_tested_commit`，完整日志为 `full-tests.log`。
 
 独立审查固定范围 `ae90242..7fbe8fc`：Critical 0、Important 1、Minor 0。审查者实际重跑原定向 46 项通过，五组 BASE/HEAD 失败路径结果一致；发现标准库环境独立导入审计失败，原因是包初始化引入 PyYAML。审查报告对当时版本结论为需修复；未再次派审查者。修复回归先运行 RED：`python -S` 子进程实际缺少 `yaml`，1 项失败；基础异常移入已登记的包外纯契约后，实际 SQLite 初始化、类型身份和独立加载回归通过，最终定向 **47 项、0 失败、无跳过，2.206 秒**。
 
-同一修复工作树的最终完整命令仍为 `python -m unittest discover -s tests -v`：**341 项、0 失败、7 项原环境跳过，69.939 秒**；日志 `final-full-tests.log`。最终门禁 **60 模块、0 存量、无循环或错误、Import Linter 返回 0**；原 162 项资产、34 项定义、2,809 组允许关系及正式导出复核通过。跳过：真实 Qlib、真实 bt、私有 P4、三项 Windows 链接权限及临时卷未启用 8.3 文件名。修复提交固定后更新 `tested_commit`；审查修复日志和裁决归档保留在上述忽略目录。
+最终完整命令仍为 `python -m unittest discover -s tests -v`：**341 项、0 失败、7 项原环境跳过，69.939 秒**；日志 `final-full-tests.log`。最终门禁 **60 模块、0 存量、无循环或错误、Import Linter 返回 0**；原 162 项资产、34 项定义、2,809 组允许关系及正式导出复核通过。跳过：真实 Qlib、真实 bt、私有 P4、三项 Windows 链接权限及临时卷未启用 8.3 文件名。这轮结果对应 `tested_commit`，后续只补录验收文档；审查修复日志和裁决归档保留在上述忽略目录。
 
 ### Task 1: 迁移执行顺序，注入原审计实现
 
@@ -59,7 +59,9 @@ Interfaces: Produces `MonitorPorts`、`DailyPorts`、`LegacyAuditBindings`、`co
 - [x] 新静态测试拒绝旧两条越界/动态导入，并验证 ports 无 IO、工作流仅消费公开回调；新消费测试覆盖自定义审计绑定、惰性启动/错误、实际临时数据库和独立进程加载。Expected: 对缺失功能及三条原违规发生断言失败，不以测试导入错误替代 RED。
 - [x] 机械迁移 Monitor/Daily 顺序到工作流；文件操作保留在入口回调，审计由可信惰性工厂注入，`argparse` 普通导入。Expected: 新测试和全部原引擎用例通过；原其余方法、存储方法、质检、SQL 与固定资产保持。
 - [x] 登记三个真实能力，仅删除三条已消除基线；同步 README、整改清单和当前架构状态。执行原定向回归、新测试及 `python -m unittest discover -s tests -v`。Expected: 无失败；原环境跳过单列；真实 IO 仍归原模块。
-- [ ] 执行 `python -m tools.architecture --base-ref ae9024208a002d26fd533a1148a37736a52d9306 --branch refactor/d006-legacy-workflows --report artifacts/architecture/d006-legacy-workflows/gate.json`；固定源码/测试提交，独立审查、验收记录与归档。Expected: 存量 3→0，无循环/新增违规/放宽规则；Import Linter 返回 0，保留本地分支及工作树。
+- [x] 执行 `python -m tools.architecture --base-ref ae9024208a002d26fd533a1148a37736a52d9306 --branch refactor/d006-legacy-workflows --report artifacts/architecture/d006-legacy-workflows/gate.json`；固定源码/测试提交，独立审查、验收记录与归档。Expected: 存量 3→0，无循环/新增违规/放宽规则；Import Linter 返回 0，保留本地分支及工作树。
+
+本批保留本地分支与工作树，未推送、合并或部署。执行档案 5 项逐一校验 SHA-256，记录 12 项裁决，无本批待处理 Minor；验收收尾仅删除本批专属执行临时目录，原用户删除不纳入提交。
 
 Review Focus: 消息未确认、Memory/日报/审计失败时的真实副作用与顺序；Monitor 重试恢复/毒新闻隔离和 dry-run；原审计类型身份、默认路径、原始 source_sha256 与版本标识；入口按文件加载及 signal_audit 优先导入的初始化顺序；原 Python/CLI/HTTP、固定配方、权限及原允许矩阵兼容。
 
