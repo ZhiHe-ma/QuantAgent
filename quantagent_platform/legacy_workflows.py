@@ -313,5 +313,3 @@ def run_daily_pipeline(ports: DailyPorts):
         "capsule": capsule,
         "audit": audit_result,
     }
-
-

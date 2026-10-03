@@ -60,7 +60,9 @@
     "recovery-package"
   ],
   "readme_unchanged": {
-    "architecture": "本批只新增整合说明及文档导航，门禁接口、规则、能力登记和预算未改变，tools/architecture/README.md 无需再次更新；整体目标差异中该 README 已更新。"
+    "architecture": "本批只补整合说明、导航及发布验收记录，门禁接口、规则、能力登记和预算未改变，tools/architecture/README.md 无需再次更新；整体目标差异中该 README 已更新。",
+    "legacy-workflows": "发布前仅删除 legacy_workflows.py 末尾多余空行，不改变接口、行为、依赖或权限，quantagent_platform/README.md 无需再次更新；整体目标差异中该 README 已更新。",
+    "acceptance-tests": "发布前仅删除 tests/support/sec_samples.py 末尾多余空行，不改变样本构造、测试入口、依赖或权限，tests/README.md 无需再次更新；整体目标差异中该 README 已更新。"
   }
 }
 ```
@@ -69,11 +71,13 @@
 
 用户同意补齐整体分支说明、对齐实际目标并做固定版本整合验收。本文是当前完整源分支的汇总入口；[I001](i001-integration-review.md)、[I002](i002-monitor-dry-run.md)及各批记录保留原范围和结果，不重写历史。
 
-实施步骤：核实远端目标／重放初始扫描 → 覆盖全部受影响能力及 README 决策 → 固定提交的离线测试、完整门禁与一次独立只读整合审查。仅补文档导航，不修改产品、测试、规则、权限或历史基线；不上传、合并或部署。原用户删除保持未暂存。
+原本地整合步骤：核实远端目标／重放初始扫描 → 覆盖全部受影响能力及 README 决策 → 固定提交的离线测试、完整门禁与一次独立只读整合审查。该阶段仅补文档导航，未修改产品、测试、规则、权限或历史基线，也未上传、合并或部署。原用户删除保持未暂存。
+
+后续用户已同意：清理两处末尾空行 → 复核本地验收 → 推送当前分支至 ZhiHe-ma/QuantAgent → 创建面向 main 的草稿 PR → 跟进 Windows／Linux CI。此授权不包含合并或部署；发布前逐项记录 README 无需更新的理由。
 
 ## 涉及模块
 
-相对目标 main 的完整差异涉及 52 项能力，JSON 逐项登记；它们的所属 README 均已在整体差异中新增或更新。本批只改整合索引，JSON 另列 architecture 工具 README 无需再次更新的理由，便于后续增量提交核对。代码范围、公开入口及数据归属仍以[能力登记](../architecture/components.json)为准；本文不复制每项接口。
+相对目标 main 的完整差异涉及 52 项能力，JSON 逐项登记；它们的所属 README 均已在整体差异中新增或更新。原本地阶段只改整合索引，发布准备另清理两个 Python 文件的末尾空行；JSON 按能力记录 README 决策。代码范围、公开入口及数据归属仍以[能力登记](../architecture/components.json)为准；本文不复制每项接口。
 
 历史入口：[治理](architecture-guardrails.md)、[文件分类](file-classification.md)、[D001](d001-runner-composition.md)、[D002](d002-p5-boundaries.md)、[D003](d003-api-composition.md)、[D004](d004-sec-contracts.md)、[D005](d005-adapter-contracts.md)、[D006](d006-legacy-workflows.md)、[文档预算](doc-context-budgets.md)、[R001](r001-recovery-resume.md)、[R002](r002-recovery-read-snapshot.md)、[I002](i002-monitor-dry-run.md)。共同规范：[架构](../ARCHITECTURE.md)、[文件与文档归属](../DEVELOPMENT_TESTING.md)。
 
@@ -81,7 +85,7 @@
 
 完整变更建立精确架构／文档门禁，按能力拆分组装、契约、适配器及旧工作流，增加单机恢复与文档读取预算；现有公开 Python／CLI／HTTP／固定配方行为由兼容测试核对。I002 恢复 Monitor 只读预览、同批／跨轮去重与限次，并固定契约测试时钟。QuantAgent 公共研究与 OpenStock 私有数据的归属保持；学习业务、自动规则修改和交易未实现。
 
-本批仅添加汇总和阅读导航。Ruling: 实际整合目标使用本次 fetch 核实的 origin/main ccded244，保留落后的本地 main c445fac 和历史 origin_commit — 两者相差四个已在远端 main 的提交；若远端推进，必须对新的实际目标重新验收。
+原本地阶段仅添加汇总和阅读导航；发布前格式整理不改变业务行为。Ruling: 实际整合目标使用 fetch 核实的 origin/main ccded244，保留落后的本地 main c445fac 和历史 origin_commit — 两者相差四个已在远端 main 的提交；若远端推进，必须对新的实际目标重新验收。
 
 ## 新增依赖
 
@@ -123,6 +127,6 @@
 
 ## 遗留问题
 
-I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。当前源分支未上传；远端 Windows／Linux CI 和保护须在实际提交上核对，不能称已合入或生产通过。真实集成及恢复／产品未测范围见上表。
+I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。当前进入用户已授权的草稿 PR 发布准备；最新提交的 Windows／Linux CI 和保护仍待实际核对，未合入或部署。真实集成及恢复／产品未测范围见上表。
 
-历史 Minor 延后：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 的末尾空行仍在（whole-diff-check.log）；不影响当前引用和业务验收，合入前整理。本批不扩展为产品格式清理。
+历史 Minor：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 存在末尾空行（whole-diff-check.log）。本次发布准备只处理这两处，新的命令、版本和结果另行记录，历史日志保留。

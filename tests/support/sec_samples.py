@@ -61,5 +61,3 @@ def make_responses(payloads=None, *, retrieved_at=None):
         rows.append(SecResponse(kind, cik, url, raw, hashlib.sha256(raw).hexdigest(),
                                 retrieved_at))
     return rows
-
-
