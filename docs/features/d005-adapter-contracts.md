@@ -45,7 +45,11 @@ Task 1（源码提交 `e4ccd9af4b4f84c99c27940bb41379364333c0e9`）：原回归 
 
 Task 2：`python -m unittest tests.architecture.test_adapter_boundaries tests.contract.test_worker_ports tests.test_platform tests.test_daily_plugins tests.test_outcome_replay tests.test_qlib_plugins tests.test_bt_plugins -v`：47 项、0 失败、2 跳过，1.662 秒。新测试初始 RED 有 9 次预期断言失败；恢复原两条运行器引用后，独立进程/静态检查再次失败，恢复新导入后 9/9 通过，1.780 秒。最终完整离线命令：332 项、0 失败、原 7 项环境跳过，69.222 秒。门禁通过，56 模块、3 条仅属 D006 的精确存量、无循环，Import Linter 返回 0；没有新增豁免。
 
-`python artifacts/architecture/d005-adapter-contracts/verify_compatibility.py` 实际核对 174 个原资产、28 项原定义、2,500 组原允许关系、原常量及正式导出；原插件和 worker 方法体保持。两步原始日志均保留，最终完整回归源码/测试对应首个 JSON 的 `tested_commit`，后续仅补录文档；独立审查尚未运行。
+`python artifacts/architecture/d005-adapter-contracts/verify_compatibility.py` 实际核对 174 个原资产、28 项原定义、2,500 组原允许关系、原常量及正式导出；原插件和 worker 方法体保持。两步原始日志均保留，最终完整回归源码/测试对应首个 JSON 的 `tested_commit`，后续仅补录文档。
+
+独立只读审查范围 `d86787b..2725ec2`：Critical 0、Important 0、Minor 1；审查者实际执行 `python -B -m unittest tests.architecture.test_adapter_boundaries tests.contract.test_worker_ports tests.test_qlib_plugins tests.test_bt_plugins -v`，22 项、0 失败、2 项原真实后端跳过，1.264 秒；另 11 项临时文件/子进程探针通过，覆盖响应和两路日志超限、JSON/UTF-8、缺失响应、超时、环境、哈希、DTO 与工厂异常。完整命令、工具输出标识及审查范围保存在同一证据目录的 `final-review.md`；全量结果由审查者复核日志，不重复计为新运行。基线、静态边界、diff 检查和只读前后指纹通过。
+
+本批 7 份执行工作文件已归档至同一证据目录的 `execution/`，SHA-256 逐文件一致；`manifest.json` 保存完整裁定及暂缓项。本地分支和工作树保留，未推送、合并或部署。
 
 ### Task 1: 稳定信号与报告版本归属
 
@@ -69,7 +73,7 @@ Interfaces: Consumes Task 1 原报告契约；Produces `WorkerExecution`、`Work
 - [x] 移动原 DTO，添加纯接口和启动工厂；原运行函数不改，只增加无状态服务实现与启动绑定。两个插件仅改导入，不改方法体或构造形式。Expected: 新契约测试及原 fake-worker 回归通过。
 - [x] 验证服务未绑定或非法工厂明确失败；既有包启动后单独重载 ports/插件不直接依赖运行器。保持原 10 MiB 输入、2 MiB 响应、64 KiB 日志、超时、哈希、错误和最小环境；全量回归涵盖原权限预检及 CLI/HTTP。
 - [x] 登记两个新能力并删除仅剩的两条 D005 基线，更新所属 README/整改状态。运行 `python -m unittest discover -s tests -v` 和上述完整门禁。Expected: 全部原离线断言继续通过；跳过逐项记录；剩余 3 条仅属 D006，无循环或新增违规。
-- [ ] 单独提交源码/测试，记录实际验收 SHA；一次独立只读审查整个分支，归档本批执行记录，保留本地分支和工作树。
+- [x] 单独提交源码/测试，记录实际验收 SHA；一次独立只读审查整个分支，归档本批执行记录，保留本地分支和工作树。
 
 Review Focus: 旧版本标识和真实消费结果；原 WorkerExecution 类型身份/不可变字段及公开函数参数；启动仅绑定、无参插件与显式自定义工厂并存；输入/日志/响应大小、超时、哈希和环境隔离错误语义；原 Python 导出、CLI/HTTP、目录配方与权限审计；旧登记允许关系不扩张，IO 实现仍归实际适配器。
 
@@ -80,3 +84,5 @@ Review Focus: 旧版本标识和真实消费结果；原 WorkerExecution 类型�
 ## 遗留问题
 
 当前仍部分符合，D006 继续按精确基线整改。真实 SEC、私有 P4、真实 Qlib/bt、Linux/远端 CI、部署和生产未运行；离线 worker 替身只验证宿主协议，不验证第三方研究或回测引擎。单独重载检查区分契约依赖和既有启动组装，不声称整个包从不导入具体执行代码。
+
+审查遗留 Minor：Task 2 历史计划步骤将两路默认输入上限概括为 10 MiB；实际保留原值为 **Qlib 10 MiB、bt 20 MiB**。该行更正暂缓，验收以此处实际值为准。默认工厂仅用于可信进程启动，调用时分别取得服务；不承诺账户热切换、跨进程工厂继承、深层不可变或跨版本 pickle。原有 stat 后文件增长、worker 写盘期间日志增长的资源限制语义不变，本批未证明恶意 worker 的硬资源配额。
