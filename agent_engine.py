@@ -232,6 +232,91 @@ class QuantAgent:
         return self.signal_audit_store.record_recovered_signal(payload["run"], payload["signal"], payload["factors"],
                         expected_canonical_signal_id=payload["expected_canonical_signal_id"])
 
+    def _strict_projection_json(self, path, default):
+        data = self._projection_bytes(path)
+        return self._strict_json_text(data) if data is not None else default
+
+    def _capture_monitor_unlocked(self, date):
+        state = {"buffer": self._strict_projection_json(self._get_buffer_path(date), []),
+                 "dedup": self._strict_projection_json(self.dedup_file, []),
+                 "fingerprint": self._strict_projection_json(self.fingerprint_file, []),
+                 "quarantine": self._strict_projection_json(self.failed_news_file, {})}
+        for name in ("dedup", "fingerprint"):
+            value = state[name]
+            if not isinstance(value, list) or any(not isinstance(x, str) or not x for x in value) or len(set(value)) != len(value):
+                raise RecoveryInvalidState("invalid news identity projection")
+        buffer = state["buffer"]
+        if not isinstance(buffer, list) or any(not isinstance(x, dict) for x in buffer):
+            raise RecoveryInvalidState("invalid news buffer")
+        seen = {}
+        for factor in buffer:
+            fingerprint = factor.get("fingerprint")
+            if fingerprint:
+                if not isinstance(fingerprint, str) or fingerprint in seen and seen[fingerprint] != factor:
+                    raise RecoveryInvalidState("conflicting buffered factor")
+                seen[fingerprint] = factor
+        failures = state["quarantine"]
+        if not isinstance(failures, dict):
+            raise RecoveryInvalidState("invalid quarantine projection")
+        for key, failure in failures.items():
+            if (not isinstance(failure, dict) or failure.get("fingerprint", key) != key
+                    or type(failure.get("attempts")) is not int or failure["attempts"] < 0
+                    or failure.get("status") not in {"retry_pending", "quarantined"}):
+                raise RecoveryInvalidState("invalid news retry record")
+        return state
+
+    def capture_monitor_state(self, date):
+        with self.recovery_store.lock("projection") if not self.dry_run else nullcontext():
+            return self._capture_monitor_unlocked(date)
+
+    def project_news_record(self, record, projection):
+        if self.dry_run:
+            return StepResult("failed", {"error_code": "dry_run"})
+        if projection not in {"buffer", "dedup", "fingerprint", "quarantine"}:
+            raise RecoveryInvalidState("unknown news projection")
+        try:
+            body = self._recovery_payload(record.snapshot)
+            if record.snapshot.kind != "monitor":
+                raise RecoveryInvalidState("not a Monitor snapshot")
+            detail = next(e.detail for e in reversed(record.events) if e.step == "model" and e.status in {"succeeded", "failed"})
+            with self.recovery_store.lock("projection"):
+                state = self._capture_monitor_unlocked(body["target_date"])
+                value = state[projection]
+                path = {"buffer": self._get_buffer_path(body["target_date"]), "dedup": self.dedup_file,
+                        "fingerprint": self.fingerprint_file, "quarantine": self.failed_news_file}[projection]
+                if projection == "buffer":
+                    factor = detail["factor"]
+                    matches = [x for x in value if x.get("fingerprint") == body["fingerprint"]]
+                    if any(x != factor for x in matches):
+                        return StepResult("needs_review", {"error_code": "factor_conflict"})
+                    value = self._prune_day_buffer(value + ([] if matches else [factor]))
+                elif projection in {"dedup", "fingerprint"}:
+                    item = body["news_id"] if projection == "dedup" else body["fingerprint"]
+                    value = value + ([] if item in value else [item])
+                    if projection == "fingerprint": value = value[-50000:]
+                elif detail["decision"] in {None, "quarantined"}:
+                    news = body["news"]
+                    value[body["fingerprint"]] = {"id": body["news_id"], "fingerprint": body["fingerprint"],
+                        "source": self._clamp_str(news.get("source", "rss"), 40), "title": self._clamp_str(news.get("title", ""), 180),
+                        "url": self._clamp_str(news.get("url", ""), 240), "attempts": detail["attempts"],
+                        "last_failed_at": next(e.occurred_at for e in reversed(record.events) if e.step == "model" and e.status in {"succeeded", "failed"}),
+                        "error": "model_or_parse_failure", "raw_preview": self._clamp_str(detail["raw_result"], 240),
+                        "status": "quarantined" if detail["decision"] == "quarantined" else "retry_pending"}
+                    value = dict(list(value.items())[-1000:])
+                else:
+                    value.pop(body["fingerprint"], None)
+                target = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8")
+                current = self._projection_bytes(path)
+                if current == target or current is None and not value:
+                    return StepResult("succeeded", {"already_present": True})
+                if not self._safe_json_write(path, value):
+                    return StepResult("failed", {"error_code": "news_write_unconfirmed"})
+            return StepResult("succeeded", {})
+        except RecoveryInvalidState:
+            return StepResult("needs_review", {"error_code": "invalid_news_projection"})
+        except OSError:
+            return StepResult("failed", {"error_code": "news_io"})
+
     def recovery_channel_id(self):
         return hashlib.sha256(self.wecom_url.encode("utf-8")).hexdigest() if self.wecom_url and "None" not in self.wecom_url else None
 
@@ -284,10 +369,7 @@ class QuantAgent:
         if self.dry_run:
             print(f"🧪 [DRY_RUN] 已阻止 JSON 状态写入: {path}")
             return False
-        tmp_path = f"{path}.tmp"
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, path)
+        self._atomic_projection(path, json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8"))
         return True
 
     def _strip_json_fence(self, text):
@@ -983,7 +1065,10 @@ class QuantAgent:
 
     def run_monitor_pipeline(self):
         """Run the original sequence through explicit public workflow ports."""
-        return run_monitor_pipeline(MonitorPorts(
+        return run_monitor_pipeline(self.monitor_ports())
+
+    def monitor_ports(self):
+        return MonitorPorts(
             dedup_file=self.dedup_file,
             fingerprint_file=self.fingerprint_file,
             failed_news_file=self.failed_news_file,
@@ -1003,7 +1088,11 @@ class QuantAgent:
             prune_day_buffer=self._prune_day_buffer,
             now=datetime.now,
             sleep=time.sleep,
-        ))
+            dry_run=self.dry_run,
+            recovery=self.recovery_store,
+            capture_state=self.capture_monitor_state,
+            project_news=self.project_news_record,
+        )
 
     # =========================
     # 每日收敛层
@@ -1073,7 +1162,8 @@ def main(argv=None):
             if engine is not None:
                 store = engine.recovery_store
             result = run_recovery_action(store, action=args.action, run_id=args.run_id, reason=args.reason, dry_run=dry,
-                                         daily=engine.daily_ports() if engine else None)
+                                         daily=engine.daily_ports() if engine else None,
+                                         monitor=engine.monitor_ports() if engine else None)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return result
         engine = QuantAgent()

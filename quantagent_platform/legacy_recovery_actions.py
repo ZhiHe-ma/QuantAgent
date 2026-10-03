@@ -3,6 +3,7 @@ from datetime import datetime
 import uuid
 
 from .legacy_daily_recovery import resume_daily
+from .legacy_monitor_recovery import resume_news
 from .legacy_ports import DailyPorts, MonitorPorts
 from .recovery.contracts import (JsonObject, RecoveryAction, RecoveryEvent, RecoveryInvalidState, RecoveryStore)
 from .recovery.rules import task_resolved
@@ -42,8 +43,8 @@ def run_recovery_action(store: RecoveryStore, *, action: RecoveryAction, run_id:
         if action == "retry":
             if record.snapshot.kind == "daily" and daily is not None and daily.recovery is store:
                 return resume_daily(daily, record, explicit_retry=True)
-            if record.snapshot.kind == "monitor" and monitor is not None:
-                raise RecoveryInvalidState("Monitor resume is not yet installed")
+            if record.snapshot.kind == "monitor" and monitor is not None and monitor.recovery is store:
+                return resume_news(monitor, record)
             raise RecoveryInvalidState("retry requires matching owned recovery ports")
         if action == "abandon":
             if record.state == "completed":

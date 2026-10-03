@@ -46,7 +46,7 @@ class LegacyBoundaryTests(unittest.TestCase):
             self.assertFalse(edge["dynamic"])
             self.assertNotIn(edge["target"].split(".")[0], IO_PACKAGES)
             if edge["target"].startswith("quantagent_platform"):
-                self.assertIn(edge["target"], {"quantagent_platform.legacy_ports", "quantagent_platform.daily_workflow", "quantagent_platform.legacy_daily_recovery"})
+                self.assertIn(edge["target"], {"quantagent_platform.legacy_ports", "quantagent_platform.daily_workflow", "quantagent_platform.legacy_daily_recovery", "quantagent_platform.legacy_monitor_recovery"})
         for node in ast.walk(ast.parse(text)):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
                 self.assertNotIn(node.func.id, {"open", "__import__", "eval", "exec"})

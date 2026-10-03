@@ -308,7 +308,7 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
                 ]
             )
             engine.request_deepseek = mock.Mock(return_value="not-json")
-            engine._safe_json_write = mock.Mock()
+            engine._safe_json_write = mock.Mock(wraps=engine._safe_json_write)
 
             with mock.patch.object(self.module.time, "sleep", side_effect=StopMonitor):
                 with self.assertRaises(StopMonitor):
@@ -351,7 +351,7 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
             )
             engine.fetch_crypto_flash_news = mock.Mock(return_value=[news])
             engine.request_deepseek = mock.Mock(return_value="not-json")
-            engine._safe_json_write = mock.Mock(return_value=True)
+            engine._safe_json_write = mock.Mock(wraps=engine._safe_json_write)
 
             with mock.patch.object(self.module.time, "sleep", side_effect=StopMonitor):
                 with self.assertRaises(StopMonitor):

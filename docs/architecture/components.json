@@ -1000,13 +1000,15 @@
       "modules": [
         "quantagent_platform.legacy_workflows",
         "quantagent_platform.legacy_daily_recovery",
-        "quantagent_platform.legacy_recovery_actions"
+        "quantagent_platform.legacy_recovery_actions",
+        "quantagent_platform.legacy_monitor_recovery"
       ],
       "kind": "workflow",
       "public_modules": [
         "quantagent_platform.legacy_workflows",
         "quantagent_platform.legacy_daily_recovery",
-        "quantagent_platform.legacy_recovery_actions"
+        "quantagent_platform.legacy_recovery_actions",
+        "quantagent_platform.legacy_monitor_recovery"
       ],
       "allows": [
         "legacy-ports",

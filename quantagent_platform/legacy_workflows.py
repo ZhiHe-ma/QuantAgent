@@ -3,9 +3,12 @@ import json
 from .legacy_ports import DailyPorts, MonitorPorts
 from .daily_workflow import DAILY_SYSTEM_PROMPT, build_daily_prompt, render_daily_report
 from .legacy_daily_recovery import run_daily_recovery
+from .legacy_monitor_recovery import MONITOR_SYSTEM_PROMPT, run_monitor_recovery
 
 def run_monitor_pipeline(ports: MonitorPorts):
     """24小时常驻静默监控核心状态机"""
+    if ports.recovery is not None:
+        return run_monitor_recovery(ports)
     print("🚀 [Monitor] 实时高精度快讯监听常驻进程已成功挂载底座。进入事件循环...")
 
     processed_ids = set(ports.read_json(ports.dedup_file, []))
@@ -14,13 +17,7 @@ def run_monitor_pipeline(ports: MonitorPorts):
     if not isinstance(failed_news_records, dict):
         failed_news_records = {}
 
-    sys_prompt_monitor = (
-        "你是一个极端保守的微观量化因子标记器。请直接分析给定新闻对加密货币（主要是BTC与主流代币）价格的影响。\n"
-        "评级纪律必须极硬：Low=普通观点/行情复盘/轻微产品动态；Medium=有方向但冲击路径间接；High=有清晰、直接、可交易的价格冲击路径；Critical=只允许非线性事件，例如交易所宕机、提现暂停、重大监管裁决、ETF突发批准或否决、巨额黑客攻击、大型钱包向交易所转移、宏观数据严重超预期。\n"
-        "禁止把普通分析稿、行情直播、技术面评论、may/could/analyst 类文章评为 Critical。正常情况下 Critical 应极少出现。\n"
-        "必须输出标准 JSON，严禁 Markdown、解释性文字、多余字段。格式如下：\n"
-        '{"sentiment": "利多" | "利空" | "中性", "weight": "Critical" | "High" | "Medium" | "Low", "reason": "50字以内的极端精炼异动逻辑"}'
-    )
+    sys_prompt_monitor = MONITOR_SYSTEM_PROMPT
 
     while True:
         try:

@@ -34,6 +34,8 @@ API 路由组装与兼容证据见 [D003](../../docs/features/d003-api-compositi
 
 [test_daily_recovery.py](test_daily_recovery.py) 使用所属 ports 与真实临时文件／SQLite，确认重复恢复不研究、不增审计行；外部服务为合成替身。
 
+[test_monitor_recovery.py](test_monitor_recovery.py) 覆盖源移除／跨午夜、投影失败、旧隔离接入及预算；CLI 对应的单任务 retry 不抓新新闻、不 sleep。
+
 ## 已知限制
 
 本批是分类试点；其他平铺用例仍按测试导航保留。当前架构部分符合，存量问题不因目录整理消除。

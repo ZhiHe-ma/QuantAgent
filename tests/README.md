@@ -80,6 +80,8 @@ R001 文件、消息和审计所属接口用 `python -m unittest tests.contract.
 
 R001 Daily 通过 [test_daily_recovery.py](integration/test_daily_recovery.py) 覆盖两类边界失败、编号复用、未知消息、渠道绑定／冲突、旧历史／FORCE／终止及只读命令；底层文件和 SQLite 为真实临时存储。
 
+Monitor 用 `python -m unittest tests.integration.test_monitor_recovery tests.test_idempotency_error_isolation tests.contract.test_legacy_ports -v` 验证真实投影、跨日、预算、隔离、旧文件拒绝和单任务 retry；旧写入 mock 改为包装真实临时文件写入。
+
 ## 已知限制
 
 当前部分符合，剩余问题见 [精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

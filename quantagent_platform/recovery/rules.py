@@ -158,16 +158,19 @@ def transition(record: ExecutionRecord, event: RecoveryEvent) -> ExecutionRecord
             raise RecoveryInvalidState("only Memory can be superseded")
         if current in {"succeeded", "superseded"} and event.status == "running":
             raise RecoveryInvalidState("resolved local step cannot execute again")
+        if event.step == "model" and event.status == "failed":
+            steps["quarantine"] = "pending"
         if event.step == "model" and event.status == "succeeded":
             if detail.get("decision") not in {"pooled", "low_weight_discarded", "quarantined"}:
                 raise RecoveryInvalidState("missing frozen news decision")
             old = next((e.detail for e in record.events if e.step == "model" and e.status == "succeeded"), None)
             if old is not None and old != detail:
                 raise RecoveryConflict("news result is already frozen")
-            for step in ("dedup", "fingerprint", "quarantine"):
-                steps.setdefault(step, "pending")
-            if detail["decision"] == "pooled":
-                steps.setdefault("buffer", "pending")
+            if old is None:
+                for step in ("dedup", "fingerprint", "quarantine"):
+                    steps[step] = "pending"
+                if detail["decision"] == "pooled":
+                    steps["buffer"] = "pending"
         steps[event.step] = event.status
     else:
         raise RecoveryInvalidState("unknown recovery step")

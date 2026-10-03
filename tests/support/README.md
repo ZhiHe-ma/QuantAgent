@@ -44,6 +44,8 @@ API 捕获与固定预期比较见 [D003](../../docs/features/d003-api-compositi
 
 recovery_fixtures.isolated_engine 使用独立加载的引擎、临时授权目录、合成配置及外部服务替身；退出时恢复环境和公开工厂配置，供恢复集成测试复用。
 
+recovery_fixtures 同时供 Daily 和 Monitor 使用，各实例和工厂在测试结束恢复；推理／网络为合成替身，文件和恢复库为真实临时存储。
+
 ## 已知限制
 
 路径依赖约定的四个仓库标记；非本项目目录会失败。SEC 默认时间仍随运行时变化，需固定时传 retrieved_at。当前只整理首批支持，其他平铺测试后续随能力整改。

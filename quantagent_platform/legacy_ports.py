@@ -2,9 +2,9 @@
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Literal, Protocol
 from signal_audit_contracts import SignalAuditError
-from .recovery.contracts import (DeliveryResult, FrozenSnapshot, JsonObject,
+from .recovery.contracts import (DeliveryResult, ExecutionRecord, FrozenSnapshot, JsonObject,
                                  RecoveryStore, RecoveryStoreFactory, StepResult)
 
 
@@ -89,6 +89,10 @@ class MonitorPorts:
     prune_day_buffer: Callable[[list[dict[str, Any]]], list[dict[str, Any]]]
     now: Callable[[], datetime]
     sleep: Callable[[float], None]
+    dry_run: bool = False
+    recovery: RecoveryStore | None = None
+    capture_state: Callable[[str], JsonObject] | None = None
+    project_news: Callable[[ExecutionRecord, Literal["buffer", "dedup", "fingerprint", "quarantine"]], StepResult] | None = None
 
 
 @dataclass(frozen=True)
