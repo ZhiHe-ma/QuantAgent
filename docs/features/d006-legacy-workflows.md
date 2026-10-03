@@ -6,6 +6,7 @@
 {
   "branch": "refactor/d006-legacy-workflows",
   "base_commit": "ae9024208a002d26fd533a1148a37736a52d9306",
+  "tested_commit": "9f9ccd8d10e97f30a87bc9c531b22410a3063d27",
   "components": ["legacy-engine", "signal-audit", "daily-domain", "compatibility-exports", "legacy-ports", "legacy-workflows", "legacy-composition", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "检查器、扫描范围、依赖规则与 CI 命令不变；只登记真实新增能力和移除已消除的精确基线。"
@@ -41,7 +42,7 @@ Global Constraints: 不改旧模块层级、归属、原能力两两允许关系
 
 新 8 项测试先 RED：三类旧违规和缺失能力触发 14 次预期断言失败，无测试导入错误。实现后的首轮新样本字段/表名不符原数据契约，修正新样本；临时数据库连接必须显式关闭，修正新测试清理。原测试与产品规则不变。最终定向命令 `python -m unittest tests.architecture.test_legacy_boundaries tests.contract.test_legacy_ports tests.test_dry_run tests.test_idempotency_error_isolation tests.test_signal_audit tests.integration.audit.test_signal_audit_integration -v`：46 项、0 失败、无跳过，1.442 秒。兼容核对通过；仅两项原流程迁移，其他原方法/资产/允许矩阵保持。
 
-完整离线 `python -m unittest discover -s tests -v` 实际运行 **340 项、0 失败、7 项原环境跳过，70.446 秒**。跳过：真实 Qlib、真实 bt、私有 P4、三项 Windows 链接权限及临时卷未启用 8.3 文件名。完整架构/文档门禁通过：59 模块、0 存量、无循环或错误、Import Linter 返回 0。原所有测试、SQL、固定配方/样本、其他产品文件、原 2,809 组允许关系及正式导出保持。源码/测试提交和独立审查结果将在固定后补录。
+完整离线 `python -m unittest discover -s tests -v` 实际运行 **340 项、0 失败、7 项原环境跳过，70.446 秒**。跳过：真实 Qlib、真实 bt、私有 P4、三项 Windows 链接权限及临时卷未启用 8.3 文件名。完整架构/文档门禁通过：59 模块、0 存量、无循环或错误、Import Linter 返回 0。原所有测试、SQL、固定配方/样本、其他产品文件、原 2,809 组允许关系及正式导出保持。完整结果对应首个 JSON 的 `tested_commit`；后续仅补录文档，独立审查尚未运行。
 
 ### Task 1: 迁移执行顺序，注入原审计实现
 
