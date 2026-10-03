@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 from .budget import CORE_DOCUMENTS, POLICY as DOCUMENT_BUDGET, check as check_budget, load_policy, parse_policy, reading_bundle
 from .documentation import check as check_docs
@@ -42,7 +43,14 @@ def write_report(root: Path, destination: Path, result: dict, registry: dict, re
             report.is_file() and report.suffix.lower() in {".md", ".py"}):
         raise ValueError(f"report path collides with repository input: {destination}")
     report.parent.mkdir(parents=True, exist_ok=True)
-    report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    fd, temporary_name = tempfile.mkstemp(prefix=".architecture-report-", dir=report.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+        temporary.replace(report)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def base_sources(root: Path, revision: str) -> dict[str, str]:

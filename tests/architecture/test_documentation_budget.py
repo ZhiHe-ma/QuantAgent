@@ -213,6 +213,22 @@ class DocumentationBudgetCliTests(DocumentFixture):
                 self.assertEqual(before, {p.relative_to(self.root).as_posix(): p.read_bytes()
                                           for p in self.root.rglob("*") if p.is_file()})
 
+    def test_report_replaces_hard_link_without_changing_original_document(self):
+        self.prepare_cli()
+        original = self.root / "qa/README.md"
+        report = self.root / "context.json"
+        os.link(original, report)
+        self.assertTrue(original.samefile(report))
+        before = {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        proc = self.cli("--context-for", "alpha", "--report", "context.json", without_git=True)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(original.read_bytes(), before["qa/README.md"])
+        self.assertEqual(json.loads(report.read_text(encoding="utf-8")), json.loads(proc.stdout))
+        self.assertFalse(original.samefile(report))
+        after = {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        before.pop("context.json");after.pop("context.json")
+        self.assertEqual(before, after)
+
     def test_context_cli_rejects_unknown_scope_and_overflow(self):
         self.prepare_cli()
         proc = self.cli("--context-for", "missing", without_git=True)
