@@ -307,3 +307,12 @@ python -m unittest tests.test_bt_plugins -v
 - 数据体检和观点跟踪是固定的精选 Agent 组合。P3a 提供单用户只读结果接口；另一个显式启用的 `serve-research` 服务支持固定离线样本提交、状态查询和协作取消，不代表已提供 OpenStock 页面或多用户授权。P5 的固定 SEC 单跳复核不等于通用 Agent 协作；模型驱动选路、通用动态工具与预算控制、人工暂停恢复仍不属于现有能力。
 - 第三方行情和新闻源可能出现访问限制、数据缺失或接口变化。
 - 数据库设计文档含后续规划，功能是否完成以当前源码和测试为准。
+
+
+## 本地恢复
+
+Daily 自动继续同日未完成的原快照，不重新研究。查看：`python agent_engine.py --mode recover --action status`；指定任务追加 `--run-id <编号>`。`--action retry --run-id <编号>` 只补缺失步骤；已完成可选消息原先未配置时，仅这次显式请求可首次绑定当前渠道。
+
+消息 unknown 先人工核对：`--action confirm-sent` 只登记收到；`--action confirm-not-sent` 只登记未收到，之后仍须明确 retry 才补送。它们不能撤回已发送内容。渠道变动停止发送，恢复原渠道再试。
+
+`--action abandon --run-id <编号> --reason "用户终止原因"` 保留历史且停止恢复；未完成不伪报成功。状态、确认和终止无需研究引擎；DRY_RUN=true 下恢复动作只预览，不创建目录、库、锁或事件。历史半成品无完整快照时需人工处理，不能从新行情补造历史。

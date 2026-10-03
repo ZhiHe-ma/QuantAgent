@@ -285,9 +285,9 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
                 engine.run_daily_pipeline()
 
             today = self.module.datetime.now().strftime("%Y-%m-%d")
-            self.assertTrue((Path(engine.daily_dir) / f"{today}.md").exists())
+            self.assertFalse((Path(engine.daily_dir) / f"{today}.md").exists())
             self.assertEqual(memory_path.read_bytes(), before_memory)
-            engine.push_to_wecom.assert_called_once()
+            engine.push_to_wecom.assert_not_called()
 
     def test_monitor_parse_failure_is_retryable_and_not_processed(self):
         class StopMonitor(BaseException):

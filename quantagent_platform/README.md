@@ -105,7 +105,9 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 [D005 验收](../docs/features/d005-adapter-contracts.md) 核对原版本标识、worker 类型/签名、惰性注入、默认配方与原实现；边界和公开服务接口覆盖在架构与契约测试。
 
-R001 的 [恢复目录](recovery/README.md) 提供纯契约、规则、SQLite 执行记录与锁。legacy_ports 追加可选恢复回调及工厂；legacy_bootstrap 和指定包入口只绑定惰性工厂，不打开库。没有 recovery 的既有显式 ports 保持原流程；正式引擎的 Daily 接口完整注入，工作流接入随后续批次实施。
+R001 的 [恢复目录](recovery/README.md) 提供纯契约、规则、SQLite 执行记录与锁。legacy_ports 追加可选恢复回调及工厂；legacy_bootstrap 和指定包入口只绑定惰性工厂，不打开库。没有 recovery 的既有显式 ports 保持原流程；正式引擎的 Daily 接口完整注入，Daily 已接入，Monitor 随后续批次实施。
+
+[legacy_daily_recovery.py](legacy_daily_recovery.py) 编排冻结与缺失步骤；[legacy_recovery_actions.py](legacy_recovery_actions.py) 提供只读状态、明确 retry、消息确认和带理由终止。工作流只调用公开 ports／纯规则；已有无 recovery 的显式 ports 和 dry-run 仍走原预览。
 
 ## 已知限制
 

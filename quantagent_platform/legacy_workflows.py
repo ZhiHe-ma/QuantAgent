@@ -2,6 +2,7 @@
 import json
 from .legacy_ports import DailyPorts, MonitorPorts
 from .daily_workflow import DAILY_SYSTEM_PROMPT, build_daily_prompt, render_daily_report
+from .legacy_daily_recovery import run_daily_recovery
 
 def run_monitor_pipeline(ports: MonitorPorts):
     """24小时常驻静默监控核心状态机"""
@@ -163,6 +164,8 @@ def run_monitor_pipeline(ports: MonitorPorts):
 
 def run_daily_pipeline(ports: DailyPorts):
     """每日 08:00 周期收敛宏观内参生成核心流水线"""
+    if ports.recovery is not None and not ports.dry_run:
+        return run_daily_recovery(ports)
     started_at = ports.now().astimezone().isoformat(timespec="seconds")
     today_str = ports.now().strftime("%Y-%m-%d")
     print(f"🌅 [Daily] 启动清晨 08:00 周期收敛引擎，执行日期: {today_str}")

@@ -38,6 +38,8 @@ API 边界整改与实际门禁结果见 [D003](../../docs/features/d003-api-com
 
 legacy_ports 的静态目标仅追加精确的 recovery.contracts；不允许存储实现或动态导入。
 
+Daily 与人工恢复源码按精确工作流／契约／纯规则目标检查，不允许具体 IO、动态导入或 ports 私有成员。
+
 ## 已知限制
 
 其他平铺用例仍按测试导航保留。当前治理状态见[架构规范](../../docs/ARCHITECTURE.md)，存量问题不因目录整理消除。

@@ -2,7 +2,7 @@
 
 ## 职责与边界
 
-保存同一授权实例的不可改写研究快照和追加事件，判断哪些步骤可继续。当前提供契约、纯规则、SQLite 记录和单机锁；Daily/Monitor 接入随 R001 后续批次实施。
+保存同一授权实例的不可改写研究快照和追加事件，判断哪些步骤可继续。当前提供契约、纯规则、SQLite 记录和单机锁，Daily 已接入；Monitor 随 R001 后续批次实施。
 
 ## 文件导航
 
@@ -25,6 +25,8 @@
 `python -m unittest tests.unit.test_recovery_rules tests.contract.test_recovery_store tests.architecture.test_recovery_boundaries -v` 验证快照、转换、修订幂等、真实临时 SQLite、实例隔离及 OS 锁；实际命令、环境、提交与结果见 R001。进程中断及工作流验收在对应批次完成后记录。
 
 原数据所属方提供受控报告／Memory 投影、结构化消息结果及审计补账，调用方通过 legacy_ports 使用；本目录的存储不直接修改这些投影或审计库。真实接口与失败场景见 [test_recovery_ports.py](../../tests/contract/test_recovery_ports.py)。
+
+Daily 已接入：步骤执行前记 running，执行后追加结果；本地中断核对目标，消息中断转 unknown。首次审计载荷独立冻结，后续确认不修改原审计标记；确认未收到只改变状态，之后必须有明确 retry 请求。recover 用法见 [使用说明](../../docs/USAGE.md)。
 
 ## 已知限制
 

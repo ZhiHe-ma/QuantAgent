@@ -23,11 +23,12 @@ from quantagent_platform.legacy_workflows import (
     run_monitor_pipeline,
     run_daily_pipeline,
 )
+from quantagent_platform.legacy_recovery_actions import run_recovery_action
 from quantagent_platform.legacy_ports import (
     SignalAuditError, MonitorPorts, DailyPorts, get_legacy_audit_bindings, get_legacy_recovery_factory,
 )
 from quantagent_platform.recovery.contracts import (
-    SCHEMA_VERSION, DeliveryResult, RecoveryInvalidState, StepResult,
+    SCHEMA_VERSION, DeliveryResult, RecoveryError, RecoveryInvalidState, StepResult,
 )
 
 _audit_bindings = get_legacy_audit_bindings()
@@ -1052,13 +1053,30 @@ class QuantAgent:
         print("⚠️ weekly 模式尚未接入完整周报引擎。本版本已显式阻断静默失败。")
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["daily", "weekly", "monitor"], required=True)
-    args = parser.parse_args()
-
-    engine = QuantAgent()
+    parser.add_argument("--mode", choices=["daily", "weekly", "monitor", "recover"], required=True)
+    parser.add_argument("--action", choices=["status", "retry", "confirm-sent", "confirm-not-sent", "abandon"])
+    parser.add_argument("--run-id")
+    parser.add_argument("--reason")
+    args = parser.parse_args(argv)
+    if args.mode != "recover" and any((args.action, args.run_id, args.reason)):
+        parser.error("recovery options require --mode recover")
+    if args.mode == "recover" and (args.action is None or (args.action != "status" and not args.run_id)
+                                 or (args.action == "abandon" and not args.reason)):
+        parser.error("recover requires --action; mutations need --run-id and abandon needs --reason")
     try:
+        if args.mode == "recover":
+            dry = os.getenv("DRY_RUN", "false").strip().lower() == "true"
+            store = get_legacy_recovery_factory()(os.path.abspath(os.path.join(BASE_DIR, "10_DailyNotes")), dry_run=dry)
+            engine = QuantAgent() if args.action == "retry" and not dry else None
+            if engine is not None:
+                store = engine.recovery_store
+            result = run_recovery_action(store, action=args.action, run_id=args.run_id, reason=args.reason, dry_run=dry,
+                                         daily=engine.daily_ports() if engine else None)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return result
+        engine = QuantAgent()
         if args.mode == "daily":
             engine.run_daily_pipeline()
         elif args.mode == "monitor":
@@ -1068,3 +1086,10 @@ if __name__ == "__main__":
     except DeepSeekError as e:
         print(f"❌ [AI Failure] {e}")
         raise SystemExit(2)
+    except RecoveryError as e:
+        print(f"❌ [Recovery] {e}")
+        raise SystemExit(2)
+
+
+if __name__ == "__main__":
+    main()

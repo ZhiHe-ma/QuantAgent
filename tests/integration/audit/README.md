@@ -26,6 +26,8 @@
 
 执行 `python -m unittest discover -s tests/integration/audit -t . -v`；实际数量、用例映射、环境与跳过见 [分支说明](../../../docs/features/file-classification.md)。离线替身通过不构成真实后端或生产验收。
 
+R001 顺序用例检查胶囊预检在交付前，随后 report → message → Memory → audit；使用所属投影和 commit_frozen_audit 包装实际文件／SQLite 操作。失败注入移到恢复公开入口，保留交付保护、Memory 失败阻止审计与旧直调验收。
+
 ## 已知限制
 
 本批是分类试点；其他平铺用例仍按测试导航保留。当前架构部分符合，存量问题不因目录整理消除。

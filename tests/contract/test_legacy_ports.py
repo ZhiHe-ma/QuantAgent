@@ -74,6 +74,9 @@ class LegacyPortsTests(unittest.TestCase):
             def record_completed_signal(self, *args, **kwargs):
                 result = super().record_completed_signal(*args, **kwargs)
                 return dict(result, provider="injected")
+            def record_recovered_signal(self, *args, **kwargs):
+                result = super().record_recovered_signal(*args, **kwargs)
+                return dict(result, provider="injected_recovery")
         def quality(snapshot, factors, *, version_known, reconciled=False):
             if snapshot != METRICS or not version_known:
                 raise AssertionError("incorrect quality input")
@@ -89,7 +92,10 @@ class LegacyPortsTests(unittest.TestCase):
             today = module.datetime.now().strftime("%Y-%m-%d")
             engine.request_deepseek = lambda *args, **kwargs: "offline analysis" if kwargs.get("use_r1") else json.dumps(capsule(today))
             result = engine.run_daily_pipeline()
-            self.assertEqual(result["audit"]["provider"], "injected")
+            self.assertEqual(result["audit"]["provider"], "injected_recovery")
+            run, signal = engine.build_signal_audit_payload(today, today+"T08:00:00+08:00",
+                capsule(today), METRICS, [], {}, "direct audit")
+            self.assertEqual(engine.signal_audit_store.record_completed_signal(run, signal)["provider"], "injected")
             self.assertIn("offline analysis", (Path(engine.daily_dir) / (today + ".md")).read_text(encoding="utf-8"))
             self.assertEqual(json.loads(Path(engine.memory_file).read_text(encoding="utf-8"))["last_daily_capsule"]["date"], today)
             with closing(sqlite3.connect(engine.signal_audit_file)) as connection:
@@ -173,7 +179,7 @@ with redirect_stdout(output):
     try: runpy.run_path(sys.argv[0], run_name="__main__")
     except SystemExit as exc: assert exc.code == 0
     else: raise AssertionError("CLI help did not exit")
-assert "{daily,weekly,monitor}" in output.getvalue()
+assert "{daily,weekly,monitor,recover}" in output.getvalue()
 import importlib
 sys.modules.pop("quantagent_platform.legacy_ports")
 unbound_ports=importlib.import_module("quantagent_platform.legacy_ports")

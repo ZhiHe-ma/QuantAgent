@@ -998,15 +998,21 @@
     {
       "id": "legacy-workflows",
       "modules": [
-        "quantagent_platform.legacy_workflows"
+        "quantagent_platform.legacy_workflows",
+        "quantagent_platform.legacy_daily_recovery",
+        "quantagent_platform.legacy_recovery_actions"
       ],
       "kind": "workflow",
       "public_modules": [
-        "quantagent_platform.legacy_workflows"
+        "quantagent_platform.legacy_workflows",
+        "quantagent_platform.legacy_daily_recovery",
+        "quantagent_platform.legacy_recovery_actions"
       ],
       "allows": [
         "legacy-ports",
-        "daily-domain"
+        "daily-domain",
+        "recovery-contracts",
+        "recovery-domain"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",

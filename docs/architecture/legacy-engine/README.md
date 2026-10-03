@@ -32,7 +32,9 @@
 
 本批命令、实际结果及未测范围见 [D006](../../features/d006-legacy-workflows.md)。
 
-R001 新增所属恢复接口：capture_daily_inputs 严格读取 Memory／文件前像并确认审计提供方支持恢复；prepare_recovery_audit 在交付前校验；project_daily_report／project_daily_memory 在短投影锁内校对目标与前像，用相同 UTF-8 字节原子替换。内容冲突需人工检查，较新 Memory 返回 superseded。send_wecom_result 区分 confirmed／failed／unknown／not_configured，原 push_to_wecom 继续返回 bool；daily_ports 对旧回调 False 保守标记 unknown。commit_frozen_audit 交给已注入审计实例，入口不访问其内部数据库。当前原流程接入在 R001 后续批次完成。
+R001 新增所属恢复接口：capture_daily_inputs 严格读取 Memory／文件前像并确认审计提供方支持恢复；prepare_recovery_audit 在交付前校验；project_daily_report／project_daily_memory 在短投影锁内校对目标与前像，用相同 UTF-8 字节原子替换。内容冲突需人工检查，较新 Memory 返回 superseded。send_wecom_result 区分 confirmed／failed／unknown／not_configured，原 push_to_wecom 继续返回 bool；daily_ports 对旧回调 False 保守标记 unknown。commit_frozen_audit 交给已注入审计实例，入口不访问其内部数据库。Daily 已接入，Monitor 接入随 R001 后续批次完成。
+
+正式 Daily 已接入恢复：先校验研究与胶囊并冻结快照，再交付报告、消息、Memory、审计。同日未完成复用原编号／研究，FORCE 不能绕过；已有完整历史继续跳过，半成品需人工处理。recover status／confirm／abandon 不构造研究引擎；retry 通过完整所属 ports 恢复指定任务。
 
 ## 已知限制
 
