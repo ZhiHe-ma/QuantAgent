@@ -3,21 +3,19 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 from .contracts import ContractError, DataPacket, canonical_json, parse_aware_timestamp, sha256_json
-from .p5_registry import (
-    ApprovedRun, ApprovedSourceError, bounded_regular_file, strict_json,
+from .p5_ports import (
+    ApprovedRun, ApprovedSourceError, HandoffError, P5Services,
+    ResolvedPlanView as ResolvedAgentPlan, ParentRunView as RunResult,
+    get_p5_services, strict_json,
 )
-if TYPE_CHECKING:
-    from .agents import ResolvedAgentPlan
-    from .runner import RunResult
 
 
 HANDOFF_CONTRACT = "quantagent.agent_handoff.v1"
@@ -30,10 +28,6 @@ _READ_WRITE = frozenset({"filesystem:read", "filesystem:write"})
 _MAX_POLICY = 64 * 1024
 _MAX_ENVELOPE = 16 * 1024
 _MAX_BUNDLE = 2 * 1024 * 1024
-
-
-class HandoffError(ValueError):
-    """A fixed SEC route or handoff failed admission."""
 
 
 def _digest(raw: bytes) -> str:
@@ -142,9 +136,20 @@ class RoutePolicy:
     sha256: str
 
     @classmethod
-    def load(cls, path: Path) -> "RoutePolicy":
+    def load(cls, path: Path, *, services: P5Services | None = None) -> "RoutePolicy":
+        io = services if services is not None else get_p5_services()
         try:
-            raw = bounded_regular_file(Path(path), _MAX_POLICY)
+            raw = io.read_file(Path(path), _MAX_POLICY)
+        except (ApprovedSourceError, OSError, TypeError, KeyError) as exc:
+            raise HandoffError("fixed route policy failed validation") from exc
+        return cls.from_bytes(raw)
+
+    @classmethod
+    def from_bytes(cls, raw: bytes) -> "RoutePolicy":
+        """Validate a bounded policy without reading files or executing an Agent."""
+        if not isinstance(raw, bytes) or len(raw) > _MAX_POLICY:
+            raise HandoffError("fixed route policy failed validation")
+        try:
             value = strict_json(raw)
             _validate_policy(value)
         except (ApprovedSourceError, OSError, TypeError, KeyError) as exc:
@@ -279,13 +284,10 @@ class Handoff:
     sha256: str
 
 
-def _schema_validate(envelope: dict[str, Any]) -> None:
-    schema_path = (
-        Path(__file__).resolve().parents[1] / "schemas"
-        / "quantagent.agent_handoff.v1.schema.json"
-    )
+def _schema_validate(envelope: dict[str, Any], services: P5Services | None = None) -> None:
+    io = services if services is not None else get_p5_services()
     try:
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        schema = io.handoff_schema()
         Draft202012Validator.check_schema(schema)
         errors = list(Draft202012Validator(
             schema, format_checker=FormatChecker()).iter_errors(envelope))
@@ -303,7 +305,9 @@ def create_handoff(
     coordinator_id: str,
     completed_at: datetime,
     deadline_at: datetime,
+    *, services: P5Services | None = None,
 ) -> Handoff:
+    io = services if services is not None else get_p5_services()
     if (
         not isinstance(coordinator_id, str)
         or not coordinator_id
@@ -323,7 +327,7 @@ def create_handoff(
     ):
         raise HandoffError("parent has no completed SEC evidence bundle")
     try:
-        bundle_raw = bounded_regular_file(Path(bundle_path), _MAX_BUNDLE)
+        bundle_raw = io.read_file(Path(bundle_path), _MAX_BUNDLE)
         bundle_packet = DataPacket.from_dict(strict_json(bundle_raw))
     except (ApprovedSourceError, ContractError) as exc:
         raise HandoffError("parent bundle artifact is invalid") from exc
@@ -377,7 +381,7 @@ def create_handoff(
         "policy_version": policy.version,
         "policy_sha256": policy.sha256,
     }
-    _schema_validate(envelope)
+    _schema_validate(envelope, io)
     raw = canonical_json(envelope).encode("utf-8")
     if len(raw) > _MAX_ENVELOPE:
         raise HandoffError("handoff envelope exceeds 16 KiB")
@@ -387,6 +391,7 @@ def create_handoff(
 def verify_handoff(
     raw: bytes, expected_sha256: str,
     policy: RoutePolicy, now: datetime,
+    *, services: P5Services | None = None,
 ) -> Handoff:
     if not isinstance(raw, bytes) or len(raw) > _MAX_ENVELOPE:
         raise HandoffError("handoff envelope is too large")
@@ -400,7 +405,7 @@ def verify_handoff(
         raise HandoffError("handoff envelope JSON is invalid") from exc
     if canonical != raw:
         raise HandoffError("handoff envelope is not canonical JSON")
-    _schema_validate(envelope)
+    _schema_validate(envelope, services)
     if (
         envelope["policy_version"] != policy.version
         or envelope["policy_sha256"] != policy.sha256

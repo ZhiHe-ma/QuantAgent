@@ -9,7 +9,10 @@ from io import StringIO
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 sys.path.insert(0, str(ROOT))
 
 from fastapi.testclient import TestClient  # noqa: E402

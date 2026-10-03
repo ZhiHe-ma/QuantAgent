@@ -8,10 +8,24 @@ import types
 import unittest
 from contextlib import closing
 from pathlib import Path
+
+if __name__ == "__main__" and not __package__:
+    # Make the owning package available before importing shared test support.
+    root_hint = next(
+        (parent for parent in Path(__file__).resolve().parents
+         if (parent / "tests" / "support" / "paths.py").is_file()),
+        None,
+    )
+    if root_hint is None:
+        raise FileNotFoundError("Shared QuantAgent test support was not found")
+    sys.path.insert(0, str(root_hint))
+    from tests.support.paths import ROOT
+
+from tests.support.paths import ROOT
 from unittest import mock
 
 
-SOURCE_PATH = Path(__file__).resolve().parents[1] / "agent_engine.py"
+SOURCE_PATH = ROOT / "agent_engine.py"
 
 
 def load_agent_module():
@@ -160,7 +174,7 @@ class SignalAuditIntegrationTests(unittest.TestCase):
             engine = self.module.QuantAgent()
             today = self.module.datetime.now().strftime("%Y-%m-%d")
             self.configure_successful_pipeline(engine, today)
-            engine.signal_audit_store.record_completed_signal = mock.Mock(
+            engine.signal_audit_store.record_recovered_signal = mock.Mock(
                 side_effect=self.module.SignalAuditError("database unavailable")
             )
 
@@ -213,16 +227,14 @@ class SignalAuditIntegrationTests(unittest.TestCase):
             engine.generate_memory_capsule = mock.Mock(
                 side_effect=lambda *_: events.append("capsule") or capsule(today)
             )
-            engine.save_memory_capsule = mock.Mock(
-                side_effect=lambda *_: events.append("memory") or True
-            )
-            engine.record_signal_audit = mock.Mock(
-                side_effect=lambda *_: events.append("audit") or {"status": "recorded"}
-            )
+            report, memory, audit = engine.project_daily_report, engine.project_daily_memory, engine.commit_frozen_audit
+            engine.project_daily_report = mock.Mock(side_effect=lambda *a: events.append("report") or report(*a))
+            engine.project_daily_memory = mock.Mock(side_effect=lambda *a: events.append("memory") or memory(*a))
+            engine.commit_frozen_audit = mock.Mock(side_effect=lambda *a: events.append("audit") or audit(*a))
 
             engine.run_daily_pipeline()
 
-            self.assertEqual(events, ["wecom", "capsule", "memory", "audit"])
+            self.assertEqual(events, ["capsule", "report", "wecom", "memory", "audit"])
 
     def test_memory_failure_skips_audit_persistence(self):
         with tempfile.TemporaryDirectory() as temp_dir, self.production_env():
@@ -233,8 +245,9 @@ class SignalAuditIntegrationTests(unittest.TestCase):
             engine.request_deepseek = mock.Mock(return_value="analysis")
             engine.push_to_wecom = mock.Mock()
             engine.generate_memory_capsule = mock.Mock(return_value=capsule(today))
-            engine.save_memory_capsule = mock.Mock(return_value=False)
-            engine.record_signal_audit = mock.Mock()
+            from quantagent_platform.recovery.contracts import StepResult
+            engine.project_daily_memory = mock.Mock(return_value=StepResult("failed", {"error_code": "fixture"}))
+            engine.commit_frozen_audit = mock.Mock()
 
             result = engine.run_daily_pipeline()
 
@@ -242,7 +255,7 @@ class SignalAuditIntegrationTests(unittest.TestCase):
                 result["audit"],
                 {"status": "skipped", "reason": "memory_not_saved"},
             )
-            engine.record_signal_audit.assert_not_called()
+            engine.commit_frozen_audit.assert_not_called()
 
     def test_completed_daily_skip_does_not_touch_audit_database(self):
         with tempfile.TemporaryDirectory() as temp_dir, self.production_env():

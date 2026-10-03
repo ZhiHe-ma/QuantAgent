@@ -14,13 +14,18 @@ import time
 import unittest
 from dataclasses import replace
 from pathlib import Path
+
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 from unittest.mock import patch
 
 from quantagent_platform.contracts import DataPacket, canonical_json
 from quantagent_platform.p5_worker import WorkerSpec, WorkerSupervisor, run_worker
 from quantagent_platform.p5_registry import RAW_NAMES
 from quantagent_platform.runner import RecipeRunner, default_registry
-from tests.test_sec_contracts import make_responses
+from tests.support.sec_samples import make_responses
 
 
 def fixture_worker(connection, cancel_flag, spec_raw: bytes) -> None:
@@ -322,7 +327,7 @@ class WorkerTests(unittest.TestCase):
 
     def test_production_entrypoint_runs_approved_parent_in_spawn(self) -> None:
         root = self.root / "p4-runs"
-        repository = Path(__file__).resolve().parents[1]
+        repository = ROOT
         recipe = RecipeRunner.load_recipe(repository / "recipes" / "sec_industry_peers.json")
         with patch.dict(os.environ, {"SEC_USER_AGENT": "QuantAgent test@example.invalid"}):
             with patch("quantagent_platform.sec_plugins.fetch_sample",

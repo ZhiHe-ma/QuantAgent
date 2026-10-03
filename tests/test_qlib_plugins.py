@@ -8,7 +8,10 @@ from pathlib import Path
 from unittest import mock
 
 
-ROOT = Path(__file__).resolve().parents[1]
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 sys.path.insert(0, str(ROOT))
 
 from quantagent_platform import RecipeError, RecipeRunner  # noqa: E402
@@ -17,7 +20,7 @@ from quantagent_platform.qlib_plugins import FACTOR_RESEARCH_CONTRACT  # noqa: E
 
 RECIPE_PATH = ROOT / "recipes" / "qlib_factor_research.json"
 DATA_FIXTURE = ROOT / "tests" / "fixtures" / "sample_qlib_factor.csv"
-FAKE_WORKER = ROOT / "tests" / "fixtures" / "fake_qlib_worker.py"
+FAKE_WORKER = ROOT / "tests" / "support" / "fakes" / "fake_qlib_worker.py"
 
 
 class QlibPluginTests(unittest.TestCase):

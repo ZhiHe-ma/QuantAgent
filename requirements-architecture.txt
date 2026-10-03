@@ -1,0 +1,7 @@
+# Development-only lock validated on Python 3.12; product runtime is unchanged.
+import-linter==2.8
+grimp==3.13
+rich==15.0.0
+markdown-it-py==4.2.0
+mdurl==0.1.2
+Pygments==2.21.0

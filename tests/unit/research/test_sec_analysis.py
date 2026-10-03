@@ -1,6 +1,20 @@
+import sys
+from pathlib import Path
 import copy
 import unittest
 from decimal import Decimal
+
+if __name__ == "__main__" and not __package__:
+    # Make the owning package available before importing shared test support.
+    root_hint = next(
+        (parent for parent in Path(__file__).resolve().parents
+         if (parent / "tests" / "support" / "paths.py").is_file()),
+        None,
+    )
+    if root_hint is None:
+        raise FileNotFoundError("Shared QuantAgent test support was not found")
+    sys.path.insert(0, str(root_hint))
+    from tests.support.paths import ROOT
 
 from quantagent_platform.contracts import ContractError, DataPacket
 from quantagent_platform.sec_analysis import (
@@ -10,7 +24,7 @@ from quantagent_platform.sec_analysis import (
     build_sector,
 )
 from quantagent_platform.sec_contracts import normalize_sample
-from tests.test_sec_contracts import ISSUERS, make_payloads, make_responses
+from tests.support.sec_samples import ISSUERS, make_payloads, make_responses
 
 
 class SecAnalysisTests(unittest.TestCase):

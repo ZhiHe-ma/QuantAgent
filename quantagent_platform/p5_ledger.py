@@ -11,9 +11,9 @@ from typing import Any
 
 from .contracts import ContractError, canonical_json, parse_aware_timestamp, utc_now
 from .p5_registry import RAW_NAMES
+from .p5_ports import LedgerError, validate_identifier as _safe_id
 
 
-_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 _HASH = re.compile(r"^[a-f0-9]{64}$")
 _NONTERMINAL = (
     "admitted", "parent_running", "parent_completed", "handoff_ready",
@@ -44,18 +44,8 @@ _FAILURE_CODES = frozenset({
 })
 
 
-class LedgerError(RuntimeError):
-    """P5 chain state is invalid or cannot be persisted."""
-
-
 class IdempotencyConflict(LedgerError):
     """A request ID was already reserved for different evidence."""
-
-
-def _safe_id(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not _ID.fullmatch(value):
-        raise LedgerError(f"{label} must be a safe bounded identifier")
-    return value
 
 
 def _safe_hash(value: Any, label: str) -> str:

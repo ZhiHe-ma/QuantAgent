@@ -8,6 +8,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
+
 from quantagent_platform.contracts import DataPacket, canonical_json
 from quantagent_platform.p5_coordinator import P5Coordinator
 
@@ -47,7 +52,7 @@ class PrivateP4LiveAcceptanceTests(unittest.TestCase):
             coordinator = P5Coordinator(
                 registry_path=registry_path, approved_run_root=approved_root,
                 run_root=private / "p5-runs",
-                policy_path=(Path(__file__).resolve().parents[1] / "policies"
+                policy_path=(ROOT / "policies"
                              / "p5_sec_route.v1.json"),
             )
             result = coordinator.run("p4-live-fy2025-mara-riot", "acceptance-live-001")

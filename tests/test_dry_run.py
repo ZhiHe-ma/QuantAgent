@@ -8,10 +8,15 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
+
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 from unittest import mock
 
 
-SOURCE_PATH = Path(__file__).resolve().parents[1] / "agent_engine.py"
+SOURCE_PATH = ROOT / "agent_engine.py"
 
 
 def load_agent_module():
@@ -261,7 +266,7 @@ class DryRunIsolationTests(unittest.TestCase):
             state = json.loads(memory_path.read_text(encoding="utf-8"))
             self.assertEqual(state["last_daily_capsule"]["date"], today)
 
-    def test_production_delivers_report_before_capsule_generation(self):
+    def test_production_preflights_capsule_before_delivery(self):
         with tempfile.TemporaryDirectory() as temp_dir, mock.patch.dict(
             os.environ,
             {
@@ -292,8 +297,8 @@ class DryRunIsolationTests(unittest.TestCase):
                 if kwargs.get("use_r1"):
                     events.append("analysis")
                     return "production analysis"
-                self.assertTrue(report_path.exists())
-                self.assertIn("wecom", events)
+                self.assertFalse(report_path.exists())
+                self.assertNotIn("wecom", events)
                 events.append("capsule")
                 return json.dumps(
                     {
@@ -312,7 +317,8 @@ class DryRunIsolationTests(unittest.TestCase):
 
             engine.run_daily_pipeline()
 
-            self.assertEqual(events, ["analysis", "wecom", "capsule"])
+            self.assertEqual(events, ["analysis", "capsule", "wecom"])
+            self.assertTrue(report_path.exists())
 
 
 if __name__ == "__main__":

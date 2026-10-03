@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .builtin_plugins import REPORT_CONTRACT, SIGNAL_CONTRACT
+from .signal_report_contracts import REPORT_CONTRACT, SIGNAL_CONTRACT
 from .contracts import ContractError, DataPacket, canonical_json, parse_aware_timestamp
 from .plugins import PluginError, PluginManifest, RunContext
 

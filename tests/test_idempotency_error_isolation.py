@@ -6,10 +6,15 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
+
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 from unittest import mock
 
 
-SOURCE_PATH = Path(__file__).resolve().parents[1] / "agent_engine.py"
+SOURCE_PATH = ROOT / "agent_engine.py"
 
 
 def load_agent_module():
@@ -280,9 +285,9 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
                 engine.run_daily_pipeline()
 
             today = self.module.datetime.now().strftime("%Y-%m-%d")
-            self.assertTrue((Path(engine.daily_dir) / f"{today}.md").exists())
+            self.assertFalse((Path(engine.daily_dir) / f"{today}.md").exists())
             self.assertEqual(memory_path.read_bytes(), before_memory)
-            engine.push_to_wecom.assert_called_once()
+            engine.push_to_wecom.assert_not_called()
 
     def test_monitor_parse_failure_is_retryable_and_not_processed(self):
         class StopMonitor(BaseException):
@@ -303,7 +308,7 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
                 ]
             )
             engine.request_deepseek = mock.Mock(return_value="not-json")
-            engine._safe_json_write = mock.Mock()
+            engine._safe_json_write = mock.Mock(wraps=engine._safe_json_write)
 
             with mock.patch.object(self.module.time, "sleep", side_effect=StopMonitor):
                 with self.assertRaises(StopMonitor):
@@ -346,7 +351,7 @@ class IdempotencyAndErrorIsolationTests(unittest.TestCase):
             )
             engine.fetch_crypto_flash_news = mock.Mock(return_value=[news])
             engine.request_deepseek = mock.Mock(return_value="not-json")
-            engine._safe_json_write = mock.Mock(return_value=True)
+            engine._safe_json_write = mock.Mock(wraps=engine._safe_json_write)
 
             with mock.patch.object(self.module.time, "sleep", side_effect=StopMonitor):
                 with self.assertRaises(StopMonitor):

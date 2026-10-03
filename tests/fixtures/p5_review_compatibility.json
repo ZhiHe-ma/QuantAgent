@@ -1,0 +1,109 @@
+{
+  "source": "synthetic SEC make_responses; fixed P5 offline route",
+  "base_commit": "7e6033bf337f5abbc9baf938e0d7023b650440dc",
+  "findings": {
+    "cohort_id": "us-listed-bitcoin-miners-fy2025-mara-riot-v1",
+    "as_of": "2026-09-21T11:00:00+00:00",
+    "status": "pass",
+    "coverage": {
+      "Revenues": {
+        "available": 2,
+        "total": 2
+      },
+      "Assets": {
+        "available": 2,
+        "total": 2
+      }
+    },
+    "sample_sums_usd": {
+      "Revenues": 1554528000,
+      "Assets": 11223666000
+    },
+    "companies": [
+      {
+        "cik": "0001507605",
+        "ticker": "MARA",
+        "accession": "0001507605-26-000007",
+        "accepted_at": "2026-03-02T21:49:11+00:00",
+        "facts": {
+          "Revenues": {
+            "evidence_id": "sec:0001507605:0001507605-26-000007:Revenues:2025-01-01:2025-12-31:USD",
+            "concept": "Revenues",
+            "unit": "USD",
+            "period_start": "2025-01-01",
+            "period_end": "2025-12-31",
+            "value_usd": 907093000,
+            "filed_at": "2026-03-02",
+            "filing_index_url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000007/0001507605-26-000007-index.htm",
+            "companyfacts_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001507605.json"
+          },
+          "Assets": {
+            "evidence_id": "sec:0001507605:0001507605-26-000007:Assets:instant:2025-12-31:USD",
+            "concept": "Assets",
+            "unit": "USD",
+            "period_start": null,
+            "period_end": "2025-12-31",
+            "value_usd": 7286899000,
+            "filed_at": "2026-03-02",
+            "filing_index_url": "https://www.sec.gov/Archives/edgar/data/1507605/000150760526000007/0001507605-26-000007-index.htm",
+            "companyfacts_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001507605.json"
+          }
+        },
+        "omissions": {}
+      },
+      {
+        "cik": "0001167419",
+        "ticker": "RIOT",
+        "accession": "0001104659-26-022322",
+        "accepted_at": "2026-03-02T21:49:11+00:00",
+        "facts": {
+          "Revenues": {
+            "evidence_id": "sec:0001167419:0001104659-26-022322:Revenues:2025-01-01:2025-12-31:USD",
+            "concept": "Revenues",
+            "unit": "USD",
+            "period_start": "2025-01-01",
+            "period_end": "2025-12-31",
+            "value_usd": 647435000,
+            "filed_at": "2026-03-02",
+            "filing_index_url": "https://www.sec.gov/Archives/edgar/data/1167419/000110465926022322/0001104659-26-022322-index.html",
+            "companyfacts_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001167419.json"
+          },
+          "Assets": {
+            "evidence_id": "sec:0001167419:0001104659-26-022322:Assets:instant:2025-12-31:USD",
+            "concept": "Assets",
+            "unit": "USD",
+            "period_start": null,
+            "period_end": "2025-12-31",
+            "value_usd": 3936767000,
+            "filed_at": "2026-03-02",
+            "filing_index_url": "https://www.sec.gov/Archives/edgar/data/1167419/000110465926022322/0001104659-26-022322-index.html",
+            "companyfacts_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001167419.json"
+          }
+        },
+        "omissions": {}
+      }
+    ],
+    "source_sha256": {
+      "sec-mara-companyfacts.json": "61df2e25719a6c297f57dca966d18a53496a7ba636e0b0390585eb5aac974815",
+      "sec-mara-submissions.json": "45c8631471e364afaea305a317b174a12cb5781e68e95f91c655d1d93438f539",
+      "sec-riot-companyfacts.json": "3e5b1a1f2a803b4732d1123764dab6fce47cede3ba571d76e0ac2859f2ab2785",
+      "sec-riot-submissions.json": "2f62c54778d85b5c5a5accd08d175018d8d53c7de9d0b97d50e5794a1c4373a9"
+    },
+    "report_sha256": "179fdffa5ee581ef8d52967b1cd762b2aca4d932270109284cddfce78f2e48ef",
+    "methods_checked": [
+      "pinned_submissions_accession_form_acceptance",
+      "pinned_companyfacts_concept_period_unit",
+      "integer_usd_coverage_sum_decimal_display",
+      "fixed_p4_report_numeric_tables_and_scope"
+    ]
+  },
+  "reviewed_at": "2026-09-21T12:00:00+00:00",
+  "review_sha256": "0f1753b49996a13044bd2849ccc57da0540f50e985aec7c34ff45221b232535f",
+  "audit": {
+    "status": "completed",
+    "handoff_calls": 1,
+    "model_cost_minor": 0,
+    "failure_code": null,
+    "event_count": 6
+  }
+}

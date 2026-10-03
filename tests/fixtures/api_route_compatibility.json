@@ -1,0 +1,1396 @@
+{
+  "base_commit": "f02a0e2bdf6dacf1b60222386e2b2b5c80e22d5b",
+  "source": "original API factory with temporary synthetic fixture; no admitted runs",
+  "contracts": {
+    "errors": {
+      "result": {
+        "ReadApiError": {
+          "status": 500,
+          "code": "read_api_error",
+          "message": "The result could not be read.",
+          "headers": {}
+        },
+        "AuthenticationRequired": {
+          "status": 401,
+          "code": "authentication_required",
+          "message": "Valid bearer authentication is required.",
+          "headers": {
+            "WWW-Authenticate": "Bearer"
+          }
+        },
+        "AccessDenied": {
+          "status": 403,
+          "code": "access_denied",
+          "message": "The authenticated subject cannot read this run collection.",
+          "headers": {}
+        },
+        "RunNotFound": {
+          "status": 404,
+          "code": "run_not_found",
+          "message": "The requested run was not found.",
+          "headers": {}
+        },
+        "ResultUnavailable": {
+          "status": 409,
+          "code": "result_unavailable",
+          "message": "The run does not have a completed Markdown result.",
+          "headers": {}
+        },
+        "ArtifactIntegrityError": {
+          "status": 409,
+          "code": "artifact_integrity_error",
+          "message": "The stored run artifacts failed integrity validation.",
+          "headers": {}
+        }
+      },
+      "submission": {
+        "InvalidSubmission": {
+          "status": 422,
+          "code": "invalid_submission",
+          "message": "The submission is invalid or not allow-listed.",
+          "headers": {}
+        },
+        "SubmissionTooLarge": {
+          "status": 413,
+          "code": "submission_too_large",
+          "message": "The submission exceeds the request size limit.",
+          "headers": {}
+        },
+        "IdempotencyConflict": {
+          "status": 409,
+          "code": "idempotency_conflict",
+          "message": "The idempotency key is already bound to another submission.",
+          "headers": {}
+        },
+        "SubmissionPending": {
+          "status": 409,
+          "code": "submission_pending",
+          "message": "The submission is being recorded; retry with the same key.",
+          "headers": {}
+        },
+        "FixtureChanged": {
+          "status": 409,
+          "code": "fixture_changed",
+          "message": "The registered input has changed since server startup.",
+          "headers": {}
+        },
+        "ExecutionFailed": {
+          "status": 500,
+          "code": "execution_failed",
+          "message": "The admitted run failed; its run summary may contain status details.",
+          "headers": {}
+        }
+      },
+      "task": {
+        "TaskNotFound": {
+          "status": 404,
+          "code": "task_not_found",
+          "message": "The requested task was not found.",
+          "headers": {}
+        },
+        "TaskCapacity": {
+          "status": 429,
+          "code": "task_capacity_reached",
+          "message": "The local task worker is at capacity; retry later.",
+          "headers": {}
+        },
+        "TaskNotCancelable": {
+          "status": 409,
+          "code": "task_not_cancelable",
+          "message": "The task has already reached a terminal state.",
+          "headers": {}
+        },
+        "TaskInterrupted": {
+          "status": 409,
+          "code": "task_interrupted",
+          "message": "The task is no longer managed by this process.",
+          "headers": {}
+        }
+      }
+    },
+    "read_only": {
+      "openapi": {
+        "openapi": "3.1.0",
+        "info": {
+          "title": "QuantAgent Read API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/healthz": {
+            "get": {
+              "summary": "Health",
+              "operationId": "health_healthz_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Response Health Healthz Get"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v1/runs/{run_id}": {
+            "get": {
+              "summary": "Get Run",
+              "operationId": "get_run_api_v1_runs__run_id__get",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "run_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                    "type": "string",
+                    "title": "Run Id"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/RunSummary"
+                      }
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v1/runs/{run_id}/report": {
+            "get": {
+              "summary": "Get Report",
+              "operationId": "get_report_api_v1_runs__run_id__report_get",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "run_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                    "type": "string",
+                    "title": "Run Id"
+                  }
+                },
+                {
+                  "name": "if-none-match",
+                  "in": "header",
+                  "required": false,
+                  "schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "If-None-Match"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "components": {
+          "schemas": {
+            "AgentSelection": {
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "agent",
+                  "title": "Type"
+                },
+                "agent": {
+                  "$ref": "#/components/schemas/ExactRef"
+                },
+                "skill": {
+                  "$ref": "#/components/schemas/ExactRef"
+                },
+                "recipe": {
+                  "$ref": "#/components/schemas/ExactRef"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "type",
+                "agent",
+                "skill",
+                "recipe"
+              ],
+              "title": "AgentSelection"
+            },
+            "ExactRef": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id"
+                },
+                "version": {
+                  "type": "string",
+                  "title": "Version"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "title": "ExactRef"
+            },
+            "FinalResultRef": {
+              "properties": {
+                "contract": {
+                  "type": "string",
+                  "title": "Contract"
+                },
+                "content_sha256": {
+                  "type": "string",
+                  "title": "Content Sha256"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "contract",
+                "content_sha256"
+              ],
+              "title": "FinalResultRef"
+            },
+            "HTTPValidationError": {
+              "properties": {
+                "detail": {
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationError"
+                  },
+                  "type": "array",
+                  "title": "Detail"
+                }
+              },
+              "type": "object",
+              "title": "HTTPValidationError"
+            },
+            "RecipeRef": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id"
+                },
+                "version": {
+                  "type": "string",
+                  "title": "Version"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "title": "RecipeRef"
+            },
+            "ResultLinks": {
+              "properties": {
+                "report": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Report"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "report"
+              ],
+              "title": "ResultLinks"
+            },
+            "RunSummary": {
+              "properties": {
+                "contract_type": {
+                  "type": "string",
+                  "const": "quantagent.read_api.run_summary.v1",
+                  "title": "Contract Type"
+                },
+                "run_id": {
+                  "type": "string",
+                  "title": "Run Id"
+                },
+                "recipe": {
+                  "$ref": "#/components/schemas/RecipeRef"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "running",
+                    "failed",
+                    "completed"
+                  ],
+                  "title": "Status"
+                },
+                "started_at": {
+                  "type": "string",
+                  "title": "Started At"
+                },
+                "completed_at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Completed At"
+                },
+                "offline": {
+                  "type": "boolean",
+                  "title": "Offline"
+                },
+                "selection": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AgentSelection"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "steps": {
+                  "items": {
+                    "$ref": "#/components/schemas/StepSummary"
+                  },
+                  "type": "array",
+                  "title": "Steps"
+                },
+                "final": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FinalResultRef"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "failure_type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Failure Type"
+                },
+                "links": {
+                  "$ref": "#/components/schemas/ResultLinks"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "contract_type",
+                "run_id",
+                "recipe",
+                "status",
+                "started_at",
+                "completed_at",
+                "offline",
+                "selection",
+                "steps",
+                "final",
+                "failure_type",
+                "links"
+              ],
+              "title": "RunSummary"
+            },
+            "StepSummary": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id"
+                },
+                "plugin_id": {
+                  "type": "string",
+                  "title": "Plugin Id"
+                },
+                "plugin_version": {
+                  "type": "string",
+                  "title": "Plugin Version"
+                },
+                "capability": {
+                  "type": "string",
+                  "title": "Capability"
+                },
+                "output_contract": {
+                  "type": "string",
+                  "title": "Output Contract"
+                },
+                "output_sha256": {
+                  "type": "string",
+                  "title": "Output Sha256"
+                },
+                "status": {
+                  "type": "string",
+                  "title": "Status"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "plugin_id",
+                "plugin_version",
+                "capability",
+                "output_contract",
+                "output_sha256",
+                "status"
+              ],
+              "title": "StepSummary"
+            },
+            "ValidationError": {
+              "properties": {
+                "loc": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "type": "array",
+                  "title": "Location"
+                },
+                "msg": {
+                  "type": "string",
+                  "title": "Message"
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Error Type"
+                },
+                "input": {
+                  "title": "Input"
+                },
+                "ctx": {
+                  "type": "object",
+                  "title": "Context"
+                }
+              },
+              "type": "object",
+              "required": [
+                "loc",
+                "msg",
+                "type"
+              ],
+              "title": "ValidationError"
+            }
+          },
+          "securitySchemes": {
+            "HTTPBearer": {
+              "type": "http",
+              "scheme": "bearer"
+            }
+          }
+        }
+      },
+      "responses": {
+        "health": {
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "mode": "read_only",
+            "api_version": "v1"
+          },
+          "headers": {
+            "content-type": "application/json"
+          }
+        },
+        "unauthenticated": {
+          "status": 401,
+          "body": {
+            "error": {
+              "code": "authentication_required",
+              "message": "Valid bearer authentication is required."
+            }
+          },
+          "headers": {
+            "cache-control": "no-store",
+            "www-authenticate": "Bearer",
+            "content-type": "application/json"
+          }
+        },
+        "missing": {
+          "status": 404,
+          "body": {
+            "error": {
+              "code": "run_not_found",
+              "message": "The requested run was not found."
+            }
+          },
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "application/json"
+          }
+        }
+      }
+    },
+    "enabled": {
+      "openapi": {
+        "openapi": "3.1.0",
+        "info": {
+          "title": "QuantAgent Read API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/healthz": {
+            "get": {
+              "summary": "Health",
+              "operationId": "health_healthz_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Response Health Healthz Get"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v1/runs/{run_id}": {
+            "get": {
+              "summary": "Get Run",
+              "operationId": "get_run_api_v1_runs__run_id__get",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "run_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                    "type": "string",
+                    "title": "Run Id"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/RunSummary"
+                      }
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v1/runs/{run_id}/report": {
+            "get": {
+              "summary": "Get Report",
+              "operationId": "get_report_api_v1_runs__run_id__report_get",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "run_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                    "type": "string",
+                    "title": "Run Id"
+                  }
+                },
+                {
+                  "name": "if-none-match",
+                  "in": "header",
+                  "required": false,
+                  "schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "If-None-Match"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v1/runs": {
+            "post": {
+              "summary": "Submit Run",
+              "operationId": "submit_run_api_v1_runs_post",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "idempotency-key",
+                  "in": "header",
+                  "required": false,
+                  "schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Idempotency-Key"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/RunSummary"
+                      }
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v2/runs": {
+            "post": {
+              "summary": "Submit Task",
+              "operationId": "submit_task_api_v2_runs_post",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "idempotency-key",
+                  "in": "header",
+                  "required": false,
+                  "schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Idempotency-Key"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/TaskStatusV2"
+                      }
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v2/runs/{run_id}": {
+            "get": {
+              "summary": "Get Task",
+              "operationId": "get_task_api_v2_runs__run_id__get",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "run_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                    "type": "string",
+                    "title": "Run Id"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/TaskStatusV2"
+                      }
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/v2/runs/{run_id}/cancel": {
+            "post": {
+              "summary": "Cancel Task",
+              "operationId": "cancel_task_api_v2_runs__run_id__cancel_post",
+              "security": [
+                {
+                  "HTTPBearer": []
+                }
+              ],
+              "parameters": [
+                {
+                  "name": "run_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                    "type": "string",
+                    "title": "Run Id"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/TaskStatusV2"
+                      }
+                    }
+                  }
+                },
+                "422": {
+                  "description": "Validation Error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/HTTPValidationError"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "components": {
+          "schemas": {
+            "AgentSelection": {
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "agent",
+                  "title": "Type"
+                },
+                "agent": {
+                  "$ref": "#/components/schemas/ExactRef"
+                },
+                "skill": {
+                  "$ref": "#/components/schemas/ExactRef"
+                },
+                "recipe": {
+                  "$ref": "#/components/schemas/ExactRef"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "type",
+                "agent",
+                "skill",
+                "recipe"
+              ],
+              "title": "AgentSelection"
+            },
+            "ExactRef": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id"
+                },
+                "version": {
+                  "type": "string",
+                  "title": "Version"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "title": "ExactRef"
+            },
+            "FinalResultRef": {
+              "properties": {
+                "contract": {
+                  "type": "string",
+                  "title": "Contract"
+                },
+                "content_sha256": {
+                  "type": "string",
+                  "title": "Content Sha256"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "contract",
+                "content_sha256"
+              ],
+              "title": "FinalResultRef"
+            },
+            "HTTPValidationError": {
+              "properties": {
+                "detail": {
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationError"
+                  },
+                  "type": "array",
+                  "title": "Detail"
+                }
+              },
+              "type": "object",
+              "title": "HTTPValidationError"
+            },
+            "RecipeRef": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id"
+                },
+                "version": {
+                  "type": "string",
+                  "title": "Version"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "title": "RecipeRef"
+            },
+            "ResultLinks": {
+              "properties": {
+                "report": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Report"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "report"
+              ],
+              "title": "ResultLinks"
+            },
+            "RunSummary": {
+              "properties": {
+                "contract_type": {
+                  "type": "string",
+                  "const": "quantagent.read_api.run_summary.v1",
+                  "title": "Contract Type"
+                },
+                "run_id": {
+                  "type": "string",
+                  "title": "Run Id"
+                },
+                "recipe": {
+                  "$ref": "#/components/schemas/RecipeRef"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "running",
+                    "failed",
+                    "completed"
+                  ],
+                  "title": "Status"
+                },
+                "started_at": {
+                  "type": "string",
+                  "title": "Started At"
+                },
+                "completed_at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Completed At"
+                },
+                "offline": {
+                  "type": "boolean",
+                  "title": "Offline"
+                },
+                "selection": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AgentSelection"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "steps": {
+                  "items": {
+                    "$ref": "#/components/schemas/StepSummary"
+                  },
+                  "type": "array",
+                  "title": "Steps"
+                },
+                "final": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FinalResultRef"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "failure_type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Failure Type"
+                },
+                "links": {
+                  "$ref": "#/components/schemas/ResultLinks"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "contract_type",
+                "run_id",
+                "recipe",
+                "status",
+                "started_at",
+                "completed_at",
+                "offline",
+                "selection",
+                "steps",
+                "final",
+                "failure_type",
+                "links"
+              ],
+              "title": "RunSummary"
+            },
+            "StepSummary": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id"
+                },
+                "plugin_id": {
+                  "type": "string",
+                  "title": "Plugin Id"
+                },
+                "plugin_version": {
+                  "type": "string",
+                  "title": "Plugin Version"
+                },
+                "capability": {
+                  "type": "string",
+                  "title": "Capability"
+                },
+                "output_contract": {
+                  "type": "string",
+                  "title": "Output Contract"
+                },
+                "output_sha256": {
+                  "type": "string",
+                  "title": "Output Sha256"
+                },
+                "status": {
+                  "type": "string",
+                  "title": "Status"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "plugin_id",
+                "plugin_version",
+                "capability",
+                "output_contract",
+                "output_sha256",
+                "status"
+              ],
+              "title": "StepSummary"
+            },
+            "TaskLinksV2": {
+              "properties": {
+                "summary": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Summary"
+                },
+                "report": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Report"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "summary",
+                "report"
+              ],
+              "title": "TaskLinksV2"
+            },
+            "TaskStatusV2": {
+              "properties": {
+                "contract_type": {
+                  "type": "string",
+                  "const": "quantagent.run_status.v2",
+                  "title": "Contract Type"
+                },
+                "run_id": {
+                  "type": "string",
+                  "title": "Run Id"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "queued",
+                    "running",
+                    "completed",
+                    "failed",
+                    "cancelled",
+                    "interrupted"
+                  ],
+                  "title": "Status"
+                },
+                "cancel_requested": {
+                  "type": "boolean",
+                  "title": "Cancel Requested"
+                },
+                "created_at": {
+                  "type": "string",
+                  "title": "Created At"
+                },
+                "started_at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Started At"
+                },
+                "completed_at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Completed At"
+                },
+                "failure_type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Failure Type"
+                },
+                "links": {
+                  "$ref": "#/components/schemas/TaskLinksV2"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "contract_type",
+                "run_id",
+                "status",
+                "cancel_requested",
+                "created_at",
+                "started_at",
+                "completed_at",
+                "failure_type",
+                "links"
+              ],
+              "title": "TaskStatusV2"
+            },
+            "ValidationError": {
+              "properties": {
+                "loc": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "type": "array",
+                  "title": "Location"
+                },
+                "msg": {
+                  "type": "string",
+                  "title": "Message"
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Error Type"
+                },
+                "input": {
+                  "title": "Input"
+                },
+                "ctx": {
+                  "type": "object",
+                  "title": "Context"
+                }
+              },
+              "type": "object",
+              "required": [
+                "loc",
+                "msg",
+                "type"
+              ],
+              "title": "ValidationError"
+            }
+          },
+          "securitySchemes": {
+            "HTTPBearer": {
+              "type": "http",
+              "scheme": "bearer"
+            }
+          }
+        }
+      },
+      "responses": {
+        "health": {
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "mode": "controlled_local_submit",
+            "api_version": "v2"
+          },
+          "headers": {
+            "content-type": "application/json"
+          }
+        },
+        "unauthenticated": {
+          "status": 401,
+          "body": {
+            "error": {
+              "code": "authentication_required",
+              "message": "Valid bearer authentication is required."
+            }
+          },
+          "headers": {
+            "cache-control": "no-store",
+            "www-authenticate": "Bearer",
+            "content-type": "application/json"
+          }
+        },
+        "missing": {
+          "status": 404,
+          "body": {
+            "error": {
+              "code": "run_not_found",
+              "message": "The requested run was not found."
+            }
+          },
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "application/json"
+          }
+        }
+      }
+    }
+  }
+}

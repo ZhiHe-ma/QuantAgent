@@ -9,10 +9,7 @@ from typing import Any
 
 from .contracts import ContractError, DataPacket, utc_now
 from .p5_handoff import HandoffError, RoutePolicy, verify_handoff
-from .p5_registry import (
-    ApprovedRun, ApprovedRunRegistry, ApprovedSourceError,
-    bounded_regular_file, read_approved_source, strict_json,
-)
+from .p5_ports import ApprovedSourceError, get_p5_services, strict_json
 from .p5_review import IndependentReviewError, render_review_report, review_evidence
 from .plugins import PluginError, PluginManifest, RunContext
 
@@ -47,9 +44,9 @@ class SecApprovedRunSource:
         try:
             registry_path = context.assert_read_path(_string(config, "registry_path"))
             run_root = context.assert_read_path(_string(config, "approved_run_root"))
-            registry = ApprovedRunRegistry.load(registry_path, run_root)
+            registry = get_p5_services().approved_registry(registry_path, run_root)
             source = registry.resolve(_string(config, "approved_source_id"))
-            evidence = read_approved_source(source)
+            evidence = get_p5_services().read_approved_source(source)
             record = evidence.packet.records[0]
             return DataPacket.create(
                 contract_version=APPROVED, packet_type="sec_approved_run",
@@ -122,13 +119,13 @@ class SecHandoffSource:
         try:
             handoff_path = context.assert_read_path(_string(config, "handoff_path"))
             bundle_path = context.assert_read_path(_string(config, "bundle_path"))
-            raw = bounded_regular_file(handoff_path, 16 * 1024)
+            raw = get_p5_services().read_file(handoff_path, 16 * 1024)
             policy = RoutePolicy.load(POLICY_PATH)
             handoff = verify_handoff(
                 raw, _string(config, "handoff_sha256"), policy,
                 datetime.now(timezone.utc),
             )
-            bundle_raw = bounded_regular_file(bundle_path, 2 * 1024 * 1024)
+            bundle_raw = get_p5_services().read_file(bundle_path, 2 * 1024 * 1024)
             bundle = DataPacket.from_dict(strict_json(bundle_raw))
             expected = handoff.envelope["bundle"]
             if (
@@ -177,9 +174,9 @@ class SecIndependentReview:
             }:
                 raise PluginError("verified handoff record has unexpected fields")
             root = context.assert_read_path(_string(config, "approved_run_root"))
-            source = ApprovedRun.from_pins(row["approved_source_pins"], root)
+            source = get_p5_services().source_from_pins(row["approved_source_pins"], root)
             context.assert_read_path(str(source.run_dir))
-            findings = review_evidence(read_approved_source(source), row["bundle"])
+            findings = review_evidence(get_p5_services().read_approved_source(source), row["bundle"])
             findings["handoff_sha256"] = row["handoff_sha256"]
             findings["coordinator_id"] = row["coordinator_id"]
             findings["parent_run_id"] = row["parent_run_id"]

@@ -1,0 +1,33 @@
+# 旧引擎审计集成
+
+## 职责与边界
+
+使用原模型、网络、消息替身加载旧引擎，验证审计与失败路径。
+
+## 文件导航
+
+- [test_signal_audit_integration.py](test_signal_audit_integration.py)：审计集成用例。
+
+全局目录见 [测试导航](../../README.md)。
+
+## 对外接口
+
+保持原 unittest TestCase、测试方法、断言与失败条件；发现命令从仓库根执行。直接运行脚本时按文件祖先引导所属包，再用共享 ROOT 验证仓库标记；--help 启动由专项回归覆盖。
+
+## 依赖规则
+
+通过路径支持定位原 agent_engine.py，保持原动态测试加载和接口断言。
+
+## 数据与权限
+
+原合成输入与临时审计 SQLite；调用被替身限制。
+
+## 测试与验收
+
+执行 `python -m unittest discover -s tests/integration/audit -t . -v`；实际数量、用例映射、环境与跳过见 [分支说明](../../../docs/features/file-classification.md)。离线替身通过不构成真实后端或生产验收。
+
+R001 顺序用例检查胶囊预检在交付前，随后 report → message → Memory → audit；使用所属投影和 commit_frozen_audit 包装实际文件／SQLite 操作。失败注入移到恢复公开入口，保留交付保护、Memory 失败阻止审计与旧直调验收。
+
+## 已知限制
+
+本批是分类试点；其他平铺用例仍按测试导航保留。当前架构部分符合，存量问题不因目录整理消除。

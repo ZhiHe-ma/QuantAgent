@@ -16,10 +16,13 @@ from quantagent_platform.contracts import DataPacket, canonical_json
 from quantagent_platform.p5_handoff import RoutePolicy, create_handoff, preflight_route
 from quantagent_platform.p5_registry import ApprovedRunRegistry, RAW_NAMES
 from quantagent_platform.runner import RecipeRunner, default_registry
-from tests.test_sec_contracts import make_responses
+from tests.support.sec_samples import make_responses
 
 
-ROOT = Path(__file__).resolve().parents[1]
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 PARENT = "builtin.sec-evidence-producer-agent"
 CHILD = "builtin.sec-evidence-review-agent"
 

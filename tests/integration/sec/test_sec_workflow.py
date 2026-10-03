@@ -1,3 +1,4 @@
+import sys
 import copy
 import hashlib
 import json
@@ -9,6 +10,18 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+if __name__ == "__main__" and not __package__:
+    # Make the owning package available before importing shared test support.
+    root_hint = next(
+        (parent for parent in Path(__file__).resolve().parents
+         if (parent / "tests" / "support" / "paths.py").is_file()),
+        None,
+    )
+    if root_hint is None:
+        raise FileNotFoundError("Shared QuantAgent test support was not found")
+    sys.path.insert(0, str(root_hint))
+    from tests.support.paths import ROOT
+
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -18,10 +31,10 @@ from quantagent_platform.plugins import PluginError
 from quantagent_platform.result_api import ApiConfig, create_app
 from quantagent_platform.runner import RecipeError, RecipeRunner, default_registry
 from quantagent_platform.sec_contracts import SEC_FACTS_CONTRACT, normalize_sample
-from tests.test_sec_contracts import ISSUERS, make_payloads, make_responses
+from tests.support.sec_samples import ISSUERS, make_payloads, make_responses
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 RECIPE_PATH = ROOT / "recipes" / "sec_industry_peers.json"
 CONTACT = "QuantAgent test-contact@example.invalid"
 

@@ -5,9 +5,9 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .builtin_plugins import REPORT_CONTRACT
+from .signal_report_contracts import REPORT_CONTRACT
 from .contracts import DataPacket
-from .isolated_runtime import execute_json_worker, read_bounded
+from .worker_ports import execute_json_worker, read_bounded
 from .plugins import PluginError, PluginManifest, RunContext
 from .qlib_worker import PROTOCOL_VERSION, RESULT_CONTRACT
 

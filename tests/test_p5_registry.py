@@ -19,10 +19,13 @@ from quantagent_platform.p5_registry import (
     strict_json,
 )
 from quantagent_platform.runner import RecipeRunner, default_registry
-from tests.test_sec_contracts import make_responses
+from tests.support.sec_samples import make_responses
 
 
-ROOT = Path(__file__).resolve().parents[1]
+if __package__:
+    from tests.support.paths import ROOT
+else:
+    from support.paths import ROOT
 RAW_NAMES = (
     "sec-mara-submissions.json",
     "sec-mara-companyfacts.json",

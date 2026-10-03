@@ -1,5 +1,7 @@
-# Runtime lock plus HTTP client dependencies used by FastAPI TestClient.
+# Runtime lock plus HTTP client and recovery CLI test dependencies.
 -r requirements.txt
+-r requirements-architecture.txt
 httpcore2==2.13.0
 httpx2==2.13.0
+python-dotenv==1.2.2
 truststore==0.10.4

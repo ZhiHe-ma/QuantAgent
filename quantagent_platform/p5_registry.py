@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import os
 import re
 import stat
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -16,15 +14,12 @@ from jsonschema import Draft202012Validator
 
 from .contracts import ContractError, DataPacket
 from .sec_contracts import validate_sec_packet
+from .p5_ports import ApprovedRun, ApprovedSourceError, SecEvidence, strict_json
+from .sec_source_identities import RAW_NAMES
 
 
 REGISTRY_CONTRACT = "quantagent.sec_approved_run.v1"
-RAW_NAMES = (
-    "sec-mara-submissions.json",
-    "sec-mara-companyfacts.json",
-    "sec-riot-submissions.json",
-    "sec-riot-companyfacts.json",
-)
+
 _PACKET_NAMES = (
     "01-load-sec-facts.json",
     "02-summarize-sector.json",
@@ -45,47 +40,8 @@ _MAX_RAW = 8 * 1024 * 1024
 _MAX_REPORT = 4 * 1024 * 1024
 
 
-class ApprovedSourceError(ValueError):
-    """Private approved source is missing, unsafe, or inconsistent."""
-
-
 def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
-
-
-def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    value: dict[str, Any] = {}
-    for key, item in pairs:
-        if key in value:
-            raise ApprovedSourceError("approved JSON has duplicate keys")
-        value[key] = item
-    return value
-
-
-def _reject_constant(value: str) -> None:
-    raise ApprovedSourceError("approved JSON has a non-finite number")
-
-
-def _finite_float(value: str) -> float:
-    parsed = float(value)
-    if not math.isfinite(parsed):
-        raise ApprovedSourceError("approved JSON has a non-finite number")
-    return parsed
-
-
-def strict_json(raw: bytes) -> dict[str, Any]:
-    try:
-        value = json.loads(
-            raw.decode("utf-8"),
-            object_pairs_hook=_unique_object,
-            parse_constant=_reject_constant,
-            parse_float=_finite_float,
-        )
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ApprovedSourceError("approved JSON is not strict UTF-8") from exc
-    if not isinstance(value, dict):
-        raise ApprovedSourceError("approved JSON root must be an object")
-    return value
 
 
 def _signature(path: Path) -> tuple[int, int, int]:
@@ -102,6 +58,11 @@ def _path_signatures(path: Path) -> tuple[tuple[Path, tuple[int, int, int]], ...
         return tuple((piece, _signature(piece)) for piece in pieces)
     except (OSError, ValueError) as exc:
         raise ApprovedSourceError("approved path is missing or unsafe") from exc
+
+
+def path_signatures(path: Path) -> tuple[tuple[Path, tuple[int, int, int]], ...]:
+    """Public, no-follow path identity snapshot used by the P5 storage port."""
+    return _path_signatures(path)
 
 
 def _windows_open_nofollow(path: Path) -> int:
@@ -204,67 +165,41 @@ def _safe_run_root(run_root: Path) -> Path:
     return root
 
 
-@dataclass(frozen=True)
-class ApprovedRun:
-    source_id: str
-    run_id: str
-    run_dir: Path
-    registry_sha256: str
-    packet_sha256: str
-    report_sha256: str
-    raw_sha256: dict[str, str]
-    recipe_id: str
-    recipe_version: str
-    source_plugin_id: str
-    source_plugin_version: str
-
-    @classmethod
-    def from_pins(cls, pins: dict[str, object], run_root: Path) -> "ApprovedRun":
-        if not isinstance(pins, dict) or set(pins) != {
-            "approved_source_id", "run_id", "recipe", "source_plugin",
-            "packet_sha256", "report_sha256", "raw_sha256", "registry_sha256",
-        }:
-            raise ApprovedSourceError("approved handoff pins have invalid fields")
-        entry = {key: value for key, value in pins.items() if key != "registry_sha256"}
-        _validate_registry({"registry_version": REGISTRY_CONTRACT, "entries": [entry]})
-        registry_sha = pins["registry_sha256"]
-        if not isinstance(registry_sha, str) or not _HEX.fullmatch(registry_sha):
-            raise ApprovedSourceError("approved registry hash is invalid")
-        root = _safe_run_root(run_root)
-        run_id = entry["run_id"]
-        if not _RUN_ID.fullmatch(run_id) or run_id in {".", ".."}:
-            raise ApprovedSourceError("approved run ID is unsafe")
-        run_dir = root / run_id
-        _path_signatures(run_dir)
-        if not run_dir.is_dir() or run_dir.parent != root:
-            raise ApprovedSourceError("approved run directory is unsafe")
-        return cls(
-            source_id=entry["approved_source_id"],
-            run_id=run_id,
-            run_dir=run_dir,
-            registry_sha256=registry_sha,
-            packet_sha256=entry["packet_sha256"],
-            report_sha256=entry["report_sha256"],
-            raw_sha256=dict(entry["raw_sha256"]),
-            recipe_id=entry["recipe"]["id"],
-            recipe_version=entry["recipe"]["version"],
-            source_plugin_id=entry["source_plugin"]["id"],
-            source_plugin_version=entry["source_plugin"]["version"],
-        )
-
-    def to_pins(self) -> dict[str, object]:
-        return {
-            "approved_source_id": self.source_id,
-            "run_id": self.run_id,
-            "recipe": {"id": self.recipe_id, "version": self.recipe_version},
-            "source_plugin": {
-                "id": self.source_plugin_id, "version": self.source_plugin_version
-            },
-            "packet_sha256": self.packet_sha256,
-            "report_sha256": self.report_sha256,
-            "raw_sha256": dict(self.raw_sha256),
-            "registry_sha256": self.registry_sha256,
-        }
+def approved_source_from_pins(
+    pins: dict[str, object], run_root: Path,
+    source_type: type[ApprovedRun] = ApprovedRun,
+) -> ApprovedRun:
+    if not isinstance(pins, dict) or set(pins) != {
+        "approved_source_id", "run_id", "recipe", "source_plugin",
+        "packet_sha256", "report_sha256", "raw_sha256", "registry_sha256",
+    }:
+        raise ApprovedSourceError("approved handoff pins have invalid fields")
+    entry = {key: value for key, value in pins.items() if key != "registry_sha256"}
+    _validate_registry({"registry_version": REGISTRY_CONTRACT, "entries": [entry]})
+    registry_sha = pins["registry_sha256"]
+    if not isinstance(registry_sha, str) or not _HEX.fullmatch(registry_sha):
+        raise ApprovedSourceError("approved registry hash is invalid")
+    root = _safe_run_root(run_root)
+    run_id = entry["run_id"]
+    if not _RUN_ID.fullmatch(run_id) or run_id in {".", ".."}:
+        raise ApprovedSourceError("approved run ID is unsafe")
+    run_dir = root / run_id
+    _path_signatures(run_dir)
+    if not run_dir.is_dir() or run_dir.parent != root:
+        raise ApprovedSourceError("approved run directory is unsafe")
+    return source_type(
+        source_id=entry["approved_source_id"],
+        run_id=run_id,
+        run_dir=run_dir,
+        registry_sha256=registry_sha,
+        packet_sha256=entry["packet_sha256"],
+        report_sha256=entry["report_sha256"],
+        raw_sha256=dict(entry["raw_sha256"]),
+        recipe_id=entry["recipe"]["id"],
+        recipe_version=entry["recipe"]["version"],
+        source_plugin_id=entry["source_plugin"]["id"],
+        source_plugin_version=entry["source_plugin"]["version"],
+    )
 
 
 class ApprovedRunRegistry:
@@ -280,7 +215,7 @@ class ApprovedRunRegistry:
         digest = _sha256(raw)
         entries: dict[str, ApprovedRun] = {}
         for entry in value["entries"]:
-            source = ApprovedRun.from_pins(
+            source = approved_source_from_pins(
                 {**entry, "registry_sha256": digest}, run_root
             )
             entries[source.source_id] = source
@@ -291,20 +226,6 @@ class ApprovedRunRegistry:
             return self.entries[source_id]
         except (KeyError, TypeError) as exc:
             raise ApprovedSourceError("approved source ID is not registered") from exc
-
-
-@dataclass(frozen=True)
-class SecEvidence:
-    packet: DataPacket
-    record_sha256: str
-    packet_file_sha256: str
-    sector_packet: DataPacket
-    peer_packet: DataPacket
-    report_packet: DataPacket
-    report: bytes
-    report_sha256: str
-    raw: dict[str, bytes]
-    raw_sha256: dict[str, str]
 
 
 def read_approved_source(source: ApprovedRun) -> SecEvidence:

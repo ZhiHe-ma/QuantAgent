@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import hashlib
 import json
 import os
@@ -13,6 +14,18 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+if __name__ == "__main__" and not __package__:
+    # Make the owning package available before importing shared test support.
+    root_hint = next(
+        (parent for parent in Path(__file__).resolve().parents
+         if (parent / "tests" / "support" / "paths.py").is_file()),
+        None,
+    )
+    if root_hint is None:
+        raise FileNotFoundError("Shared QuantAgent test support was not found")
+    sys.path.insert(0, str(root_hint))
+    from tests.support.paths import ROOT
+
 from fastapi.testclient import TestClient
 
 from quantagent_platform.cli import main as cli_main
@@ -21,10 +34,10 @@ from quantagent_platform.p5_coordinator import ChainResult
 from quantagent_platform.p5_registry import RAW_NAMES
 from quantagent_platform.result_api import ApiConfig, create_app
 from quantagent_platform.runner import RecipeRunner, default_registry
-from tests.test_sec_contracts import make_responses
+from tests.support.sec_samples import make_responses
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests.support.paths import ROOT
 TOKEN = "p5-test-token-with-at-least-thirty-two-characters"
 
 

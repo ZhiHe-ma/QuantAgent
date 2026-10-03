@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .contracts import ContractError, DataPacket, canonical_json
-from .p5_registry import ApprovedSourceError, _path_signatures, bounded_regular_file, strict_json
+from .p5_ports import ApprovedSourceError, get_p5_services, strict_json, validate_identifier
 
 
 _MAX_SPEC = 64 * 1024
@@ -51,8 +51,6 @@ class WorkerSpec:
     submission_context: dict[str, str]
 
     def __post_init__(self) -> None:
-        from .p5_ledger import _safe_id
-
         role = _ROLES.get(self.agent_id)
         if role is None or (
             self.agent_version, self.skill_id, self.skill_version,
@@ -60,7 +58,7 @@ class WorkerSpec:
         ) != ("1.0.0", role[0], "1.0.0", role[1], "1.0.0"):
             raise ValueError("worker Agent/Skill/Recipe is outside fixed P5 route")
         try:
-            _safe_id(self.run_id, "run_id")
+            validate_identifier(self.run_id, "run_id")
         except ValueError as exc:
             raise ValueError("worker run ID is invalid") from exc
         if (
@@ -150,7 +148,7 @@ def _agent_worker(connection, cancel_flag, spec_raw: bytes) -> None:
             _send(connection, {"status": "failed", "run_id": spec.run_id})
             return
         path = Path(result.steps[-1]["packet_path"])
-        raw = bounded_regular_file(path, _MAX_PACKET)
+        raw = get_p5_services().read_file(path, _MAX_PACKET)
         _send(connection, {
             "status": "completed", "run_id": spec.run_id,
             "packet_path": str(path),
@@ -189,16 +187,17 @@ class WorkerSupervisor:
         if path.name != role[3]:
             return WorkerResult("interrupted", spec.run_id)
         try:
-            expected_signatures = _path_signatures(expected_dir)
-            reported_signatures = _path_signatures(path.parent)
+            io = get_p5_services()
+            expected_signatures = io.path_signatures(expected_dir)
+            reported_signatures = io.path_signatures(path.parent)
             if Path(os.path.abspath(path)).parent != expected_dir:
                 # Windows 8.3 and long names can identify the same directory.
                 # Reject links/junctions before accepting an identity match.
-                if not path.parent.samefile(expected_dir):
+                if not io.same_directory(path.parent, expected_dir):
                     return WorkerResult("interrupted", spec.run_id)
-            raw = bounded_regular_file(path, _MAX_PACKET)
-            if (_path_signatures(expected_dir) != expected_signatures
-                    or _path_signatures(path.parent) != reported_signatures):
+            raw = io.read_file(path, _MAX_PACKET)
+            if (io.path_signatures(expected_dir) != expected_signatures
+                    or io.path_signatures(path.parent) != reported_signatures):
                 return WorkerResult("interrupted", spec.run_id)
             packet = DataPacket.from_dict(strict_json(raw))
             if (

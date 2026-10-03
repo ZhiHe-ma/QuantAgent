@@ -11,8 +11,8 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .contracts import ContractError, parse_aware_timestamp
-from .p5_registry import RAW_NAMES, SecEvidence
-from .sec_client import SEC_URLS
+from .p5_ports import SecEvidence
+from .sec_source_identities import RAW_NAMES, SEC_URLS
 from .sec_contracts import COHORT_ID, CONCEPTS, FISCAL_END, FISCAL_START, ISSUERS
 
 
