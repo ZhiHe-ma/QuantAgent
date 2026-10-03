@@ -107,9 +107,15 @@
 
 一次独立只读整合审查：无新增 Critical／Important／Minor，既有 Minor 2 项延后。独立聚焦 9 项通过，1.313 秒、退出 0（reviewer-focused-tests.log）；42 项原始键、61 登记／52 受影响、唯一源分支说明及全部 README 决策核对通过。50 份固定资产字节保持（48 原路径、2 迁移），12 项导出、29 项插件顺序及原公开方法签名保持；I002 修复确在当前提交链，见 reviewer-static-checks.json、reviewer-compatibility-inventory.json、reviewer-final-review.md。未重复完整套件，也未用分离分支的结果拼成已发布版本。
 
-当前进度：I001-01／02 由 I002 完成，I001-03／04 在本批完成；本地交付通过，Ready to merge 尚未建立。最终提交只补本文证据，产品保持上述固定版本。基础读取清单初始 231 行／11,488 字符通过，长篇历史与接口按职责分段读取；最终门禁继续应用原文档及默认阅读预算。
+原本地进度：I001-01／02 由 I002 完成，I001-03／04 在本批完成；当时本地交付通过，Ready to merge 尚未建立，后续 4c98aa2 仅补本文证据。基础读取清单初始 231 行／11,488 字符通过，长篇历史与接口按职责分段读取；最终门禁继续应用原文档及默认阅读预算。
 
-作者逐项承接审查者未裁决的范围，沿用已确认边界：
+发布前补验（同日／同环境）：1932e2e9be94efa09e9200bb23295f3a695db218 清理两处末尾空行，AST 与原版本一致，被测文件哈希与提交 blob 相符。`python -m unittest discover -s tests -v` 返回 0，398 项／391 通过／7 跳过，102.871 秒；跳过及真实依赖范围保持上述限制。原始日志和哈希见 artifacts/integration/i003-pr/local-full-tests.log、format-evidence.json、local-source-receipt.json。
+
+完整目标及增量命令 `python -m tools.architecture --base-ref <目标> --branch feature/i003-integration-acceptance --report <报告>` 分别以 ccded244 和 4c98aa2 为目标，均退出 0：68 模块、0 违规／循环／存量，Import Linter 返回 0（local-full-gate.json、local-incremental-gate.json）。`git diff --check ccded244..1932e2e` 返回 0，两项历史格式 Minor 已处理。README 未再更新的原因已按能力记录。
+
+main 保护已通过 `gh api repos/ZhiHe-ma/QuantAgent/branches/main/protection` 回读：strict=true，四项 Windows／Linux Python 3.12 测试及架构检查均必需；enforce_admins=false，未配置必需 PR 审查，远端配置未修改。草稿 PR／最新提交 CI 尚待执行，后续以实际 PR 检查和固定提交证据为准；本地通过不表示合并或部署。
+
+以下为 5242b11 独立审查时的作者裁定；远端与格式事项的后续补验见上文，其他范围沿用：
 
 | Final Ruling | 理由与未验证代价 |
 | --- | --- |
@@ -129,4 +135,4 @@
 
 I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。当前进入用户已授权的草稿 PR 发布准备；最新提交的 Windows／Linux CI 和保护仍待实际核对，未合入或部署。真实集成及恢复／产品未测范围见上表。
 
-历史 Minor：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 存在末尾空行（whole-diff-check.log）。本次发布准备只处理这两处，新的命令、版本和结果另行记录，历史日志保留。
+历史 Minor：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 存在末尾空行（whole-diff-check.log）。1932e2e 已处理这两处，完整差异检查退出 0；历史日志保留。
