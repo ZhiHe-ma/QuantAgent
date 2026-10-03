@@ -4,7 +4,7 @@
 {
   "branch": "feature/i002-monitor-dry-run",
   "base_commit": "6475cbc7dea5cb6993d3cb9f002bcec623abc9e4",
-  "phase": "implementing",
+  "phase": "verified",
   "components": ["legacy-workflows", "acceptance-tests", "recovery-storage", "architecture"],
   "readme_unchanged": {
     "architecture": "本批仅按既有格式添加修复记录，门禁接口、能力归属、规则与文档预算未变，tools/architecture/README.md 无需更新。"
@@ -32,7 +32,7 @@
 
 ## 测试证据
 
-2026-10-04，Asia/Singapore／Windows／Python 3.12.8／UTF-8。基线 6475cbc：`python -m unittest tests.test_dry_run tests.integration.test_monitor_recovery tests.contract.test_legacy_ports -v`，21 项、1 错误、3.347 秒，退出 1；错误为 I001-02，日志在忽略的 `artifacts/integration/i002-monitor-dry-run/baseline.log`。
+2026-10-04，Asia/Singapore／Windows 11（10.0.22631）／Python 3.12.8／SQLite 3.45.3／UTF-8。基线 6475cbc：`python -m unittest tests.test_dry_run tests.integration.test_monitor_recovery tests.contract.test_legacy_ports -v`，21 项、1 错误、3.347 秒，退出 1；错误为 I001-02，日志在忽略的 `artifacts/integration/i002-monitor-dry-run/baseline.log`。
 
 合并阅读清单 341 行／19,355 字符超过既有预算，按职责分段：工作流＋恢复 5 份、239 行／14,233 字符；测试＋门禁 5 份、229 行／11,377 字符，均通过。未放宽预算或删去必需规范。
 
@@ -40,7 +40,13 @@
 
 修复后同一基线命令通过：24 项、0 失败、3.546 秒，退出 0，日志 `targeted-green.log`。首次固定源码 7fc404138b6a9e5f47751171f0ad7c9d5d35f023：`python -m unittest discover -s tests -v`，398 项、391 通过／7 跳过、101.323 秒，退出 0，日志 `full-tests.log`；本批增量门禁通过。RED 为基线加未提交回归测试的工作区，不是已提交源码验收。
 
-独立审查发现 1 项 Important：同批重复 ID／指纹导致预览重复推理，已有失败 2／上限 3 时还能追加 3 次。复现见 `reviewer-duplicate-probe.log`；扩充现有公开入口测试后，2 项方法／3 个失败，0.073 秒，退出 1（`batch-red.log`）。仅 dry-run 候选批新增 ID／指纹去重，修复后同一基线命令 24 项通过，3.571 秒，退出 0（`targeted-batch-green.log`）。新固定源码的全量回归、门禁和复审待完成；日志均在上述忽略目录，不作为生产证据。
+独立审查发现 1 项 Important：同批重复 ID／指纹导致预览重复推理，已有失败 2／上限 3 时还能追加 3 次。复现见 `reviewer-duplicate-probe.log`；扩充现有公开入口测试后，2 项方法／3 个失败，0.073 秒，退出 1（`batch-red.log`）。仅 dry-run 候选批新增 ID／指纹去重，修复后同一基线命令 24 项通过，3.571 秒，退出 0（`targeted-batch-green.log`）。
+
+最终源码：35b65c45d447ff8c8cdab6fbc80c8e8259e43c4a。`python -m unittest discover -s tests -v`：398 项，391 通过／7 跳过、0 失败、100.842 秒，退出 0（`full-tests-final.log`）；包含既有公开 Python 导出、CLI、HTTP 与固定配方兼容用例。7 项跳过为真实 bt／Qlib 解释器未配置、私有 P4 样本缺失、3 项 Windows 链接权限限制和 8.3 名称禁用，不记作通过。
+
+本批门禁：`python -m tools.architecture --base-ref 6475cbc7dea5cb6993d3cb9f002bcec623abc9e4 --branch feature/i002-monitor-dry-run --report artifacts/integration/i002-monitor-dry-run/gate-source.json`，68 模块、0 违规／0 环、Import Linter 退出 0（54 条契约通过）。最终阅读清单：工作流＋恢复 243 行／14,541 字符，测试＋门禁 231 行／11,488 字符，均在原预算内。
+
+独立复审固定范围 7fc4041 → 35b65c4：5 项聚焦回归通过，0.667 秒、退出 0（`reviewer-batch-green-focused.log`）；两条原探针各调用模型 1 次且文件字节不变（`reviewer-batch-green-probes.log`）。Critical／Important／Minor 均为 0，原 Important 已闭环，I001-01／02 在本批完成。本记录的最终提交仅补证据，源码保持上述版本；日志均在上述忽略目录，不作为远端 CI 或生产证据。
 
 ## 回滚方式
 
