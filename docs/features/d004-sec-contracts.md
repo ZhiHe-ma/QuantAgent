@@ -5,6 +5,7 @@
   "branch": "refactor/d004-sec-contracts",
   "base_commit": "722550fe26c39b45725935052b04114c71b107e1",
   "sec_contract_commit": "a79f1a84b2bfc08d61787e61aeb73a4c0236806d",
+  "tested_commit": "331ac4630d9363ae120a58d74aa4e32625d4c72a",
   "components": ["sec-contracts", "sec-response-contracts", "sec-source-identities", "sec-adapter", "runner", "architecture", "acceptance-tests"],
   "readme_unchanged": {
     "architecture": "仅登记新的纯响应契约并删除实际消除的 D004 引用；检查器、规则及 CI 命令不变。"
@@ -44,7 +45,7 @@
 | 完整离线 | `python -m unittest discover -s tests -v`：323 项、0 失败、7 跳过，63.950 秒 |
 | 兼容与门禁 | `python artifacts/architecture/d004-sec-contracts/verify_compatibility.py`：81 个原资产、24 项原 SEC 定义及除已说明写入 helper 外的原 runner AST 保持，共 25 项核对；2,401 个原允许关系、原 Packet 和别名保持。完整门禁通过，53 个模块、9 条精确存量、无循环，Import Linter 返回 0 |
 
-保留前两次完整日志：319 项分别因旧边界白名单及已复现 Windows 替换失败而失败，修复后完整回归通过。7 项跳过为原真实 bt/Qlib、私有 P4、三项 Windows 链接，以及当前临时目录卷未启用 8.3 文件名的短路径用例；实际测试源码提交号在本地提交后绑定。
+保留前两次完整日志：319 项分别因旧边界白名单及已复现 Windows 替换失败而失败，修复后完整回归通过。7 项跳过为原真实 bt/Qlib、私有 P4、三项 Windows 链接，以及当前临时目录卷未启用 8.3 文件名的短路径用例；最终完整回归源码和测试对应 `tested_commit`，后续仅补录文档。
 
 ### Task 1: 提取最小 SEC 响应契约
 
@@ -61,7 +62,7 @@
 - [x] 新增 `tests/unit/test_runner_atomic_write.py`：真实 Windows 读句柄占用恢复、模拟 WinError 5/32 有限重试、永久拒绝保留旧字节、其他错误及非 Windows 不重试。Expected: 原写入在占用恢复/重试用例中按预期失败。
 - [x] 仅调整 `runner._atomic_json_write()` 的 replace：Windows 5/32 最多 5 次，失败间隔 10/20/30/40 ms；其他错误立即沿用原异常。Expected: 新测试通过，永久拒绝仍抛异常且旧目标字节不变。
 - [x] 复跑原四路同键提交及全套 `python -m unittest discover -s tests -v`，记录每次失败与跳过。Expected: 完整离线通过；不跳过并发用例、不声称永久权限错误被修复。
-- [ ] 更新 README 和验收，单独提交；最后运行上面的完整门禁作为 task-done 验证。
+- [x] 更新 README 和验收，单独提交；最后运行上面的完整门禁作为 task-done 验证。
 - [ ] 一次独立只读审查整个分支，归档执行记录，保留本地分支和工作树。
 
 Review focus: 旧 SecResponse 导入及 isinstance 身份；既有启动组装后的独立契约重载不依赖客户端/可选 SDK；客户端和标准化共用原 8 MiB 上限与四个固定 URL；frozen/repr 与原 SHA/时间/严格 JSON 语义；Windows 原子替换只有限处理 5/32、失败保持旧字节、非 Windows及其他错误行为；P5、CLI/HTTP 和固定配方间接兼容，原允许关系保持。
