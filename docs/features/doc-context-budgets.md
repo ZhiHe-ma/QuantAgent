@@ -4,7 +4,7 @@
 {
   "branch": "feature/doc-context-budgets",
   "base_commit": "3717263081ec079d0a38d2284919f329d312edef",
-  "phase": "verifying",
+  "phase": "verified",
   "components": ["architecture", "acceptance-tests"],
   "readme_unchanged": {}
 }
@@ -44,9 +44,13 @@
 
 首个候选实现为 `fc0cd9ce36067210273952aef9f87f125938821c`。只读审查在真实临时环境复现报告覆盖原文、目标政策 null／重复键被放过两项 Important；新增两个真实 CLI／Git 回归，先观察 13 个子场景失败，再修复。额外观察并修复严格解析造成的目标政策 BOM 兼容失败。
 
-修复提交 `c58120c43a0d3829386c07b3eb49647e5f0ac94d` 的架构测试 79 项通过，5.507 秒；完整回归 392 项、0 失败、7 项原环境跳过，101.350 秒。复核确认两项原问题闭合，但复现硬链接别名仍能覆盖原文；新增真实硬链接 CLI 用例先观察失败，再用临时文件与原子替换修复。`python -m unittest discover -s tests/architecture -v`：**80 项通过，5.564 秒**；最终完整回归与只读修复复核正在执行。完整门禁仍 PASS：68 个模块、0 条存量违规、Import Linter 返回 0。
+修复提交 `c58120c43a0d3829386c07b3eb49647e5f0ac94d` 的架构测试 79 项通过，5.507 秒；完整回归 392 项、0 失败、7 项原环境跳过，101.350 秒。复核确认两项原问题闭合，但复现硬链接别名仍能覆盖原文；新增真实硬链接 CLI 用例先观察失败，再用临时文件与原子替换修复。
 
-原始日志和结构化报告保留在忽略的 `artifacts/architecture/doc-context-budget/`；full-tests-final.log 保存 c58120c 的回归结果，最终结果以 full-tests-atomic.log／architecture-tests-final.log／gate-final.json 为准。review-red.log／review-bom-red.log／hardlink-red.log 保留修复前证据。验证针对提交前候选代码，不可变修复提交及最终审查在收尾追加记录，验收日志不提交到版本库。
+最终受验收源码 `bb86a89c3c9cbc0dc5bc6dbd3f4eac4f1ab7952c`：`python -m unittest discover -s tests/architecture -v` **80 项通过，5.564 秒**；`python -m unittest discover -s tests -v` **393 项、0 失败、7 项原环境跳过，101.333 秒**。上述门禁命令 PASS：68 个模块、0 条存量违规、Import Linter 返回 0。两能力阅读清单 PASS：5 份文档、227 行／11,221 字符。
+
+同一只读审查席位复核最终修复，独立运行 16 项预算测试通过，4.168 秒；直接覆盖、非法目标政策、硬链接覆盖均闭合，无 Critical／Important／Minor。审查仅评价本批工具增量，既有业务设计未重新审查；既有离线用例已包含在完整回归中。真实 token／整段聊天计量和远端 CI 未验证。后续收尾提交只更新本分支说明，验收源码不变。
+
+原始日志和结构化报告保留在忽略的 `artifacts/architecture/doc-context-budget/`；full-tests-final.log 保存 c58120c 的回归结果，最终结果以 full-tests-atomic.log／architecture-tests-final.log／gate-final.json／context-final.json／receipt.json 为准。review-red.log／review-bom-red.log／hardlink-red.log 保留修复前证据；验收日志不提交到版本库。
 
 ## 回滚方式
 
