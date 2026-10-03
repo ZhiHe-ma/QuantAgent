@@ -76,7 +76,7 @@ D006 新边界见 [test_legacy_boundaries.py](architecture/test_legacy_boundarie
 
 Monitor 用 `python -m unittest tests.integration.test_monitor_recovery tests.test_idempotency_error_isolation tests.contract.test_legacy_ports -v` 验证真实投影、跨日、预算、隔离、旧文件拒绝和单任务 retry；旧写入 mock 改为包装真实临时文件写入。
 
-R001 入口见 [恢复功能](../quantagent_platform/recovery/README.md)：单元／契约／架构、Daily／Monitor 集成和真实子进程中断／并发测试。使用合成外部服务与真实临时文件、SQLite、OS 锁；结果见 [R001](../docs/features/r001-recovery-resume.md)。
+R001 入口见 [恢复功能](../quantagent_platform/recovery/README.md)：单元／契约／架构、Daily／Monitor 集成和真实子进程中断／并发测试。使用合成外部服务与真实临时文件、SQLite、OS 锁；真实 `.env` 读取依赖由 [requirements-test.txt](../requirements-test.txt) 锁定，CI 也按此清单安装；结果见 [R001](../docs/features/r001-recovery-resume.md)。
 
 [R002](../docs/features/r002-recovery-read-snapshot.md) 在 [恢复存储契约](contract/test_recovery_store.py) 中验证独立连接交错、列表同一快照、实际损坏拒绝和默认模式错误后锁释放，避免 status 误报正常并发提交。
 

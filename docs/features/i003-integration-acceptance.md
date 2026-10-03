@@ -60,9 +60,9 @@
     "recovery-package"
   ],
   "readme_unchanged": {
-    "architecture": "本批只补整合说明、导航及发布验收记录，门禁接口、规则、能力登记和预算未改变，tools/architecture/README.md 无需再次更新；整体目标差异中该 README 已更新。",
+    "architecture": "纯整合导航及验收记录提交不改变门禁接口、规则、能力登记或预算；tools/architecture/README.md 已随 CI 测试依赖补齐同步更新，无需在纯记录提交中再次修改。",
     "legacy-workflows": "发布前仅删除 legacy_workflows.py 末尾多余空行，不改变接口、行为、依赖或权限，quantagent_platform/README.md 无需再次更新；整体目标差异中该 README 已更新。",
-    "acceptance-tests": "发布前仅删除 tests/support/sec_samples.py 末尾多余空行，不改变样本构造、测试入口、依赖或权限，tests/README.md 无需再次更新；整体目标差异中该 README 已更新。"
+    "acceptance-tests": "样本末尾空行清理及验收记录不改变样本构造、测试入口或权限；tests/README.md 已随 CI 测试依赖补齐同步更新，无需在纯记录提交中再次修改。"
   }
 }
 ```
@@ -73,7 +73,7 @@
 
 原本地整合步骤：核实远端目标／重放初始扫描 → 覆盖全部受影响能力及 README 决策 → 固定提交的离线测试、完整门禁与一次独立只读整合审查。该阶段仅补文档导航，未修改产品、测试、规则、权限或历史基线，也未上传、合并或部署。原用户删除保持未暂存。
 
-后续用户已同意：清理两处末尾空行 → 复核本地验收 → 推送当前分支至 ZhiHe-ma/QuantAgent → 创建面向 main 的草稿 PR → 跟进 Windows／Linux CI。此授权不包含合并或部署；发布前逐项记录 README 无需更新的理由。
+后续用户已同意：清理两处末尾空行 → 复核本地验收 → 推送当前分支至 ZhiHe-ma/QuantAgent → 创建面向 main 的草稿 PR → 跟进 Windows／Linux CI。此授权不包含合并或部署；发布前逐项记录 README 无需更新的理由。CI 暴露漏列测试依赖时，先复现，再补精确锁定及所属 README，不跳过失败用例。
 
 ## 涉及模块
 
@@ -89,7 +89,7 @@
 
 ## 新增依赖
 
-本批无新增依赖、能力、豁免或允许引用。整个范围新增锁定开发依赖 Import Linter 2.8（见 [requirements-architecture.txt](../../requirements-architecture.txt)，由 requirements-test.txt 引入），现有 Python 3.12 Windows／Linux CI 执行离线测试及门禁；真实实验后端继续按原开关隔离。本地通过、远端 CI、部署和生产分别记录。
+原整合阶段无新增依赖、能力、豁免或允许引用；首轮 CI 修复仅在 [requirements-test.txt](../../requirements-test.txt) 补锁原恢复 CLI 用例所需 python-dotenv==1.2.2，不新增业务引用。整个范围新增锁定开发依赖 Import Linter 2.8（见 [requirements-architecture.txt](../../requirements-architecture.txt)，由测试清单引入），Python 3.12 Windows／Linux CI 执行离线测试及门禁；真实实验后端继续按原开关隔离。本地通过、远端 CI、部署和生产分别记录。
 
 ## 测试证据
 
@@ -113,7 +113,11 @@
 
 完整目标及增量命令 `python -m tools.architecture --base-ref <目标> --branch feature/i003-integration-acceptance --report <报告>` 分别以 ccded244 和 4c98aa2 为目标，均退出 0：68 模块、0 违规／循环／存量，Import Linter 返回 0（local-full-gate.json、local-incremental-gate.json）。`git diff --check ccded244..1932e2e` 返回 0，两项历史格式 Minor 已处理。README 未再更新的原因已按能力记录。
 
-main 保护已通过 `gh api repos/ZhiHe-ma/QuantAgent/branches/main/protection` 回读：strict=true，四项 Windows／Linux Python 3.12 测试及架构检查均必需；enforce_admins=false，未配置必需 PR 审查，远端配置未修改。草稿 PR／最新提交 CI 尚待执行，后续以实际 PR 检查和固定提交证据为准；本地通过不表示合并或部署。
+main 保护已通过 `gh api repos/ZhiHe-ma/QuantAgent/branches/main/protection` 回读：strict=true，四项 Windows／Linux Python 3.12 测试及架构检查均必需；enforce_admins=false，未配置必需 PR 审查，远端配置未修改。[草稿 PR #22](https://github.com/ZhiHe-ma/QuantAgent/pull/22) 已创建，源 bedc9cca、目标 ccded244，上传 Git 树与本地一致；未合并或部署。
+
+首轮 PR CI（[37145502567](https://github.com/ZhiHe-ma/QuantAgent/actions/runs/37145502567)，bedc9cca）两套架构检查通过；Linux／Windows 全量均因同一 dotenv 导入缺失出现 4 个 subTest 失败，分别 9／3 跳过。原有恢复 CLI 用例需要真实 `.env` 读取，本机系统包 python-dotenv 1.2.2 掩盖了 requirements-test.txt 漏列。使用 `python -m venv --without-pip artifacts/integration/i003-pr/clean-env`，该隔离解释器运行 `-m unittest tests.integration.test_daily_recovery.DailyRecoveryTests.test_recover_cli_honors_dotenv_dry_run_without_engine -v` 复现退出 1、相同 4 个失败（dotenv-red.log）。修复范围为补锁 python-dotenv==1.2.2 及依赖说明，业务及原失败用例保持；修复后须复核该用例、完整门禁与实际最新提交 CI。
+
+补齐后使用 `python -m pip --python artifacts/integration/i003-pr/clean-env/Scripts/python.exe install --disable-pip-version-check --no-cache-dir --no-deps python-dotenv==1.2.2`，仅写隔离环境。相同用例 1 项／4 个动作均通过，3.983 秒、退出 0（dotenv-green.log）；完整目标门禁退出 0（dotenv-fix-gate.json），两份所属 README 同步说明依赖入口。本地完整套件沿用未变业务代码的 1932e2e 证据；最新修复提交的全套测试由实际 CI 复核，不能将这 1 项用例称为全量复测。
 
 以下为 5242b11 独立审查时的作者裁定；远端与格式事项的后续补验见上文，其他范围沿用：
 
@@ -133,6 +137,6 @@ main 保护已通过 `gh api repos/ZhiHe-ma/QuantAgent/branches/main/protection`
 
 ## 遗留问题
 
-I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。当前进入用户已授权的草稿 PR 发布准备；最新提交的 Windows／Linux CI 和保护仍待实际核对，未合入或部署。真实集成及恢复／产品未测范围见上表。
+I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。草稿 PR #22 已建立；首轮 CI 失败及隔离复现已记录，补齐漏列依赖后的最新提交 CI 待复核，未合入或部署。真实集成及恢复／产品未测范围见上表。
 
 历史 Minor：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 存在末尾空行（whole-diff-check.log）。1932e2e 已处理这两处，完整差异检查退出 0；历史日志保留。

@@ -10,7 +10,7 @@
 
 ## 对外接口
 
-安装 `requirements-test.txt`，从仓库根执行：
+安装 [requirements-test.txt](../../requirements-test.txt)，从仓库根执行。该清单还锁定恢复 CLI 的真实 `.env` 测试依赖；架构工具自身不引用 dotenv：
 
 ```bash
 python -m tools.architecture --inventory
