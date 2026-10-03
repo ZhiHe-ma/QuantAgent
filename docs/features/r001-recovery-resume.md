@@ -10,7 +10,7 @@
 
 **Spec:** 本文“目标与非目标”至“新增依赖”的书面规范，已批准版本为提交 `2a29b69ef0fd88805f571339603530c69ed4b3ec`。
 
-2026-10-03。书面规范已获用户确认；实施计划已获用户确认，现按五批实施。沿用当前工作树和 Native 执行方式。本文件保存本批规范、计划及验收，共同规则使用链接。
+2026-10-03。已完成五批实施、一次独立整分支审查及重要问题修复，本地离线验收通过。保留当前工作树与功能分支；本文件保存规范、计划和本批验收，共同规则使用链接。
 
 ## Global Constraints
 
@@ -33,7 +33,7 @@
 {
   "branch": "feature/r001-recovery-resume",
   "base_commit": "9c09e12e6bf82c0e1fe3845ee1bf71cd1941a6ea",
-  "phase": "final_review",
+  "phase": "implemented",
   "approved_plan_commit": "f38ede46eef828d9eec7ba32798139f09e00fe04",
   "written_spec_commit": "2a29b69ef0fd88805f571339603530c69ed4b3ec",
   "execution_method": "native",
@@ -198,7 +198,7 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 - [x] **Implement/fix:** 先重现并保留 RED 原因，再在所属模块修正；不放宽门禁或替换真实存储为 mock。全离线基线原 341 项、7 项环境跳过只作历史参照；记录本次实际发现、通过、失败和跳过理由，不能预填结果。
 - [x] **GREEN targeted:** `python -m unittest tests.integration.test_recovery_processes tests.integration.test_daily_recovery tests.integration.test_monitor_recovery tests.contract.test_recovery_store tests.contract.test_recovery_ports tests.architecture.test_recovery_boundaries -v` 全通过；再运行 `python -m unittest discover -s tests -v` 和架构门禁。全套必须非零发现、0 失败；真实可选依赖按原跳过条件解释。
 - [x] **GREEN compatibility:** 单独核对原导出／类型身份、CLI help 与三种原 mode、HTTP 状态／字段／权限、固定配方及正式资产哈希；核对原 162 项资产：159 项字节保持，仅三项已批准的旧验收测试因胶囊预检／恢复和真实写入包装更新，旧能力之间的允许关系不变。原 34 项定义重新按本批范围核对：仅已列明的日报预检／恢复、Monitor 投影确认及消息分类允许行为变化，原公开签名及非目标行为保持，不能继续沿用 D006 的实现 AST 全部不变要求。Windows 本地与未来 Linux CI 结果分别记录；真实服务、远端 CI、部署与生产未跑就写未跑。
-- [ ] **Review/commit:** 沿用 Native，由本会话完成各批后请求一次新的整分支独立审查，记录结论并修复阻断项；补齐实际源码／文档提交及回滚证据后 `git commit -m "test: verify R001 process recovery and compatibility"`，仅暂存本 Task 实际修改，再复核门禁和工作树。保留用户原有删除，不推送、合并或部署。
+- [x] **Review/commit:** 沿用 Native，由本会话完成各批后请求一次新的整分支独立审查，记录结论并修复阻断项；补齐实际源码／文档提交及回滚证据后 `git commit -m "test: verify R001 process recovery and compatibility"`，仅暂存本 Task 实际修改，再复核门禁和工作树。保留用户原有删除，不推送、合并或部署。
 
 ### 每批命令与记录
 
@@ -239,7 +239,13 @@ Task 3：在提交 `0bb853758aaa0372fde630bca13cc9ae52750eb5` 的工作差异验
 
 Task 4：在提交 `402f661066c9b792e21f2940f34be8c3066ddc22` 的工作差异运行 Monitor／原幂等／注入／静态边界 25 项通过。完整套件 369 项、0 失败、7 项原环境跳过，76.264 秒；门禁 67 模块、0 存量／循环／错误，Import Linter=0。失败测试暴露隔离投影旧确认复用和旧已耗尽预算仍重推，均修正并验证；单任务 retry 不抓取新新闻、不进入 sleep。调整纯 reducer 使每次模型失败／首个冻结决议的隔离投影重新待确认，次数仅由推理错误事件增加。环境／未测范围同前。
 
-Task 5 初验：运行计划定向命令，28 项通过，20.961 秒；真实子进程四边界退出及三类锁／两种流程同时推理，2 项首次通过，15.606 秒，未为验收伪造 RED。完整命令 372 项、0 失败、7 项原环境跳过，93.280 秒；门禁 67 模块、0 存量／循环／错误，Import Linter=0。源码 `11f561aaf8c30cd7834098587befc8943afcd046`，本批工作差异只新增测试与当前说明。旧 57 能力的 3,249 组允许关系和公开导出保持；34 原定义中 28 项 AST 保持，6 项按 R001 改变，原函数／审计 10 项方法签名保持。159／162 资产原字节保持，三项变动均为已批准的旧验收用例；CLI 原三 mode 分发及不构造引擎的 status 另验通过。证据见 task-5-full.log、task-5-targeted.log、task-5-gate.json、compatibility.json、cli-compatibility.json；整分支审查结论待记录。
+Task 5 初验（独立审查前）：运行计划定向命令，28 项通过，20.961 秒；真实子进程四边界退出及三类锁／两种流程同时推理，2 项首次通过，15.606 秒，未为验收伪造 RED。完整命令 372 项、0 失败、7 项原环境跳过，93.280 秒；门禁 67 模块、0 存量／循环／错误，Import Linter=0。源码 `11f561aaf8c30cd7834098587befc8943afcd046`，本批工作差异只新增测试与当前说明。旧 57 能力的 3,249 组允许关系和公开导出保持；34 原定义中 28 项 AST 保持，6 项按 R001 改变，原函数／审计 10 项方法签名保持。159／162 资产原字节保持，三项变动均为已批准的旧验收用例；CLI 原三 mode 分发及不构造引擎的 status 另验通过。证据见 task-5-full.log、task-5-targeted.log、task-5-gate.json、compatibility.json、cli-compatibility.json；后续结论见下。
+
+最终审查：新上下文审查者检查 `f38ede4..683fe23`，独立重跑五项 Review Focus 均通过；发现 5 项 Important、1 项 Minor，无 Critical。五项重要问题均先复现再修复：恢复入口读取 `.env` 预览设置、无渠道且 report 提前失败时禁止普通重跑首次发送、Daily CLI 显示未完成及退出 2、Monitor 短投影锁竞争退让、同批新闻按确认 ID 去重。新增五项回归通过，日志为 final-fix-red.log、final-dotenv-red.log、final-fix-green.log；审查记录与完整执行账本分别保存为 final-review.txt、execution-ledger.md，均在忽略的本地验收目录。
+
+最终验收：仍为 Windows／Python 3.12.8／UTF-8，运行 `python -m unittest discover -s tests -v`：377 项、0 失败、7 项跳过，96.991 秒；测试时为 `683fe23` 加本批工作差异，实际产品／测试内容随后提交 `cea6238779e5ac308d471b59038837321edc7687`，收尾只更新文档。上列完整架构命令使用 final-fix-gate.json：67 模块、0 存量／循环／错误、Import Linter=0；兼容性复核保持上述资产、定义、签名、允许关系和公开导出。原始完整日志 final-full.log 与最终来源收据 final-acceptance.json 保留本地；源码提交与文档提交分别登记。
+
+7 项环境跳过为真实 bt／Qlib 未指定隔离解释器、固定私人 P4 样本缺失、3 项 Windows 链接权限不足及 8.3 名称禁用。Linux／远端 CI、真实服务、部署、生产、跨主机和物理灾难均未验证；本批结论仅为本地离线恢复验收。
 
 ## 回滚方式
 
@@ -248,3 +254,5 @@ Task 5 初验：运行计划定向命令，28 项通过，20.961 秒；真实子
 ## 遗留问题
 
 首次协议仅支持单机同一实例。历史资料不足、消息未知及人为改动不能自动判真；恢复记录不能证明真实送达或物理灾难恢复。完成记录本批保留，不自动清理，后续需单独制定保留/归档规则。书面规范和实施计划均已批准；沿用本会话的当前工作树、Native 和逐批验收方式。
+
+延期 Minor：并发只读 status 的两次读取可能跨过一次合法提交，暂时报 journal projection mismatch；不会修改数据，重新查询可恢复。一致性 SQLite 读取修正留作后续项，本批没有宣称该问题已修复。
