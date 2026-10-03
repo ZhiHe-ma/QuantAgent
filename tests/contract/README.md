@@ -39,6 +39,8 @@ worker 契约使用临时授权目录和原 fake worker 子进程，验证宿主
 
 API 契约来源与验证见 [D003](../../docs/features/d003-api-composition.md)。
 
+[test_recovery_ports.py](test_recovery_ports.py) 核验中文／换行的实际落盘字节、原子替换失败保护、较新 Memory、原生与旧消息结果以及真实审计行数和规范信号保护。
+
 ## 已知限制
 
 其他平铺用例仍按测试导航保留。当前治理状态见[架构规范](../../docs/ARCHITECTURE.md)，存量问题不因目录整理消除。

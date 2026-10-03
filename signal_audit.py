@@ -169,6 +169,20 @@ class SignalAuditStore:
         factors: Optional[list[Mapping[str, Any]]] = None,
     ) -> dict[str, Any]:
         """Persist one completed run, its canonical signal, and factor rows atomically."""
+        return self._record_signal(run, signal, factors, guard_canonical=False, expected_canonical_signal_id=None)
+
+    def validate_completed_signal(self, run: Mapping[str, Any], signal: Mapping[str, Any],
+                                  factors: Optional[list[Mapping[str, Any]]] = None) -> None:
+        self._validate_records(run, signal, list(factors or []))
+
+    def record_recovered_signal(self, run: Mapping[str, Any], signal: Mapping[str, Any],
+                                factors: Optional[list[Mapping[str, Any]]] = None,
+                                *, expected_canonical_signal_id: str | None) -> dict[str, Any]:
+        """Backfill original IDs; promote only if the captured canonical is unchanged."""
+        return self._record_signal(run, signal, factors, guard_canonical=True,
+                                   expected_canonical_signal_id=expected_canonical_signal_id)
+
+    def _record_signal(self, run, signal, factors, *, guard_canonical, expected_canonical_signal_id):
         factor_rows = list(factors or [])
         self._validate_records(run, signal, factor_rows)
 
@@ -243,7 +257,13 @@ class SignalAuditStore:
 
             asset = str(signal["asset"]).upper()
             horizon = signal.get("decision_horizon", "1d")
-            connection.execute(
+            current = connection.execute(
+                "SELECT signal_id FROM daily_signals WHERE signal_date=? AND asset=? AND decision_horizon=? AND is_canonical=1",
+                (signal["signal_date"], asset, horizon),
+            ).fetchone()
+            promote = not guard_canonical or (current["signal_id"] if current else None) == expected_canonical_signal_id
+            if promote:
+                connection.execute(
                 """
                 UPDATE daily_signals SET is_canonical = 0
                 WHERE signal_date = ? AND asset = ?
@@ -261,7 +281,7 @@ class SignalAuditStore:
                     factors_json, previous_memory_json, analysis_text, factor_count,
                     data_quality_score, quality_flags_json, is_canonical, finalized_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, 1, ?)
+                          ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     signal["signal_id"],
@@ -286,6 +306,7 @@ class SignalAuditStore:
                     len(factor_rows),
                     float(signal["data_quality_score"]),
                     self._json(signal.get("quality_flags", [])),
+                    int(promote),
                     signal["finalized_at"],
                 ),
             )

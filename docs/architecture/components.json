@@ -712,7 +712,8 @@
       ],
       "allows": [
         "legacy-ports",
-        "legacy-workflows"
+        "legacy-workflows",
+        "recovery-contracts"
       ],
       "readme": "docs/architecture/legacy-engine/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -986,7 +987,8 @@
         "quantagent_platform.legacy_ports"
       ],
       "allows": [
-        "signal-audit-contracts"
+        "signal-audit-contracts",
+        "recovery-contracts"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",
@@ -1022,7 +1024,8 @@
       ],
       "allows": [
         "legacy-ports",
-        "signal-audit"
+        "signal-audit",
+        "recovery-storage"
       ],
       "readme": "quantagent_platform/README.md",
       "data_owner": "QuantAgent: public research and audit",

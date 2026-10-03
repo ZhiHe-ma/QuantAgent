@@ -4,10 +4,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 from signal_audit_contracts import SignalAuditError
+from .recovery.contracts import (DeliveryResult, FrozenSnapshot, JsonObject,
+                                 RecoveryStore, RecoveryStoreFactory, StepResult)
 
 
 class AuditStore(Protocol):
     def record_completed_signal(self, run: Any, signal: Any, factors: Any = None) -> dict[str, Any]: ...
+    def validate_completed_signal(self, run: Any, signal: Any, factors: Any = None) -> None: ...
+    def record_recovered_signal(self, run: Any, signal: Any, factors: Any = None,
+                                *, expected_canonical_signal_id: str | None) -> dict[str, Any]: ...
+    def get_canonical_signal(self, signal_date: str, asset: str = "BTC", decision_horizon: str = "1d") -> dict[str, Any] | None: ...
 
 
 class AuditStoreFactory(Protocol):
@@ -23,6 +29,20 @@ class LegacyAuditBindings:
 
 
 _audit_factory: Callable[[], LegacyAuditBindings] | None = None
+_recovery_factory: RecoveryStoreFactory | None = None
+
+
+def configure_legacy_recovery_factory(factory: RecoveryStoreFactory) -> None:
+    if not callable(factory):
+        raise TypeError("legacy recovery factory must be callable")
+    global _recovery_factory
+    _recovery_factory = factory
+
+
+def get_legacy_recovery_factory() -> RecoveryStoreFactory:
+    if _recovery_factory is None:
+        raise RuntimeError("legacy recovery factory has not been configured at startup")
+    return _recovery_factory
 
 
 def configure_legacy_audit_factory(factory: Callable[[], LegacyAuditBindings]) -> None:
@@ -91,3 +111,11 @@ class DailyPorts:
     push_to_wecom: Callable[[str], bool]
     save_memory_capsule: Callable[[dict[str, Any]], bool]
     now: Callable[[], datetime]
+    recovery: RecoveryStore | None = None
+    capture_inputs: Callable[[str], JsonObject] | None = None
+    prepare_audit: Callable[[JsonObject], JsonObject] | None = None
+    project_report: Callable[[FrozenSnapshot], StepResult] | None = None
+    project_memory: Callable[[FrozenSnapshot], StepResult] | None = None
+    commit_audit: Callable[[JsonObject], JsonObject] | None = None
+    send_message: Callable[[str], DeliveryResult | bool] | None = None
+    channel_id: Callable[[], str | None] | None = None

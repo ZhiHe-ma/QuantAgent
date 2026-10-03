@@ -5,6 +5,8 @@ import json
 import time
 import random
 import hashlib
+import tempfile
+from contextlib import nullcontext
 import html as html_lib
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -22,7 +24,10 @@ from quantagent_platform.legacy_workflows import (
     run_daily_pipeline,
 )
 from quantagent_platform.legacy_ports import (
-    SignalAuditError, MonitorPorts, DailyPorts, get_legacy_audit_bindings,
+    SignalAuditError, MonitorPorts, DailyPorts, get_legacy_audit_bindings, get_legacy_recovery_factory,
+)
+from quantagent_platform.recovery.contracts import (
+    SCHEMA_VERSION, DeliveryResult, RecoveryInvalidState, StepResult,
 )
 
 _audit_bindings = get_legacy_audit_bindings()
@@ -100,6 +105,159 @@ class QuantAgent:
             SIGNAL_AUDIT_MIGRATION_DIR,
             dry_run=self.dry_run,
         )
+        self.recovery_store = get_legacy_recovery_factory()(self.daily_dir, dry_run=self.dry_run)
+
+    def _strict_json_text(self, text):
+        def pairs(items):
+            result = {}
+            for key, value in items:
+                if key in result:
+                    raise RecoveryInvalidState("duplicate projection key")
+                result[key] = value
+            return result
+        def invalid(value):
+            raise RecoveryInvalidState("non-finite projection value")
+        try:
+            return json.loads(text, object_pairs_hook=pairs, parse_constant=invalid)
+        except (ValueError, UnicodeError) as exc:
+            raise RecoveryInvalidState("malformed projection JSON") from exc
+
+    def _projection_bytes(self, path):
+        try:
+            with open(path, "rb") as handle:
+                return handle.read()
+        except FileNotFoundError:
+            return None
+
+    def _projection_hash(self, data):
+        return hashlib.sha256(data).hexdigest() if data is not None else None
+
+    def _strict_memory(self, data):
+        state = self._strict_json_text(data) if data is not None else {"last_daily_capsule": {}, "rolling_7d": []}
+        if (not isinstance(state, dict) or not isinstance(state.get("last_daily_capsule", {}), dict)
+                or not isinstance(state.get("rolling_7d", []), list)
+                or any(not isinstance(x, dict) for x in state.get("rolling_7d", []))):
+            raise RecoveryInvalidState("invalid Memory projection")
+        capsule = state.get("last_daily_capsule", {})
+        if capsule:
+            try:
+                datetime.strptime(capsule["date"], "%Y-%m-%d")
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RecoveryInvalidState("invalid Memory date") from exc
+        return state
+
+    def _atomic_projection(self, path, target):
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=os.path.dirname(path), prefix=os.path.basename(path)+".", suffix=".tmp", delete=False) as handle:
+                temporary = handle.name
+                handle.write(target)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, path)
+        finally:
+            if temporary is not None and os.path.exists(temporary):
+                os.unlink(temporary)
+
+    def _recovery_payload(self, snapshot):
+        if (snapshot.version != SCHEMA_VERSION or snapshot.instance_id != self.recovery_store.instance_id
+                or hashlib.sha256(snapshot.payload_json.encode("utf-8")).hexdigest() != snapshot.sha256):
+            raise RecoveryInvalidState("invalid recovery identity or hash")
+        return self._strict_json_text(snapshot.payload_json)
+
+    def capture_daily_inputs(self, date):
+        for operation in ("validate_completed_signal", "record_recovered_signal", "get_canonical_signal"):
+            if not callable(getattr(self.signal_audit_store, operation, None)):
+                raise RecoveryInvalidState("audit provider lacks recovery operations")
+        with self.recovery_store.lock("projection") if not self.dry_run else nullcontext():
+            memory = self._projection_bytes(self.memory_file)
+            state = self._strict_memory(memory)
+            report = self._projection_bytes(os.path.join(self.daily_dir, date+".md"))
+            canonical = self.signal_audit_store.get_canonical_signal(date)
+            return {"memory_state": state, "memory_preimage": self._projection_hash(memory),
+                    "report_preimage": self._projection_hash(report),
+                    "audit_preimage": canonical["signal_id"] if canonical else None}
+
+    def prepare_recovery_audit(self, draft):
+        run, signal = self.build_signal_audit_payload(draft["date"], draft["started_at"], draft["capsule"],
+            draft["metrics"], draft["compact_news"], draft["previous_memory"], draft["analysis"])
+        factors = draft["compact_news"]
+        self.signal_audit_store.validate_completed_signal(run, signal, factors)
+        return {"run": run, "signal": signal, "factors": factors}
+
+    def project_daily_report(self, snapshot):
+        if self.dry_run:
+            return StepResult("failed", {"error_code": "dry_run"})
+        try:
+            body = self._recovery_payload(snapshot)
+            target = body["report"].encode("utf-8")
+            path = os.path.join(self.daily_dir, snapshot.date+".md")
+            with self.recovery_store.lock("projection"):
+                current = self._projection_bytes(path)
+                if current == target:
+                    return StepResult("succeeded", {"already_present": True})
+                if self._projection_hash(current) != body["report_preimage"]:
+                    return StepResult("needs_review", {"error_code": "report_conflict"})
+                self._atomic_projection(path, target)
+            return StepResult("succeeded", {})
+        except RecoveryInvalidState:
+            return StepResult("needs_review", {"error_code": "invalid_snapshot"})
+        except OSError:
+            return StepResult("failed", {"error_code": "report_io"})
+
+    def project_daily_memory(self, snapshot):
+        if self.dry_run:
+            return StepResult("failed", {"error_code": "dry_run"})
+        try:
+            body = self._recovery_payload(snapshot)
+            target = json.dumps(body["memory_target"], ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8")
+            with self.recovery_store.lock("projection"):
+                current = self._projection_bytes(self.memory_file)
+                state = self._strict_memory(current)
+                if current == target:
+                    return StepResult("succeeded", {"already_present": True})
+                if state.get("last_daily_capsule", {}).get("date", "") > snapshot.date:
+                    return StepResult("superseded", {"newer_date": state["last_daily_capsule"]["date"]})
+                if self._projection_hash(current) != body["memory_preimage"]:
+                    return StepResult("needs_review", {"error_code": "memory_conflict"})
+                self._atomic_projection(self.memory_file, target)
+            return StepResult("succeeded", {})
+        except RecoveryInvalidState:
+            return StepResult("needs_review", {"error_code": "invalid_memory"})
+        except OSError:
+            return StepResult("failed", {"error_code": "memory_io"})
+
+    def commit_frozen_audit(self, payload):
+        return self.signal_audit_store.record_recovered_signal(payload["run"], payload["signal"], payload["factors"],
+                        expected_canonical_signal_id=payload["expected_canonical_signal_id"])
+
+    def recovery_channel_id(self):
+        return hashlib.sha256(self.wecom_url.encode("utf-8")).hexdigest() if self.wecom_url and "None" not in self.wecom_url else None
+
+    def send_wecom_result(self, text):
+        channel = self.recovery_channel_id()
+        if self.dry_run or channel is None:
+            return DeliveryResult("not_configured", "configuration", channel, "dry_run" if self.dry_run else None)
+        try:
+            response = requests.post(self.wecom_url, json={"msgtype": "markdown", "markdown": {"content": text}}, timeout=10)
+            if response.status_code != 200:
+                return DeliveryResult("unknown", "provider", channel, "http_response")
+            body = response.json()
+            code = body.get("errcode") if isinstance(body, dict) else None
+            if type(code) is not int:
+                return DeliveryResult("unknown", "provider", channel, "untrusted_response")
+            return DeliveryResult("confirmed" if code == 0 else "failed", "provider", channel, str(code) if code else None)
+        except Exception:
+            return DeliveryResult("unknown", "provider", channel, "transport_or_response")
+
+    def _send_recovery_message(self, text):
+        if getattr(self.push_to_wecom, "__func__", None) is QuantAgent.push_to_wecom:
+            return self.send_wecom_result(text)
+        try:
+            result = self.push_to_wecom(text)
+        except Exception:
+            result = False
+        return DeliveryResult("confirmed" if result is True else "unknown", "legacy", self.recovery_channel_id(), None)
 
     # =========================
     # 基础工具层
@@ -816,30 +974,7 @@ class QuantAgent:
             raise DeepSeekError(f"DeepSeek链路异常: {e}") from e
 
     def push_to_wecom(self, text):
-        if self.dry_run:
-            print("🧪 [DRY_RUN] 已阻止企业微信推送。")
-            return False
-        if not self.wecom_url or "None" in self.wecom_url:
-            print("❌ 企微网关未挂载，取消推送。")
-            return False
-        payload = {"msgtype": "markdown", "markdown": {"content": text}}
-        try:
-            res = requests.post(self.wecom_url, json=payload, timeout=10)
-            if res.status_code != 200:
-                print(f"⚠️ 企微网关返回异常状态码: {res.status_code}")
-                return False
-            try:
-                response_body = res.json()
-            except Exception as parse_err:
-                print(f"⚠️ 企微网关响应不是可信 JSON: {parse_err}")
-                return False
-            if not isinstance(response_body, dict) or response_body.get("errcode") != 0:
-                print(f"⚠️ 企微网关业务响应失败: {response_body}")
-                return False
-            return True
-        except Exception as e:
-            print(f"❌ 企微网关物理击穿: {e}")
-            return False
+        return self.send_wecom_result(text).status == "confirmed"
 
     # =========================
     # 常驻监听层
@@ -880,7 +1015,10 @@ class QuantAgent:
 
     def run_daily_pipeline(self):
         """Run the original sequence through explicit public workflow ports."""
-        return run_daily_pipeline(DailyPorts(
+        return run_daily_pipeline(self.daily_ports())
+
+    def daily_ports(self):
+        return DailyPorts(
             dry_run=self.dry_run,
             force_daily_run=self.force_daily_run,
             load_memory_state=self.load_memory_state,
@@ -899,7 +1037,15 @@ class QuantAgent:
             push_to_wecom=self.push_to_wecom,
             save_memory_capsule=self.save_memory_capsule,
             now=datetime.now,
-        ))
+            recovery=self.recovery_store,
+            capture_inputs=self.capture_daily_inputs,
+            prepare_audit=self.prepare_recovery_audit,
+            project_report=self.project_daily_report,
+            project_memory=self.project_daily_memory,
+            commit_audit=self.commit_frozen_audit,
+            send_message=self._send_recovery_message,
+            channel_id=self.recovery_channel_id,
+        )
 
     def run_weekly_pipeline(self):
         """显式占位，避免 argparse 允许 weekly 但执行时静默失败。"""

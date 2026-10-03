@@ -32,6 +32,8 @@
 
 本批命令、实际结果及未测范围见 [D006](../../features/d006-legacy-workflows.md)。
 
+R001 新增所属恢复接口：capture_daily_inputs 严格读取 Memory／文件前像并确认审计提供方支持恢复；prepare_recovery_audit 在交付前校验；project_daily_report／project_daily_memory 在短投影锁内校对目标与前像，用相同 UTF-8 字节原子替换。内容冲突需人工检查，较新 Memory 返回 superseded。send_wecom_result 区分 confirmed／failed／unknown／not_configured，原 push_to_wecom 继续返回 bool；daily_ports 对旧回调 False 保守标记 unknown。commit_frozen_audit 交给已注入审计实例，入口不访问其内部数据库。当前原流程接入在 R001 后续批次完成。
+
 ## 已知限制
 
 采集与日报分开启动，完整周报及学习业务未实现。旧入口的网络、模型和文件实现保留，未整体迁移为独立适配器目录；离线替身通过不能代替外部服务验收。

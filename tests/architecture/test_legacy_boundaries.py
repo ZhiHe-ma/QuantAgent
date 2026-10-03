@@ -24,7 +24,7 @@ class LegacyBoundaryTests(unittest.TestCase):
         graph = collect({path: (ROOT / path).read_text(encoding="utf-8")})
         for edge in graph["modules"]["quantagent_platform.legacy_ports"]["imports"]:
             self.assertFalse(edge["dynamic"])
-            if edge["target"] == "signal_audit_contracts":
+            if edge["target"] in {"signal_audit_contracts", "quantagent_platform.recovery.contracts"}:
                 continue
             root = edge["target"].split(".")[0]
             self.assertIn(root, sys.stdlib_module_names)

@@ -105,6 +105,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 [D005 验收](../docs/features/d005-adapter-contracts.md) 核对原版本标识、worker 类型/签名、惰性注入、默认配方与原实现；边界和公开服务接口覆盖在架构与契约测试。
 
+R001 的 [恢复目录](recovery/README.md) 提供纯契约、规则、SQLite 执行记录与锁。legacy_ports 追加可选恢复回调及工厂；legacy_bootstrap 和指定包入口只绑定惰性工厂，不打开库。没有 recovery 的既有显式 ports 保持原流程；正式引擎的 Daily 接口完整注入，工作流接入随后续批次实施。
+
 ## 已知限制
 
 存量及治理状态统一见[架构规范](../docs/ARCHITECTURE.md)。门禁不是业务语义正确、跨账户隔离或生产可用性的证明；原 IO 职责未整体迁移。不得将离线样本结果称为真实收益或自动交易能力。

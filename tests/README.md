@@ -76,6 +76,8 @@ D006 新边界见 [test_legacy_boundaries.py](architecture/test_legacy_boundarie
 
 [D005](../docs/features/d005-adapter-contracts.md) 增加适配器共享契约的静态边界，以及 [worker ports 契约](contract/test_worker_ports.py)的注入、错误、旧别名、启动和默认配方消费测试；原质检、日报、历史评价及 Qlib/bt 离线用例继续验证消费结果、进程权限和审计。
 
+R001 文件、消息和审计所属接口用 `python -m unittest tests.contract.test_recovery_ports tests.test_signal_audit tests.contract.test_legacy_ports -v` 验证，网络只有替身；真实 SQLite 和文件写入参与断言。
+
 ## 已知限制
 
 当前部分符合，剩余问题见 [精确基线](../docs/architecture/legacy-baseline.json)；平铺测试并非全部纯单元测试。真实 bt/Qlib 和私有 P4 验收保留原开关，跳过不代表通过；本地替身、模拟消息或模型日志不能作为真实调用、CI 或生产证据。

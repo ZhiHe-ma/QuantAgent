@@ -24,6 +24,8 @@
 
 `python -m unittest tests.unit.test_recovery_rules tests.contract.test_recovery_store tests.architecture.test_recovery_boundaries -v` 验证快照、转换、修订幂等、真实临时 SQLite、实例隔离及 OS 锁；实际命令、环境、提交与结果见 R001。进程中断及工作流验收在对应批次完成后记录。
 
+原数据所属方提供受控报告／Memory 投影、结构化消息结果及审计补账，调用方通过 legacy_ports 使用；本目录的存储不直接修改这些投影或审计库。真实接口与失败场景见 [test_recovery_ports.py](../../tests/contract/test_recovery_ports.py)。
+
 ## 已知限制
 
 仅单机同目录实例；不支持复制库后自动接管、物理磁盘灾难或跨主机锁。未知消息不能自动重发，旧历史不能凭新数据补造快照；没有整体原子交付或消息恰好一次保证。

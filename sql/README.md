@@ -26,6 +26,8 @@ QuantAgent 仅管理公共证据、研究结果与本机授权的审计产物；
 
 从仓库根目录运行 `python -m unittest discover -s tests -v`；架构门禁运行 `python -m tools.architecture --base-ref <目标提交> --branch <完整源分支>`。验收证据在对应分支说明；真实源、实验后端和生产环境未覆盖部分须单列。
 
+SignalAuditStore.validate_completed_signal 只校验、不打开库；record_recovered_signal 接收冻结的原 run_id／signal_id 与 expected_canonical_signal_id，短事务中仅在前像一致时提升规范信号，较旧补账不能替换新规范信号。同编号提交返回 exists、不增加记录。原 record_completed_signal 和迁移文件保持原接口／强制替换语义。独立审计仍只使用标准库与所属错误契约。
+
 ## 已知限制
 
 门禁不是业务语义正确、跨账户隔离或生产可用性的证明。默认路径、迁移及写入规则未改变；错误类型归属迁移，不承诺跨版本 pickle。不得将离线样本结果称为真实收益或自动交易能力。

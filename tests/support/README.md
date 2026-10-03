@@ -42,6 +42,8 @@ SEC 提供 `ISSUERS`、`make_payloads()`、`make_responses(payloads=None, *, ret
 
 API 捕获与固定预期比较见 [D003](../../docs/features/d003-api-composition.md)；它依赖测试环境的 FastAPI/Pydantic 版本，不证明真实服务验收。
 
+recovery_fixtures.isolated_engine 使用独立加载的引擎、临时授权目录、合成配置及外部服务替身；退出时恢复环境和公开工厂配置，供恢复集成测试复用。
+
 ## 已知限制
 
 路径依赖约定的四个仓库标记；非本项目目录会失败。SEC 默认时间仍随运行时变化，需固定时传 retrieved_at。当前只整理首批支持，其他平铺测试后续随能力整改。

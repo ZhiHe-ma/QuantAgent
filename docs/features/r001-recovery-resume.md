@@ -37,7 +37,7 @@
   "approved_plan_commit": "f38ede46eef828d9eec7ba32798139f09e00fe04",
   "written_spec_commit": "2a29b69ef0fd88805f571339603530c69ed4b3ec",
   "execution_method": "native",
-  "components": ["legacy-engine", "legacy-workflows", "legacy-ports", "legacy-composition", "signal-audit", "architecture", "acceptance-tests", "recovery-contracts", "recovery-domain", "recovery-storage", "recovery-package"],
+  "components": ["legacy-engine", "legacy-workflows", "legacy-ports", "legacy-composition", "compatibility-exports", "signal-audit", "architecture", "acceptance-tests", "recovery-contracts", "recovery-domain", "recovery-storage", "recovery-package"],
   "readme_unchanged": {
     "architecture": "仅登记实际新增能力及已批准的最小依赖边；扫描、文档检查规则和 CI 使用方式未改，工具 README 现有说明仍有效。"
   }
@@ -158,11 +158,11 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 - SignalAuditStore 增加 `validate_completed_signal(run: Mapping[str, Any], signal: Mapping[str, Any], factors: list[Mapping[str, Any]] | None = None) -> None`，仅校验不连接；`record_recovered_signal(run: Mapping[str, Any], signal: Mapping[str, Any], factors: list[Mapping[str, Any]] | None = None, *, expected_canonical_signal_id: str | None) -> dict[str, Any]`，在原审计事务中核对 canonical 前像，变化时只补非规范旧信号。原 record_completed_signal 签名、正常强制运行语义、SQL 迁移及类型别名保持。
 - AuditStore protocol 同步声明上述两项新操作及既有 `get_canonical_signal(signal_date: str, asset: str = "BTC", decision_horizon: str = "1d") -> dict[str, Any] | None`。旧自定义存储若缺少恢复接口，进入新路径前明确拒绝，不能交付后才发现；原直接调用接口不变，新增方法使用同一已注入实例。派生类对旧 record_completed_signal 的覆盖不会自动成为新方法的覆盖，契约测试须分别证明两种公开操作仍消费自定义存储。
 
-- [ ] **RED tests:** `test_unicode_projection_hash_matches_written_bytes` 使用中文和换行，`self.assertEqual(report_bytes, frozen_report.encode("utf-8"))`，JSON 目标与按冻结 memory_target 序列化的字节相同，第二次投影零替换；`test_projection_conflict_and_replace_failure_preserve_bytes` 断言 `self.assertEqual(result.status, "needs_review")`、替换失败保留旧字节；`test_old_memory_is_superseded_without_rolling_duplicate` 断言 `self.assertEqual(result.status, "superseded")`、新胶囊及重复同日的 rolling_7d 不变。
-- [ ] **RED tests:** `test_native_and_legacy_delivery_truth` 断言 errcode=0 → confirmed、明确业务拒绝 → failed、超时／不可信响应及旧 bool False → unknown、无渠道 → not_configured，旧 bool True → confirmed；`test_audit_preflight_idempotency_and_canonical_guard` 断言无效载荷不建库、同冻结编号实际行数不增、旧补账不替换新 canonical。运行 `python -m unittest tests.contract.test_recovery_ports tests.test_signal_audit tests.contract.test_legacy_ports -v`，核对 RED 原因。
-- [ ] **Implement:** 文件由原所属方严格读取、在 projection 锁内核对前像并写同目录唯一临时文件后原子替换；JSON 沿用 ensure_ascii=False、indent=2，Memory 沿用原裁剪规则，哈希计算与落盘共用同一 UTF-8 字节，报告不额外转换换行。相同目标先识别已完成；较新 Memory 返回 superseded。新消息 API 每次最多一次发送，只保存渠道标识哈希和错误代码；HTTP 200 且整数 errcode=0 为 confirmed、整数非零为 failed，其他不可信响应为 unknown。push_to_wecom 原 bool 签名保留，旧回调覆盖由绑定层识别并保守转换，不能旁路或发两次。
-- [ ] **GREEN:** 上列命令全过；实际 SQLite 测试检查 run/signal/factor 数量和 canonical，而非只检查 mock。在独立 `python -B -S` 中再次验证原审计可用，未加载插件平台；所有注入在测试后经公开 getter/configure 恢复，同步 README 和本文。
-- [ ] **Commit:** 仅暂存本 Task Files 中实际改动，`git commit -m "feat: add guarded recovery projections and delivery results"`；运行门禁。
+- [x] **RED tests:** `test_unicode_projection_hash_matches_written_bytes` 使用中文和换行，`self.assertEqual(report_bytes, frozen_report.encode("utf-8"))`，JSON 目标与按冻结 memory_target 序列化的字节相同，第二次投影零替换；`test_projection_conflict_and_replace_failure_preserve_bytes` 断言 `self.assertEqual(result.status, "needs_review")`、替换失败保留旧字节；`test_old_memory_is_superseded_without_rolling_duplicate` 断言 `self.assertEqual(result.status, "superseded")`、新胶囊及重复同日的 rolling_7d 不变。
+- [x] **RED tests:** `test_native_and_legacy_delivery_truth` 断言 errcode=0 → confirmed、明确业务拒绝 → failed、超时／不可信响应及旧 bool False → unknown、无渠道 → not_configured，旧 bool True → confirmed；`test_audit_preflight_idempotency_and_canonical_guard` 断言无效载荷不建库、同冻结编号实际行数不增、旧补账不替换新 canonical。运行 `python -m unittest tests.contract.test_recovery_ports tests.test_signal_audit tests.contract.test_legacy_ports -v`，核对 RED 原因。
+- [x] **Implement:** 文件由原所属方严格读取、在 projection 锁内核对前像并写同目录唯一临时文件后原子替换；JSON 沿用 ensure_ascii=False、indent=2，Memory 沿用原裁剪规则，哈希计算与落盘共用同一 UTF-8 字节，报告不额外转换换行。相同目标先识别已完成；较新 Memory 返回 superseded。新消息 API 每次最多一次发送，只保存渠道标识哈希和错误代码；HTTP 200 且整数 errcode=0 为 confirmed、整数非零为 failed，其他不可信响应为 unknown。push_to_wecom 原 bool 签名保留，旧回调覆盖由绑定层识别并保守转换，不能旁路或发两次。
+- [x] **GREEN:** 上列命令全过；实际 SQLite 测试检查 run/signal/factor 数量和 canonical，而非只检查 mock。在独立 `python -B -S` 中再次验证原审计可用，未加载插件平台；所有注入在测试后经公开 getter/configure 恢复，同步 README 和本文。
+- [x] **Commit:** 仅暂存本 Task Files 中实际改动，`git commit -m "feat: add guarded recovery projections and delivery results"`；运行门禁。
 
 ### Task 3：Daily 恢复与人工命令
 
@@ -232,6 +232,8 @@ unknown 不自动重发。用户可追加“已收到”确认，或明确确认
 实施计划记录：书面规范 `2a29b69ef0fd88805f571339603530c69ed4b3ec` 已批准；2026-10-03 在相同 Windows／Python 3.12.8／UTF-8 环境完成计划自查，核对规范覆盖、步骤可执行性、接口一致性、五项 Review Focus 和文档篇幅。修正草案中的文件路径、旧自定义审计接口接入、前像保护与模型预算说明；所有实施复选框仍未勾选。将上列门禁报告路径改为 `artifacts/recovery/r001/plan-gate.json` 后实际通过：60 模块、0 存量、无循环或错误、Import Linter 返回 0。仅更新本文，产品和测试源码均未改、完整产品套件未重跑；提交后复核同一门禁，详细收据保留在同目录的 plan-review.json。
 
 实施基线：2026-10-03，Windows／Python 3.12.8／UTF-8，在计划提交 `f38ede46eef828d9eec7ba32798139f09e00fe04` 上运行 `python -m unittest discover -s tests -v`：341 项、0 失败、7 项原环境跳过，69.663 秒。Task 1 定向命令见恢复 README：实现前 9 项因缺少公开功能而失败，实现后 9 项通过。Task 1 在计划提交 f38ede4 上的工作差异执行完整命令：350 项、0 失败、7 项原环境跳过，70.355 秒；task-1-gate.json 为 64 模块、0 存量、0 循环／错误、Import Linter=0。空包入口单独登记为无公开导出的 recovery-package，解决分层工具的父包重叠，不改变扫描规则或豁免。外部服务和生产仍未验证。
+
+Task 2：在源码 f64a30e 的工作差异运行定向命令及静态边界，28 项通过；完整套件 355 项、0 失败、7 项原环境跳过，70.183 秒。环境仍为 Windows／Python 3.12.8／UTF-8。task-2-gate.json：64 模块、0 存量／循环／错误，Import Linter=0。新增公开审计接口仍通过独立 `python -B -S` 的实际 SQLite 验证；现有显式 ports 流程尚未切换。
 
 ## 回滚方式
 

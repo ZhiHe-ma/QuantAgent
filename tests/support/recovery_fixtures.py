@@ -1,5 +1,35 @@
 """Synthetic recovery inputs; never imports test cases or contacts providers."""
 from typing import Any
+from contextlib import contextmanager
+import importlib.util
+import os
+from pathlib import Path
+import sys
+import types
+from unittest.mock import Mock, patch
+
+
+@contextmanager
+def isolated_engine(root: Path, *, dry_run: bool = False, wecom_url: str = "https://example.invalid/webhook"):
+    from tests.support.paths import ROOT
+    import quantagent_platform.legacy_ports as ports
+    audit_factory, recovery_factory = ports.get_legacy_audit_factory(), getattr(ports, "get_legacy_recovery_factory", lambda: None)()
+    requests = types.ModuleType("requests")
+    requests.get = requests.post = Mock(side_effect=AssertionError("unexpected network"))
+    dotenv = types.ModuleType("dotenv")
+    dotenv.load_dotenv = lambda *a, **kw: False
+    env = {"DEEPSEEK_API_KEY": "fixture", "DRY_RUN": str(dry_run).lower(), "WECOM_WEBHOOK_URL": wecom_url}
+    try:
+        with patch.dict(os.environ, env, clear=True), patch.dict(sys.modules, {"requests": requests, "yfinance": types.ModuleType("yfinance"), "dotenv": dotenv}):
+            spec = importlib.util.spec_from_file_location("recovery_engine_fixture", ROOT / "agent_engine.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            module.BASE_DIR = str(root)
+            yield module, module.QuantAgent()
+    finally:
+        ports.configure_legacy_audit_factory(audit_factory)
+        if recovery_factory is not None:
+            ports.configure_legacy_recovery_factory(recovery_factory)
 
 
 def daily_payload(date: str = "2026-10-03") -> dict[str, Any]:
