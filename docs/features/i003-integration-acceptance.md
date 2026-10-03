@@ -4,7 +4,7 @@
 {
   "branch": "feature/i003-integration-acceptance",
   "base_commit": "ccded244593942fc6de7c10983d6b0f795c36a47",
-  "phase": "implementing",
+  "phase": "verified",
   "components": [
     "sec-contracts",
     "sec-response-contracts",
@@ -97,7 +97,25 @@
 
 汇总后完整门禁：`python -m tools.architecture --base-ref ccded244593942fc6de7c10983d6b0f795c36a47 --branch feature/i003-integration-acceptance --report artifacts/integration/i003-integration-acceptance/aggregate-gate.json`，退出 0，68 模块、0 存量／违规／循环，Import Linter 返回 0。使用旧本地目标 c445fac 的同一门禁退出 1，仅报告初始目标不匹配（wrong-local-target-gate.json）；规则未放宽。加 `--branch main --mode merged` 的文档检查退出 0（merged-mode-gate.json），仅为目标分支模式模拟，未实际合并。
 
-当前进度：目标、初始扫描、52 项覆盖及正反门禁已核对；固定提交的完整离线回归和独立审查待验收。基础读取清单 231 行／11,488 字符通过，长篇历史与接口按职责分段读取。
+固定被测版本：5242b112da76534449ed1ede7e5d5eeb0958981c，完整目标差异为 52 提交／197 已提交文件；本批仅 3 份 Markdown，产品沿用 5ce3bc9。初始 42 项的 violation_key 集合逐条匹配，基线、登记、预算和门禁规则 Git blob 保持，见 fixed-source-evidence.json。
+
+`python -m unittest discover -s tests -v`：398 项，391 通过／7 跳过、0 失败，101.394 秒，退出 0（full-tests.log）。7 跳过为真实 bt／Qlib 解释器未配置、私有 P4 缺失、3 项 Windows 链接权限限制和 8.3 名称禁用，不记作通过。固定版本完整目标及本批增量门禁均 PASS（fixed-aggregate-gate.json、incremental-gate.json），不能只用新增文档自己的门禁代替整体检查。
+
+一次独立只读整合审查：无新增 Critical／Important／Minor，既有 Minor 2 项延后。独立聚焦 9 项通过，1.313 秒、退出 0（reviewer-focused-tests.log）；42 项原始键、61 登记／52 受影响、唯一源分支说明及全部 README 决策核对通过。50 份固定资产字节保持（48 原路径、2 迁移），12 项导出、29 项插件顺序及原公开方法签名保持；I002 修复确在当前提交链，见 reviewer-static-checks.json、reviewer-compatibility-inventory.json、reviewer-final-review.md。未重复完整套件，也未用分离分支的结果拼成已发布版本。
+
+当前进度：I001-01／02 由 I002 完成，I001-03／04 在本批完成；本地交付通过，Ready to merge 尚未建立。最终提交只补本文证据，产品保持上述固定版本。基础读取清单初始 231 行／11,488 字符通过，长篇历史与接口按职责分段读取；最终门禁继续应用原文档及默认阅读预算。
+
+作者逐项承接审查者未裁决的范围，沿用已确认边界：
+
+| Final Ruling | 理由与未验证代价 |
+| --- | --- |
+| 历史借入名 | 保留声明的所属导出及已记录别名；p5_coordinator.HandoffLedger 现为 Protocol，借入的 ApprovedRunRegistry 已移除。依赖这些名称的外部脚本可能不兼容，未验证。 |
+| pickle／完整程序身份 | 沿用已有范围；迁移类型元数据和入口 source_sha256 不保证跨版本序列化或整个程序身份，旧载荷与完整版本追溯需另验。 |
+| 自定义写回调 | 保留原显式 ports 消费约定，由所属适配器执行 dry-run 写守卫；实际引擎已测零写入，违规自定义适配器仍可能写文件。 |
+| 远端状态 | 本次只重新核实 main SHA，当前 CI／保护、实际合并和部署未验。本地验收不能解除远端门禁，合入可能仍被拒绝。 |
+| 真实集成及跳过项 | 保留离线范围；模型／新闻／消息、OpenStock、真实 bt／Qlib、私有 P4 与跳过平台场景无本次实证，现场兼容仍未知。 |
+| 恢复与产品保证 | 沿用单机授权实例范围，不新增跨主机／磁盘损毁／消息恰好一次、学习／交易／生产保证；这些故障或业务仍需人工处理／另批开发验收。 |
+| 原用户删除 | 不纳入本批提交、不恢复，保持唯一未暂存删除；若需将该删除交付，应单独处理，不能被本批静默纳入。 |
 
 ## 回滚方式
 
@@ -105,6 +123,6 @@
 
 ## 遗留问题
 
-I001-01／02 已在 I002 固定源码验收完成；I001-03／04 本批核实中，完成需以本次固定提交和完整目标差异的门禁／审查为准。当前未运行远端 Windows／Linux CI、真实模型／新闻／消息、OpenStock 联调、跨主机、部署或生产验收；真实 bt／Qlib、私有 P4 及 Windows 特定权限的跳过不记作通过。
+I001 四项 Important 均已有对应固定版本证据，历史记录保留当时结论。当前源分支未上传；远端 Windows／Linux CI 和保护须在实际提交上核对，不能称已合入或生产通过。真实集成及恢复／产品未测范围见上表。
 
 历史 Minor 延后：`git diff --check ccded244..5ce3bc9` 退出 2，legacy_workflows.py:316、tests/support/sec_samples.py:64 的末尾空行仍在（whole-diff-check.log）；不影响当前引用和业务验收，合入前整理。本批不扩展为产品格式清理。
